@@ -1,6 +1,17 @@
 import { io } from 'socket.io-client';
 
-const URL = import.meta.env.PROD ? undefined : 'http://localhost:3001';
+const getSocketUrl = () => {
+    if (import.meta.env.VITE_SOCKET_URL) {
+        return import.meta.env.VITE_SOCKET_URL;
+    }
+    if (import.meta.env.PROD) {
+        console.error('⚠️ VITE_SOCKET_URL is not defined in production environment!');
+        return undefined; // Fallback to window.location
+    }
+    return 'http://localhost:3001';
+};
+
+const URL = getSocketUrl();
 
 export const socket = io(URL, {
     autoConnect: true,

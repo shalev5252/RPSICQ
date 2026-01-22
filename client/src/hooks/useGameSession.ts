@@ -1,12 +1,12 @@
 import { useEffect } from 'react';
-import { socket } from '../socket';
+import { Socket } from 'socket.io-client';
 import { useGameStore } from '../store/gameStore';
 import { SOCKET_EVENTS, GameFoundPayload } from '@rps/shared';
 
 /**
  * Hook to handle global game session events and state transitions
  */
-export const useGameSession = () => {
+export const useGameSession = (socket: Socket) => {
     const setSessionId = useGameStore((state) => state.setSessionId);
     const setPlayerInfo = useGameStore((state) => state.setPlayerInfo);
     const setGamePhase = useGameStore((state) => state.setGamePhase);
@@ -28,6 +28,11 @@ export const useGameSession = () => {
             setGamePhase('waiting');
             setIsSearching(true);
             setSessionId('');
+
+            // Re-join queue automatically
+            socket.emit(SOCKET_EVENTS.JOIN_QUEUE, {
+                playerId: crypto.randomUUID(),
+            });
         };
 
         socket.on(SOCKET_EVENTS.GAME_FOUND, onGameFound);
@@ -37,5 +42,5 @@ export const useGameSession = () => {
             socket.off(SOCKET_EVENTS.GAME_FOUND, onGameFound);
             socket.off(SOCKET_EVENTS.OPPONENT_DISCONNECTED, onOpponentDisconnected);
         };
-    }, [setSessionId, setPlayerInfo, setGamePhase, setIsSearching]);
+    }, [socket, setSessionId, setPlayerInfo, setGamePhase, setIsSearching]);
 };

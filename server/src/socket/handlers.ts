@@ -54,11 +54,17 @@ export function setupSocketHandlers(io: Server): void {
                 // If the game was in setup/waiting phase, automatically requeue the opponent
                 console.log(`🔄 Re-queueing opponent ${result.opponentId} due to disconnect`);
 
-                // Notify them (optional, maybe just a toast on client side saying "Opponent disconnected, finding new match...")
-                io.to(result.opponentId).emit(SOCKET_EVENTS.OPPONENT_DISCONNECTED);
+                const opponentSocket = io.sockets.sockets.get(result.opponentId);
 
-                // Add them back to queue!
-                matchmakingService.addToQueue(result.opponentId);
+                if (opponentSocket && opponentSocket.connected) {
+                    // Notify them (optional, maybe just a toast on client side saying "Opponent disconnected, finding new match...")
+                    io.to(result.opponentId).emit(SOCKET_EVENTS.OPPONENT_DISCONNECTED);
+
+                    // Add them back to queue!
+                    matchmakingService.addToQueue(result.opponentId);
+                } else {
+                    console.log(`⚠️ Opponent socket ${result.opponentId} not found or disconnected, skipping re-queue`);
+                }
             }
         });
     });

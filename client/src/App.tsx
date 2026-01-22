@@ -5,8 +5,8 @@ import { MatchmakingScreen } from './components/MatchmakingScreen';
 import './App.css';
 
 function App() {
-    const { isConnected } = useSocket();
-    useGameSession(); // Handle global game events
+    const { socket, isConnected } = useSocket();
+    useGameSession(socket); // Handle global game events
     const gamePhase = useGameStore(state => state.gamePhase);
 
     return (
