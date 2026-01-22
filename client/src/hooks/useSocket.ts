@@ -34,19 +34,19 @@ export function useSocket() {
             setConnectionStatus('disconnected');
         });
 
-        socket.on(SOCKET_EVENTS.GAME_FOUND, (payload) => {
+        socket.on(SOCKET_EVENTS.GAME_FOUND, (payload: any) => {
             console.log('🎮 Game found:', payload);
         });
 
-        socket.on(SOCKET_EVENTS.GAME_START, (payload) => {
+        socket.on(SOCKET_EVENTS.GAME_START, (payload: any) => {
             console.log('🚀 Game started:', payload);
         });
 
-        socket.on(SOCKET_EVENTS.GAME_STATE, (payload) => {
+        socket.on(SOCKET_EVENTS.GAME_STATE, (payload: any) => {
             console.log('📊 Game state update:', payload);
         });
 
-        socket.on(SOCKET_EVENTS.ERROR, (payload) => {
+        socket.on(SOCKET_EVENTS.ERROR, (payload: any) => {
             console.error('❌ Server error:', payload);
         });
 
