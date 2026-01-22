@@ -104,6 +104,11 @@ export interface GameOverPayload {
     reason: 'king_captured' | 'timeout' | 'disconnect' | 'draw';
 }
 
+export interface ErrorPayload {
+    code: string;
+    message: string;
+}
+
 // Player view types
 export interface PlayerGameView extends Omit<GameState, 'board'> {
     board: PlayerCellView[][];
