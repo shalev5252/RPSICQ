@@ -1,8 +1,13 @@
 import { useSocket } from './hooks/useSocket';
+import { useGameSession } from './hooks/useGameSession';
+import { useGameStore } from './store/gameStore';
+import { MatchmakingScreen } from './components/MatchmakingScreen';
 import './App.css';
 
 function App() {
     const { isConnected } = useSocket();
+    useGameSession(); // Handle global game events
+    const gamePhase = useGameStore(state => state.gamePhase);
 
     return (
         <div className="app">
@@ -19,14 +24,15 @@ function App() {
                         <p>מתחבר לשרת...</p>
                     </div>
                 ) : (
-                    <div className="lobby">
-                        <h2>ברוכים הבאים ל-RPS Battle!</h2>
-                        <p>משחק אבן נייר מספריים אסטרטגי לשני שחקנים</p>
-                        <button className="start-button" disabled>
-                            התחל משחק
-                        </button>
-                        <p className="coming-soon">🚧 בקרוב...</p>
-                    </div>
+                    <>
+                        {gamePhase === 'waiting' && <MatchmakingScreen />}
+                        {gamePhase !== 'waiting' && (
+                            <div className="game-container">
+                                <h2>Game Phase: {gamePhase}</h2>
+                                <p>Multiplayer Session Active</p>
+                            </div>
+                        )}
+                    </>
                 )}
             </main>
         </div>

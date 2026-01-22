@@ -3,6 +3,7 @@
 // ============================================================
 
 export type PlayerColor = 'red' | 'blue';
+export type PlayerRole = PlayerColor;
 export type PieceType = 'king' | 'pit' | 'rock' | 'paper' | 'scissors';
 export type CombatElement = 'rock' | 'paper' | 'scissors';
 export type GamePhase = 'waiting' | 'setup' | 'playing' | 'combat' | 'finished';

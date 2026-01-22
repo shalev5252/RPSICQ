@@ -13,6 +13,8 @@ interface GameStore {
     setSessionId: (sessionId: string) => void;
     setGamePhase: (phase: GamePhase) => void;
     setGameView: (view: PlayerGameView) => void;
+    isSearching: boolean;
+    setIsSearching: (isSearching: boolean) => void;
     reset: () => void;
 }
 
@@ -23,6 +25,7 @@ const initialState = {
     sessionId: null,
     gamePhase: 'waiting' as GamePhase,
     gameView: null,
+    isSearching: false, // Default to not searching
 };
 
 export const useGameStore = create<GameStore>((set) => ({
@@ -32,5 +35,6 @@ export const useGameStore = create<GameStore>((set) => ({
     setSessionId: (sessionId) => set({ sessionId }),
     setGamePhase: (phase) => set({ gamePhase: phase }),
     setGameView: (view) => set({ gameView: view }),
+    setIsSearching: (isSearching) => set({ isSearching }),
     reset: () => set(initialState),
 }));

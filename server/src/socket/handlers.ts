@@ -1,16 +1,21 @@
 import { Server, Socket } from 'socket.io';
 import { SOCKET_EVENTS, JoinQueuePayload, PlaceKingPitPayload, MakeMovePayload, CombatChoicePayload } from '@rps/shared';
+import { MatchmakingService } from '../services/MatchmakingService.js';
+import { GameService } from '../services/GameService.js';
 
 export function setupSocketHandlers(io: Server): void {
+    const gameService = new GameService();
+    const matchmakingService = new MatchmakingService(io, gameService);
+
     io.on('connection', (socket: Socket) => {
         console.log(`✅ Client connected: ${socket.id}`);
 
         socket.on(SOCKET_EVENTS.JOIN_QUEUE, (_payload: JoinQueuePayload) => {
-            console.log(`🎮 Player ${socket.id} joining queue`);
+            matchmakingService.addToQueue(socket.id);
         });
 
         socket.on(SOCKET_EVENTS.LEAVE_QUEUE, () => {
-            console.log(`🚪 Player ${socket.id} leaving queue`);
+            matchmakingService.removeFromQueue(socket.id);
         });
 
         socket.on(SOCKET_EVENTS.PLACE_KING_PIT, (_payload: PlaceKingPitPayload) => {
@@ -39,6 +44,22 @@ export function setupSocketHandlers(io: Server): void {
 
         socket.on('disconnect', (reason: string) => {
             console.log(`❌ Client disconnected: ${socket.id} (${reason})`);
+
+            // 1. Remove from queue if they are waiting
+            matchmakingService.removeFromQueue(socket.id);
+
+            // 2. Check if they are in an active game
+            const result = gameService.handleDisconnect(socket.id);
+            if (result && result.opponentId) {
+                // If the game was in setup/waiting phase, automatically requeue the opponent
+                console.log(`🔄 Re-queueing opponent ${result.opponentId} due to disconnect`);
+
+                // Notify them (optional, maybe just a toast on client side saying "Opponent disconnected, finding new match...")
+                io.to(result.opponentId).emit(SOCKET_EVENTS.OPPONENT_DISCONNECTED);
+
+                // Add them back to queue!
+                matchmakingService.addToQueue(result.opponentId);
+            }
         });
     });
 }
