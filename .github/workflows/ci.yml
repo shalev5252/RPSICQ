@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  # Phase 1: Shared Validation
+  shared-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Lint Shared
+        run: npm run lint -- shared/
+
+      - name: Type Check Shared
+        run: npm run build --workspace=@rps/shared
+
+  # Phase 2: Application Validation (Parallel)
+  server-validation:
+    needs: shared-validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Shared
+        run: npm run build --workspace=@rps/shared
+
+      - name: Lint Server
+        run: npm run lint -- server/
+
+      - name: Type Check Server
+        run: npm run build --workspace=@rps/server
+
+  client-validation:
+    needs: shared-validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Shared
+        run: npm run build --workspace=@rps/shared
+
+      - name: Lint Client
+        run: npm run lint -- client/
+
+      - name: Type Check Client
+        run: npm run build --workspace=@rps/client

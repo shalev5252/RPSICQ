@@ -3,6 +3,7 @@
 // ============================================================
 
 export type PlayerColor = 'red' | 'blue';
+export type PlayerRole = PlayerColor;
 export type PieceType = 'king' | 'pit' | 'rock' | 'paper' | 'scissors';
 export type CombatElement = 'rock' | 'paper' | 'scissors';
 export type GamePhase = 'waiting' | 'setup' | 'playing' | 'combat' | 'finished';
@@ -101,6 +102,11 @@ export interface CombatResultPayload {
 export interface GameOverPayload {
     winner: PlayerColor | null;
     reason: 'king_captured' | 'timeout' | 'disconnect' | 'draw';
+}
+
+export interface ErrorPayload {
+    code: string;
+    message: string;
 }
 
 // Player view types
