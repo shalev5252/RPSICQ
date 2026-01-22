@@ -1,0 +1,29 @@
+{
+    "name": "rps-battle",
+    "version": "1.0.0",
+    "description": "RPS Battle - Strategic Rock Paper Scissors Board Game",
+    "private": true,
+    "workspaces": [
+        "client",
+        "server",
+        "shared"
+    ],
+    "scripts": {
+        "dev": "npm run dev:server & npm run dev:client",
+        "dev:client": "npm run dev --workspace=@rps/client",
+        "dev:server": "npm run dev --workspace=@rps/server",
+        "build": "npm run build --workspace=@rps/shared && npm run build --workspace=@rps/client && npm run build --workspace=@rps/server",
+        "install:all": "npm install"
+    },
+    "keywords": [
+        "game",
+        "rock-paper-scissors",
+        "multiplayer",
+        "socket.io"
+    ],
+    "author": "",
+    "license": "MIT",
+    "engines": {
+        "node": ">=18.0.0"
+    }
+}
