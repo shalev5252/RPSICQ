@@ -22,12 +22,12 @@ Currently, the system has placeholder socket handlers but no actual logic to pai
 1.  **Backend**:
     -   Implement a simple in-memory queue in `MatchmakingService`.
     -   Handle `JOIN_QUEUE` and `LEAVE_QUEUE` events.
-    -   When queue size >= 2, pop two players, create a session, and emit `GAME_START`.
+    -   When queue size >= 2, pop two players, create a session, and emit `GAME_FOUND`.
     -   Update `socket/handlers.ts` to use the service.
 2.  **Frontend**:
     -   Add a "Find Game" button.
     -   Show a "Waiting for opponent..." state.
-    -   Handle `GAME_START` event to transition to the game setup screen.
+    -   Handle `GAME_FOUND` event to transition to the game setup screen.
 
 ## Risks
 - **Concurrency**: Race conditions when popping from queue (single-threaded Node.js helps, but need to be careful with async if any).

@@ -15,11 +15,12 @@
         -   Randomly assign "Red" and "Blue" to A and B.
         -   Create initial `GameState`.
         -   Store in `GameSessionManager`.
-        -   Emit `GAME_START` to both A and B with session details.
+        -   Emit `GAME_FOUND` to both A and B with session details.
 
 ### Client-Side
 - **Matchmaking Store (Zustand)**:
-    -   `status`: 'idle' | 'searching' | 'connected'
+    -   `isSearching`: boolean (true when searching)
+    -   `gamePhase`: 'waiting' | 'setup' | 'playing' | 'combat' | 'ended'
 -   **UI**:
     -   Start Screen with "Play" button.
     -   Loading overlay/component when `status === 'searching'`.
@@ -29,9 +30,9 @@
 ### Shared Types (Packet payloads)
 ```typescript
 // Existing in @rps/shared (verify/add)
-export interface GameStartPayload {
+export interface GameFoundPayload {
   sessionId: string;
-  role: 'red' | 'blue';
+  color: 'red' | 'blue';
   opponentName?: string; // Optional for now
 }
 ```

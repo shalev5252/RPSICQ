@@ -1,4 +1,4 @@
-import { GameState, GamePhase, PlayerColor, PlayerState, Cell, BOARD_ROWS, BOARD_COLS, Piece } from '@rps/shared';
+import { GameState, PlayerColor, PlayerState, Cell, BOARD_ROWS, BOARD_COLS } from '@rps/shared';
 
 export class GameService {
     private sessions: Map<string, GameState> = new Map();

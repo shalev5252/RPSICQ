@@ -69,7 +69,8 @@ export class MatchmakingService {
         if (!socket1 || !socket1.connected) {
             console.log(`⚠️ Player ${player1Entry.socketId} disconnected while in queue (zombie cleanup)`);
             // Recursive call to try next match since we just removed a zombie
-            return this.tryMatch();
+            this.tryMatch();
+            return;
         }
 
         // Get the second player
@@ -86,7 +87,8 @@ export class MatchmakingService {
             console.log(`⚠️ Player ${player2Entry.socketId} disconnected while in queue (zombie cleanup)`);
             // Put player 1 back at HEAD (priority) and retry
             this.queue.unshift(player1Entry);
-            return this.tryMatch();
+            this.tryMatch();
+            return;
         }
 
         // --- MATCH FOUND ---
