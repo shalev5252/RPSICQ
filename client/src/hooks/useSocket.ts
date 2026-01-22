@@ -34,6 +34,12 @@ export function useSocket() {
         socket.on('connect', onConnect);
         socket.on('disconnect', onDisconnect);
 
+        // Sync state immediately if socket is already connected (handles race condition on mount)
+        if (socket.connected) {
+            setIsConnected(true);
+            setConnectionStatus('connected');
+        }
+
         socket.on('connect_error', (error) => {
             console.error('🔴 Connection error:', error.message);
             setConnectionStatus('disconnected');
