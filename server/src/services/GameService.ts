@@ -436,6 +436,44 @@ export class GameService {
     }
 
     /**
+     * Resolve combat between two pieces.
+     * Returns: 'attacker_wins', 'defender_wins', or 'tie'
+     */
+    private resolveCombat(attacker: Piece, defender: Piece): 'attacker_wins' | 'defender_wins' | 'tie' {
+        // Special case: Attacking the King always wins
+        if (defender.type === 'king') {
+            return 'attacker_wins';
+        }
+
+        // Special case: Pit defeats any attacker
+        if (defender.type === 'pit') {
+            return 'defender_wins';
+        }
+
+        // Standard RPS logic
+        if (attacker.type === 'rock') {
+            if (defender.type === 'scissors') return 'attacker_wins';
+            if (defender.type === 'paper') return 'defender_wins';
+            if (defender.type === 'rock') return 'tie';
+        }
+
+        if (attacker.type === 'paper') {
+            if (defender.type === 'rock') return 'attacker_wins';
+            if (defender.type === 'scissors') return 'defender_wins';
+            if (defender.type === 'paper') return 'tie';
+        }
+
+        if (attacker.type === 'scissors') {
+            if (defender.type === 'paper') return 'attacker_wins';
+            if (defender.type === 'rock') return 'defender_wins';
+            if (defender.type === 'scissors') return 'tie';
+        }
+
+        // King/Pit as attackers (should not happen, but handle gracefully)
+        return 'defender_wins';
+    }
+
+    /**
      * Execute a move. Returns success/error and whether combat occurred.
      */
     public makeMove(
@@ -485,9 +523,74 @@ export class GameService {
 
         // Check if combat will occur
         if (targetCell.piece && targetCell.piece.owner !== color) {
-            // Combat will be handled separately
-            // For now, just flag that combat is needed
-            console.log(`⚔️ Combat initiated: ${piece.type} vs ${targetCell.piece.type}`);
+            const defender = targetCell.piece;
+            const defenderOwner = defender.owner;
+
+            console.log(`⚔️ Combat initiated: ${piece.type} (${color}) vs ${defender.type} (${defenderOwner})`);
+
+            // Resolve combat
+            const result = this.resolveCombat(piece, defender);
+
+            if (result === 'tie') {
+                // Transition to tie_breaker phase
+                session.phase = 'tie_breaker';
+                session.combatState = {
+                    attackerId: piece.id,
+                    defenderId: defender.id,
+                    attackerChoice: undefined,
+                    defenderChoice: undefined,
+                    isTie: true
+                };
+                console.log(`🤝 Combat tie! Entering tie breaker phase.`);
+                return { success: true, combat: true };
+            }
+
+            // Determine winner and loser
+            const winner = result === 'attacker_wins' ? piece : defender;
+            const loser = result === 'attacker_wins' ? defender : piece;
+            const winnerOwner = winner.owner;
+            const loserOwner = loser.owner;
+
+            console.log(`✅ Combat resolved: ${winner.type} (${winnerOwner}) defeats ${loser.type} (${loserOwner})`);
+
+            // Check for King capture (game over)
+            if (loser.type === 'king') {
+                session.phase = 'finished';
+                session.winner = winnerOwner;
+                session.winReason = 'king_captured';
+                console.log(`👑 ${winnerOwner} wins by capturing the King!`);
+                return { success: true, combat: true };
+            }
+
+            // Remove loser from board
+            const loserPlayer = session.players[loserOwner];
+            if (loserPlayer) {
+                loserPlayer.pieces = loserPlayer.pieces.filter(p => p.id !== loser.id);
+            }
+
+            // Update board: winner takes position
+            if (result === 'attacker_wins') {
+                // Attacker wins: move attacker to target
+                session.board[from.row][from.col].piece = null;
+                session.board[to.row][to.col].piece = piece;
+                piece.position = { row: to.row, col: to.col };
+            } else {
+                // Defender wins: remove attacker, defender stays
+                session.board[from.row][from.col].piece = null;
+                const attackerPlayer = session.players[color];
+                if (attackerPlayer) {
+                    attackerPlayer.pieces = attackerPlayer.pieces.filter(p => p.id !== piece.id);
+                }
+            }
+
+            // Reveal and add halo to winner
+            winner.isRevealed = true;
+            winner.hasHalo = true;
+
+            // Switch turn
+            session.currentTurn = color === 'red' ? 'blue' : 'red';
+            session.turnStartTime = Date.now();
+
             return { success: true, combat: true };
         }
 
@@ -553,6 +656,138 @@ export class GameService {
             phase: session.phase,
             isMyTurn: session.currentTurn === color
         };
+    }
+
+    /**
+     * Handle tie breaker choice submission.
+     * When both players have chosen, re-resolve combat with new types.
+     */
+    public submitTieBreakerChoice(
+        socketId: string,
+        choice: 'rock' | 'paper' | 'scissors'
+    ): { success: boolean; error?: string; bothChosen?: boolean } {
+        const session = this.getSessionBySocketId(socketId);
+        if (!session) return { success: false, error: 'Session not found' };
+
+        if (session.phase !== 'tie_breaker') {
+            return { success: false, error: 'Not in tie breaker phase' };
+        }
+
+        if (!session.combatState) {
+            return { success: false, error: 'No active combat state' };
+        }
+
+        const color = this.getPlayerColor(socketId);
+        if (!color) return { success: false, error: 'Player not found' };
+
+        const player = session.players[color];
+        if (!player) return { success: false, error: 'Player state not found' };
+
+        // Find which piece belongs to this player
+        const attackerPiece = player.pieces.find(p => p.id === session.combatState!.attackerId);
+        const defenderPiece = player.pieces.find(p => p.id === session.combatState!.defenderId);
+
+        if (attackerPiece) {
+            session.combatState.attackerChoice = choice;
+        } else if (defenderPiece) {
+            session.combatState.defenderChoice = choice;
+        } else {
+            return { success: false, error: 'Piece not found in your pieces' };
+        }
+
+        // Check if both players have chosen
+        const bothChosen = session.combatState.attackerChoice !== undefined &&
+            session.combatState.defenderChoice !== undefined;
+
+        if (bothChosen) {
+            // Update piece types permanently
+            const attacker = session.players.red?.pieces.find(p => p.id === session.combatState!.attackerId) ||
+                session.players.blue?.pieces.find(p => p.id === session.combatState!.attackerId);
+            const defender = session.players.red?.pieces.find(p => p.id === session.combatState!.defenderId) ||
+                session.players.blue?.pieces.find(p => p.id === session.combatState!.defenderId);
+
+            if (!attacker || !defender) {
+                return { success: false, error: 'Combat pieces not found' };
+            }
+
+            attacker.type = session.combatState.attackerChoice!;
+            defender.type = session.combatState.defenderChoice!;
+
+            console.log(`🔄 Tie breaker resolved: ${attacker.type} vs ${defender.type}`);
+
+            // Re-resolve combat with new types
+            const result = this.resolveCombat(attacker, defender);
+
+            if (result === 'tie') {
+                // Another tie! Reset choices for another round
+                session.combatState.attackerChoice = undefined;
+                session.combatState.defenderChoice = undefined;
+                console.log(`🤝 Another tie! Continue tie breaker.`);
+                return { success: true, bothChosen: false };
+            }
+
+            // Combat resolved
+            const winner = result === 'attacker_wins' ? attacker : defender;
+            const loser = result === 'attacker_wins' ? defender : attacker;
+            const winnerOwner = winner.owner;
+            const loserOwner = loser.owner;
+
+            console.log(`✅ Final combat: ${winner.type} (${winnerOwner}) defeats ${loser.type} (${loserOwner})`);
+
+            // Check for King capture
+            if (loser.type === 'king') {
+                session.phase = 'finished';
+                session.winner = winnerOwner;
+                session.winReason = 'king_captured';
+                session.combatState = null;
+                console.log(`👑 ${winnerOwner} wins by capturing the King!`);
+                return { success: true, bothChosen: true };
+            }
+
+            // Remove loser
+            const loserPlayer = session.players[loserOwner];
+            if (loserPlayer) {
+                loserPlayer.pieces = loserPlayer.pieces.filter(p => p.id !== loser.id);
+                // Remove from board
+                for (const row of session.board) {
+                    for (const cell of row) {
+                        if (cell.piece?.id === loser.id) {
+                            cell.piece = null;
+                        }
+                    }
+                }
+            }
+
+            // Winner takes position if attacker won
+            if (result === 'attacker_wins') {
+                const defenderPos = defender.position;
+                // Remove attacker from old position
+                for (const row of session.board) {
+                    for (const cell of row) {
+                        if (cell.piece?.id === attacker.id) {
+                            cell.piece = null;
+                        }
+                    }
+                }
+                // Place attacker at defender's position
+                session.board[defenderPos.row][defenderPos.col].piece = attacker;
+                attacker.position = defenderPos;
+            }
+
+            // Reveal and add halo to winner
+            winner.isRevealed = true;
+            winner.hasHalo = true;
+
+            // Return to playing phase
+            session.phase = 'playing';
+            session.combatState = null;
+
+            // Switch turn
+            session.currentTurn = session.currentTurn === 'red' ? 'blue' : 'red';
+            session.turnStartTime = Date.now();
+        }
+
+        return { success: true, bothChosen };
     }
 
     public removeSession(sessionId: string): void {

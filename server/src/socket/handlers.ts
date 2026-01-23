@@ -105,16 +105,17 @@ export function setupSocketHandlers(io: Server): void {
                 return;
             }
 
-            // If combat occurred, we'll handle it separately in future
-            if (result.combat) {
-                // TODO: Implement combat phase
-                console.log('Combat phase not yet implemented');
-                return;
-            }
-
-            // Send updated game view to both players
+            // Send updated game view to both players (for both combat and non-combat scenarios)
             const session = gameService.getSessionBySocketId(socket.id);
             if (session) {
+                // Check if game ended
+                if (session.phase === 'finished') {
+                    io.to(session.sessionId).emit(SOCKET_EVENTS.GAME_OVER, {
+                        winner: session.winner,
+                        reason: session.winReason || 'king_captured'
+                    });
+                }
+
                 // Send to current player
                 const playerView = gameService.getPlayerGameView(socket.id);
                 if (playerView) {
@@ -132,8 +133,40 @@ export function setupSocketHandlers(io: Server): void {
             }
         });
 
-        socket.on(SOCKET_EVENTS.COMBAT_CHOICE, (_payload: CombatChoicePayload) => {
-            console.log(`⚔️ Player ${socket.id} made combat choice`);
+        socket.on(SOCKET_EVENTS.COMBAT_CHOICE, (payload: CombatChoicePayload) => {
+            console.log(`⚔️ Player ${socket.id} chose ${payload.element} for tie breaker`);
+
+            const result = gameService.submitTieBreakerChoice(socket.id, payload.element);
+
+            if (!result.success) {
+                socket.emit(SOCKET_EVENTS.ERROR, { code: 'TIE_BREAKER_ERROR', message: result.error });
+                return;
+            }
+
+            if (result.bothChosen) {
+                // Both players have chosen - resolution complete
+                const session = gameService.getSessionBySocketId(socket.id);
+                if (session) {
+                    // Check if game ended
+                    if (session.phase === 'finished') {
+                        io.to(session.sessionId).emit(SOCKET_EVENTS.GAME_OVER, {
+                            winner: session.winner,
+                            reason: session.winReason || 'king_captured'
+                        });
+                    }
+
+                    // Send updated game state to both players
+                    const redView = gameService.getPlayerGameView(session.players.red!.socketId);
+                    const blueView = gameService.getPlayerGameView(session.players.blue!.socketId);
+
+                    if (redView) {
+                        io.to(session.players.red!.socketId).emit(SOCKET_EVENTS.GAME_STATE, redView);
+                    }
+                    if (blueView) {
+                        io.to(session.players.blue!.socketId).emit(SOCKET_EVENTS.GAME_STATE, blueView);
+                    }
+                }
+            }
         });
 
         socket.on(SOCKET_EVENTS.REQUEST_REMATCH, () => {

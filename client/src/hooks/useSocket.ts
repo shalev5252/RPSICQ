@@ -75,12 +75,25 @@ export function useSocket() {
             console.error('❌ Server error:', payload);
         };
 
+        const onGameOver = (payload: { winner: any; reason: string }) => {
+            console.log('🏁 Game Over:', payload);
+            useGameStore.getState().setGamePhase('finished');
+            useGameStore.getState().setGameState({
+                board: useGameStore.getState().gameState?.board || [],
+                currentTurn: null,
+                phase: 'finished',
+                isMyTurn: false,
+                winner: payload.winner
+            });
+        };
+
         socket.on('connect', onConnect);
         socket.on('disconnect', onDisconnect);
         socket.on('connect_error', onConnectError);
         socket.on(SOCKET_EVENTS.GAME_FOUND, onGameFound);
         socket.on(SOCKET_EVENTS.GAME_START, onGameStart);
         socket.on(SOCKET_EVENTS.GAME_STATE, onGameState);
+        socket.on(SOCKET_EVENTS.GAME_OVER, onGameOver);
         socket.on(SOCKET_EVENTS.ERROR, onError);
 
         // Sync state immediately if socket is already connected (handles race condition on mount)
@@ -96,6 +109,7 @@ export function useSocket() {
             socket.off(SOCKET_EVENTS.GAME_FOUND, onGameFound);
             socket.off(SOCKET_EVENTS.GAME_START, onGameStart);
             socket.off(SOCKET_EVENTS.GAME_STATE, onGameState);
+            socket.off(SOCKET_EVENTS.GAME_OVER, onGameOver);
             socket.off(SOCKET_EVENTS.ERROR, onError);
             // Do NOT disconnect base socket on unmount of hook, usually
         };

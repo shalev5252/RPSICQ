@@ -25,4 +25,4 @@
 
 ## Validation
 - [x] Run `npm run build` in client and server
-- [ ] Manual test: both players can take turns moving pieces
+- [x] Manual test: both players can take turns moving pieces

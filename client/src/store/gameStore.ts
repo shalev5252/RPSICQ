@@ -36,8 +36,9 @@ interface GameStore {
         currentTurn: PlayerColor | null;
         phase: string;
         isMyTurn: boolean;
+        winner?: PlayerColor | null;
     } | null;
-    setGameState: (state: { board: PlayerCellView[][]; currentTurn: PlayerColor | null; phase: string; isMyTurn: boolean } | null) => void;
+    setGameState: (state: { board: PlayerCellView[][]; currentTurn: PlayerColor | null; phase: string; isMyTurn: boolean; winner?: PlayerColor | null } | null) => void;
     reset: () => void;
 }
 

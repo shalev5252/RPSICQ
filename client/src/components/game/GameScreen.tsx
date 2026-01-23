@@ -4,6 +4,7 @@ import { useGameStore } from '../../store/gameStore';
 import type { PieceType, Position, PlayerPieceView } from '@rps/shared';
 import { SOCKET_EVENTS, BOARD_ROWS, BOARD_COLS, MOVEMENT_DIRECTIONS } from '@rps/shared';
 import { Board } from '../setup/Board';
+import { TieBreakerModal } from './TieBreakerModal';
 import './GameScreen.css';
 
 export const GameScreen: React.FC = () => {
@@ -15,6 +16,7 @@ export const GameScreen: React.FC = () => {
 
     const isMyTurn = gameState?.currentTurn === myColor;
     const board = gameState?.board ?? [];
+    const isTieBreaker = gameState?.phase === 'tie_breaker';
 
     // Calculate valid moves for a piece
     const calculateValidMoves = useCallback((piece: PlayerPieceView): Position[] => {
@@ -122,6 +124,8 @@ export const GameScreen: React.FC = () => {
                     draggablePieceTypes={draggablePieceTypes}
                 />
             </div>
+
+            {isTieBreaker && <TieBreakerModal />}
         </div>
     );
 };
