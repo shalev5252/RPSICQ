@@ -85,8 +85,33 @@
     line-height: 1.5;
 }
 
+.game-over-screen__notification {
+    background: linear-gradient(135deg, #fcc419, #fab005);
+    color: #1a1a2e;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.02);
+    }
+}
+
+.game-over-screen__buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
 .game-over-screen__button {
-    background: linear-gradient(135deg, #4c6ef5, #364fc7);
     color: white;
     border: none;
     border-radius: 12px;
@@ -99,11 +124,29 @@
     letter-spacing: 2px;
 }
 
-.game-over-screen__button:hover {
+.game-over-screen__button--primary {
+    background: linear-gradient(135deg, #51cf66, #37b24d);
+}
+
+.game-over-screen__button--primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(81, 207, 102, 0.4);
+}
+
+.game-over-screen__button--primary:disabled {
+    background: linear-gradient(135deg, #868e96, #495057);
+    cursor: not-allowed;
+}
+
+.game-over-screen__button--secondary {
+    background: linear-gradient(135deg, #4c6ef5, #364fc7);
+}
+
+.game-over-screen__button--secondary:hover {
     transform: translateY(-2px);
     box-shadow: 0 10px 30px rgba(76, 110, 245, 0.4);
 }
 
-.game-over-screen__button:active {
+.game-over-screen__button:active:not(:disabled) {
     transform: translateY(0);
 }

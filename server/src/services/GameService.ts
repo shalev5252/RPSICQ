@@ -227,9 +227,6 @@ export class GameService {
         if (!setupState?.hasPlacedKingPit) {
             return { success: false, error: 'Must place King and Pit first' };
         }
-        if (setupState.hasShuffled) {
-            return { success: false, error: 'Cannot reshuffle after shuffling' };
-        }
 
         // Get all cells in player's setup rows
         const validRows = this.getSetupRows(color);
@@ -823,5 +820,88 @@ export class GameService {
         this.removeSession(sessionId);
 
         return { sessionId, opponentId };
+    }
+
+    /**
+     * Request a rematch. Returns status indicating if both players have requested.
+     */
+    public requestRematch(socketId: string): {
+        success: boolean;
+        error?: string;
+        bothRequested?: boolean;
+        opponentSocketId?: string;
+    } {
+        const session = this.getSessionBySocketId(socketId);
+        if (!session) return { success: false, error: 'Session not found' };
+
+        if (session.phase !== 'finished') {
+            return { success: false, error: 'Game is not finished' };
+        }
+
+        const color = this.getPlayerColor(socketId);
+        if (!color) return { success: false, error: 'Player not found' };
+
+        // Initialize rematchRequests if not present
+        if (!session.rematchRequests) {
+            session.rematchRequests = { red: false, blue: false };
+        }
+
+        // Mark this player's rematch request
+        session.rematchRequests[color] = true;
+
+        const opponent = session.players[color === 'red' ? 'blue' : 'red'];
+        const opponentSocketId = opponent?.socketId;
+
+        // Check if both players have requested rematch
+        const bothRequested = session.rematchRequests.red && session.rematchRequests.blue;
+
+        console.log(`🔄 Player ${socketId} (${color}) requested rematch. Both requested: ${bothRequested}`);
+
+        return {
+            success: true,
+            bothRequested,
+            opponentSocketId
+        };
+    }
+
+    /**
+     * Reset game state for rematch. Clears board, pieces, setup state, and transitions to setup phase.
+     */
+    public resetGameForRematch(sessionId: string): { success: boolean; error?: string } {
+        const session = this.sessions.get(sessionId);
+        if (!session) return { success: false, error: 'Session not found' };
+
+        // Reset board to empty
+        session.board = Array(BOARD_ROWS).fill(null).map((_, row) =>
+            Array(BOARD_COLS).fill(null).map((_, col) => ({
+                row,
+                col,
+                piece: null
+            }))
+        );
+
+        // Reset player states
+        if (session.players.red) {
+            session.players.red.pieces = [];
+            session.players.red.isReady = false;
+            this.setupStates.set(session.players.red.socketId, { hasPlacedKingPit: false, hasShuffled: false });
+        }
+        if (session.players.blue) {
+            session.players.blue.pieces = [];
+            session.players.blue.isReady = false;
+            this.setupStates.set(session.players.blue.socketId, { hasPlacedKingPit: false, hasShuffled: false });
+        }
+
+        // Reset game state
+        session.phase = 'setup';
+        session.currentTurn = null;
+        session.turnStartTime = null;
+        session.combatState = null;
+        session.winner = null;
+        session.winReason = undefined;
+        session.rematchRequests = undefined;
+
+        console.log(`🔄 Session ${sessionId} reset for rematch`);
+        return { success: true };
     }
 }

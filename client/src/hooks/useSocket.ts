@@ -7,6 +7,7 @@ import {
     GameFoundPayload,
     GameStartPayload,
     ErrorPayload,
+    SetupStatePayload,
 } from '@rps/shared';
 
 
@@ -87,6 +88,26 @@ export function useSocket() {
             });
         };
 
+        const onRematchRequested = () => {
+            console.log('🔄 Opponent requested rematch');
+            useGameStore.getState().setRematchState({ opponentRequested: true });
+        };
+
+        const onRematchAccepted = (payload: { setupState: SetupStatePayload }) => {
+            console.log('🔄 Rematch accepted, resetting game');
+            // Reset for rematch and update setup state
+            useGameStore.getState().resetForRematch();
+            if (payload.setupState) {
+                useGameStore.getState().setSetupState({
+                    board: payload.setupState.board,
+                    hasPlacedKingPit: payload.setupState.hasPlacedKingPit,
+                    hasShuffled: payload.setupState.hasShuffled,
+                    isReady: payload.setupState.isReady,
+                    opponentReady: payload.setupState.opponentReady,
+                });
+            }
+        };
+
         socket.on('connect', onConnect);
         socket.on('disconnect', onDisconnect);
         socket.on('connect_error', onConnectError);
@@ -94,6 +115,8 @@ export function useSocket() {
         socket.on(SOCKET_EVENTS.GAME_START, onGameStart);
         socket.on(SOCKET_EVENTS.GAME_STATE, onGameState);
         socket.on(SOCKET_EVENTS.GAME_OVER, onGameOver);
+        socket.on(SOCKET_EVENTS.REMATCH_REQUESTED, onRematchRequested);
+        socket.on(SOCKET_EVENTS.REMATCH_ACCEPTED, onRematchAccepted);
         socket.on(SOCKET_EVENTS.ERROR, onError);
 
         // Sync state immediately if socket is already connected (handles race condition on mount)
@@ -110,6 +133,8 @@ export function useSocket() {
             socket.off(SOCKET_EVENTS.GAME_START, onGameStart);
             socket.off(SOCKET_EVENTS.GAME_STATE, onGameState);
             socket.off(SOCKET_EVENTS.GAME_OVER, onGameOver);
+            socket.off(SOCKET_EVENTS.REMATCH_REQUESTED, onRematchRequested);
+            socket.off(SOCKET_EVENTS.REMATCH_ACCEPTED, onRematchAccepted);
             socket.off(SOCKET_EVENTS.ERROR, onError);
             // Do NOT disconnect base socket on unmount of hook, usually
         };

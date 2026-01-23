@@ -171,6 +171,40 @@ export function setupSocketHandlers(io: Server): void {
 
         socket.on(SOCKET_EVENTS.REQUEST_REMATCH, () => {
             console.log(`🔄 Player ${socket.id} requesting rematch`);
+
+            const result = gameService.requestRematch(socket.id);
+
+            if (!result.success) {
+                socket.emit(SOCKET_EVENTS.ERROR, { code: 'REMATCH_ERROR', message: result.error });
+                return;
+            }
+
+            if (result.bothRequested) {
+                // Both players want rematch - reset game and notify both
+                const session = gameService.getSessionBySocketId(socket.id);
+                if (session) {
+                    const resetResult = gameService.resetGameForRematch(session.sessionId);
+                    if (resetResult.success) {
+                        // Emit REMATCH_ACCEPTED to both players
+                        const redSocketId = session.players.red?.socketId;
+                        const blueSocketId = session.players.blue?.socketId;
+
+                        if (redSocketId) {
+                            const redSetupView = gameService.getPlayerSetupView(redSocketId);
+                            io.to(redSocketId).emit(SOCKET_EVENTS.REMATCH_ACCEPTED, { setupState: redSetupView });
+                        }
+                        if (blueSocketId) {
+                            const blueSetupView = gameService.getPlayerSetupView(blueSocketId);
+                            io.to(blueSocketId).emit(SOCKET_EVENTS.REMATCH_ACCEPTED, { setupState: blueSetupView });
+                        }
+                    }
+                }
+            } else {
+                // Only one player has requested - notify opponent
+                if (result.opponentSocketId) {
+                    io.to(result.opponentSocketId).emit(SOCKET_EVENTS.REMATCH_REQUESTED);
+                }
+            }
         });
 
         socket.on('disconnect', (reason: string) => {

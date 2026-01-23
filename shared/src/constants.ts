@@ -55,6 +55,8 @@ export const SOCKET_EVENTS = {
     MAKE_MOVE: 'make_move',
     COMBAT_CHOICE: 'combat_choice',
     REQUEST_REMATCH: 'request_rematch',
+    REMATCH_REQUESTED: 'rematch_requested',
+    REMATCH_ACCEPTED: 'rematch_accepted',
     GAME_FOUND: 'game_found',
     OPPONENT_READY: 'opponent_ready',
     GAME_START: 'game_start',

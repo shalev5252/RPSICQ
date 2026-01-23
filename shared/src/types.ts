@@ -57,6 +57,10 @@ export interface GameState {
     combatState: CombatState | null;
     winner: PlayerColor | null;
     winReason?: 'king_captured' | 'timeout' | 'disconnect' | 'draw';
+    rematchRequests?: {
+        red: boolean;
+        blue: boolean;
+    };
 }
 
 // Socket Event Payloads
