@@ -11,6 +11,7 @@ export const SetupScreen: React.FC = () => {
     const { socket } = useSocket();
     const myColor = useGameStore((state) => state.myColor);
     const setupState = useGameStore((state) => state.setupState);
+    const gamePhase = useGameStore((state) => state.gamePhase);
     const setKingPosition = useGameStore((state) => state.setKingPosition);
     const setPitPosition = useGameStore((state) => state.setPitPosition);
 
@@ -87,7 +88,14 @@ export const SetupScreen: React.FC = () => {
     }, []);
 
     const handleCellDrop = useCallback((row: number, col: number) => {
+        // Defensive guards
         if (!draggingPiece || !socket || !myColor) return;
+
+        // Validate bounds
+        if (row < 0 || row >= BOARD_ROWS || col < 0 || col >= BOARD_COLS) return;
+
+        // Validate game phase and state
+        if (gamePhase !== 'setup' || setupState.hasShuffled) return;
 
         const newPosition: Position = { row, col };
 
@@ -114,7 +122,7 @@ export const SetupScreen: React.FC = () => {
                 pitPosition: pitPos,
             });
         }
-    }, [draggingPiece, socket, myColor, setupState.kingPosition, setupState.pitPosition, setKingPosition, setPitPosition]);
+    }, [draggingPiece, socket, myColor, setupState.kingPosition, setupState.pitPosition, setupState.hasShuffled, gamePhase, setKingPosition, setPitPosition]);
 
     const handlePieceDragFromBoard = useCallback((pieceType: PieceType) => {
         if (!canReposition) return;

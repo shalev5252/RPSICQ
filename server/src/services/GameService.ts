@@ -103,8 +103,8 @@ export class GameService {
     private isValidSetupPosition(position: Position, color: PlayerColor): boolean {
         const validRows = this.getSetupRows(color);
         return validRows.includes(position.row) &&
-               position.col >= 0 &&
-               position.col < BOARD_COLS;
+            position.col >= 0 &&
+            position.col < BOARD_COLS;
     }
 
     public placeKingPit(
@@ -125,6 +125,11 @@ export class GameService {
             return { success: false, error: 'Not in setup phase' };
         }
 
+        const setupState = this.setupStates.get(socketId);
+        if (setupState?.hasShuffled) {
+            return { success: false, error: 'Cannot place King/Pit after shuffling' };
+        }
+
         // Validate positions are in player's rows
         if (!this.isValidSetupPosition(kingPosition, color)) {
             return { success: false, error: 'King position not in your rows' };
@@ -138,10 +143,24 @@ export class GameService {
             return { success: false, error: 'King and Pit must be on different cells' };
         }
 
-        // Remove any existing King/Pit pieces from this player
+        // Clean up target cells: remove any existing piece owned by player at these positions
+        // This prevents "ghost" pieces if we somehow overwrite a cell that had a piece
+        const targets = [kingPosition, pitPosition];
+        player.pieces = player.pieces.filter(p =>
+            !targets.some(t => t.row === p.position.row && t.col === p.position.col)
+        );
+
+        for (const target of targets) {
+            const cell = session.board[target.row][target.col];
+            if (cell.piece?.owner === color) {
+                cell.piece = null;
+            }
+        }
+
+        // Remove any existing King/Pit pieces from this player (standard replacement)
         player.pieces = player.pieces.filter(p => p.type !== 'king' && p.type !== 'pit');
 
-        // Clear old positions on board
+        // Clear old King/Pit positions on board
         for (const row of session.board) {
             for (const cell of row) {
                 if (cell.piece?.owner === color && (cell.piece.type === 'king' || cell.piece.type === 'pit')) {
@@ -178,7 +197,6 @@ export class GameService {
         session.board[pitPosition.row][pitPosition.col].piece = pit;
 
         // Update setup state
-        const setupState = this.setupStates.get(socketId);
         if (setupState) {
             setupState.hasPlacedKingPit = true;
         }
@@ -267,9 +285,21 @@ export class GameService {
         const player = session.players[color];
         if (!player) return { success: false, bothReady: false, error: 'Player state not found' };
 
+        // Validate phase
+        if (session.phase !== 'setup') {
+            return { success: false, bothReady: false, error: 'Game is not in setup phase' };
+        }
+
         const setupState = this.setupStates.get(socketId);
         if (!setupState?.hasShuffled) {
             return { success: false, bothReady: false, error: 'Must shuffle pieces first' };
+        }
+
+        // Idempotency check: if already ready, just return status
+        if (player.isReady) {
+            const redReady = session.players.red?.isReady ?? false;
+            const blueReady = session.players.blue?.isReady ?? false;
+            return { success: true, bothReady: redReady && blueReady };
         }
 
         // Mark player as ready
