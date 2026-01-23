@@ -27,8 +27,14 @@ After the setup phase is complete, players need to be able to move their pieces 
 3. **Turn indicator**: Clear banner/highlight showing current player's turn
 
 ## Spec Deltas
-- `piece-movement` - New capability for movement logic and UI
+- `specs/piece-movement/spec.md` - New spec for movement logic and validation rules
 
 ## Dependencies
 - `board-setup` spec (completed)
 - `socket-connection` spec (completed)
+
+## Code References
+- `client/src/components/game/GameScreen.tsx` - Component handling piece drag-and-drop and move UI
+- `server/src/services/GameService.ts:getValidMoves` - Server-side move validation
+- `server/src/services/GameService.ts:makeMove` - Move execution logic
+- `server/src/socket/handlers.ts:MAKE_MOVE` - Socket handler for move requests

@@ -23,7 +23,7 @@ The Pit MUST defeat any attacking piece, regardless of type. The Pit itself CANN
 - GIVEN a Red Rock moves to a cell occupied by a Blue Pit
 - WHEN the move is processed
 - THEN the Red Rock is removed from the board
-- AND the Blue Pit remains revealed/hidden (strategy choice: usually Pit is revealed after defending?) -> *Project.md says "Winner... is revealed"*. So Pit should be revealed.
+- AND the Blue Pit is revealed
 - AND the Blue Pit gains a "Halo" effect
 
 ### Requirement: Tie Resolution

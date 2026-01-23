@@ -66,10 +66,8 @@ export function useSocket() {
             console.log('📊 Game state update:', payload);
             // Update game state in store
             useGameStore.getState().setGameState(payload);
-            // Update game phase if changed
-            if (payload.phase === 'playing') {
-                useGameStore.getState().setGamePhase('playing');
-            }
+            // Always update game phase to stay in sync with server
+            useGameStore.getState().setGamePhase(payload.phase as 'waiting' | 'setup' | 'playing' | 'tie_breaker' | 'finished');
         };
 
         const onError = (payload: ErrorPayload) => {

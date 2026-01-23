@@ -22,8 +22,14 @@ export const GameOverScreen: React.FC = () => {
     };
 
     const handlePlayAgain = () => {
-        setRematchState({ hasRequested: true });
+        if (!socket?.connected) {
+            // Socket not connected - show error state instead of getting stuck
+            console.error('Cannot request rematch: socket disconnected');
+            return;
+        }
+
         socket.emit(SOCKET_EVENTS.REQUEST_REMATCH);
+        setRematchState({ hasRequested: true });
     };
 
     const getRematchButtonText = () => {

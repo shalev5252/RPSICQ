@@ -552,6 +552,21 @@ export class GameService {
 
             // Check for King capture (game over)
             if (loser.type === 'king') {
+                // Remove captured king from board and player's pieces
+                const loserPlayer = session.players[loserOwner];
+                if (loserPlayer) {
+                    loserPlayer.pieces = loserPlayer.pieces.filter(p => p.id !== loser.id);
+                }
+                session.board[to.row][to.col].piece = null;
+
+                // Move attacker to king's position
+                session.board[from.row][from.col].piece = null;
+                session.board[to.row][to.col].piece = piece;
+                piece.position = { row: to.row, col: to.col };
+                piece.isRevealed = true;
+                piece.hasHalo = true;
+
+                // Set game over state
                 session.phase = 'finished';
                 session.winner = winnerOwner;
                 session.winReason = 'king_captured';
@@ -733,6 +748,35 @@ export class GameService {
 
             // Check for King capture
             if (loser.type === 'king') {
+                // Remove captured king from board and player's pieces
+                const loserPlayer = session.players[loserOwner];
+                if (loserPlayer) {
+                    loserPlayer.pieces = loserPlayer.pieces.filter(p => p.id !== loser.id);
+                }
+                // Remove king from board
+                for (const row of session.board) {
+                    for (const cell of row) {
+                        if (cell.piece?.id === loser.id) {
+                            cell.piece = null;
+                        }
+                    }
+                }
+
+                // Move attacker to king's position
+                const defenderPos = defender.position;
+                for (const row of session.board) {
+                    for (const cell of row) {
+                        if (cell.piece?.id === attacker.id) {
+                            cell.piece = null;
+                        }
+                    }
+                }
+                session.board[defenderPos.row][defenderPos.col].piece = attacker;
+                attacker.position = defenderPos;
+                attacker.isRevealed = true;
+                attacker.hasHalo = true;
+
+                // Set game over state
                 session.phase = 'finished';
                 session.winner = winnerOwner;
                 session.winReason = 'king_captured';

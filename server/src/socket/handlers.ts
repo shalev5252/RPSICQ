@@ -108,15 +108,7 @@ export function setupSocketHandlers(io: Server): void {
             // Send updated game view to both players (for both combat and non-combat scenarios)
             const session = gameService.getSessionBySocketId(socket.id);
             if (session) {
-                // Check if game ended
-                if (session.phase === 'finished') {
-                    io.to(session.sessionId).emit(SOCKET_EVENTS.GAME_OVER, {
-                        winner: session.winner,
-                        reason: session.winReason || 'king_captured'
-                    });
-                }
-
-                // Send to current player
+                    // Send updated game state to current player
                 const playerView = gameService.getPlayerGameView(socket.id);
                 if (playerView) {
                     socket.emit(SOCKET_EVENTS.GAME_STATE, playerView);
@@ -129,6 +121,14 @@ export function setupSocketHandlers(io: Server): void {
                     if (opponentView) {
                         io.to(opponentId).emit(SOCKET_EVENTS.GAME_STATE, opponentView);
                     }
+                }
+
+                // Check if game ended - emit GAME_OVER after GAME_STATE so clients have final board
+                if (session.phase === 'finished') {
+                    io.to(session.sessionId).emit(SOCKET_EVENTS.GAME_OVER, {
+                        winner: session.winner,
+                        reason: session.winReason || 'king_captured'
+                    });
                 }
             }
         });
@@ -147,23 +147,29 @@ export function setupSocketHandlers(io: Server): void {
                 // Both players have chosen - resolution complete
                 const session = gameService.getSessionBySocketId(socket.id);
                 if (session) {
-                    // Check if game ended
+                    // Send updated game state to both players first
+                    const redPlayer = session.players.red;
+                    const bluePlayer = session.players.blue;
+
+                    if (redPlayer?.socketId) {
+                        const redView = gameService.getPlayerGameView(redPlayer.socketId);
+                        if (redView) {
+                            io.to(redPlayer.socketId).emit(SOCKET_EVENTS.GAME_STATE, redView);
+                        }
+                    }
+                    if (bluePlayer?.socketId) {
+                        const blueView = gameService.getPlayerGameView(bluePlayer.socketId);
+                        if (blueView) {
+                            io.to(bluePlayer.socketId).emit(SOCKET_EVENTS.GAME_STATE, blueView);
+                        }
+                    }
+
+                    // Emit GAME_OVER after GAME_STATE so clients have final board
                     if (session.phase === 'finished') {
                         io.to(session.sessionId).emit(SOCKET_EVENTS.GAME_OVER, {
                             winner: session.winner,
                             reason: session.winReason || 'king_captured'
                         });
-                    }
-
-                    // Send updated game state to both players
-                    const redView = gameService.getPlayerGameView(session.players.red!.socketId);
-                    const blueView = gameService.getPlayerGameView(session.players.blue!.socketId);
-
-                    if (redView) {
-                        io.to(session.players.red!.socketId).emit(SOCKET_EVENTS.GAME_STATE, redView);
-                    }
-                    if (blueView) {
-                        io.to(session.players.blue!.socketId).emit(SOCKET_EVENTS.GAME_STATE, blueView);
                     }
                 }
             }
