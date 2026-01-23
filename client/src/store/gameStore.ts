@@ -56,6 +56,9 @@ interface GameStore {
     tieBreakerState: TieBreakerState;
     incrementTieBreakerRetry: () => void;
     resetTieBreakerState: () => void;
+    // Turn skipped state
+    showTurnSkipped: boolean;
+    setShowTurnSkipped: (show: boolean) => void;
     reset: () => void;
 }
 
@@ -90,6 +93,7 @@ const initialState = {
     gameState: null,
     rematchState: initialRematchState,
     tieBreakerState: initialTieBreakerState,
+    showTurnSkipped: false,
 };
 
 export const useGameStore = create<GameStore>((set) => ({
@@ -125,5 +129,6 @@ export const useGameStore = create<GameStore>((set) => ({
         tieBreakerState: { retryCount: prev.tieBreakerState.retryCount + 1 }
     })),
     resetTieBreakerState: () => set({ tieBreakerState: initialTieBreakerState }),
+    setShowTurnSkipped: (show) => set({ showTurnSkipped: show }),
     reset: () => set(initialState),
 }));

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Socket } from 'socket.io-client';
-import { socket as socketInstance } from '../socket'; // Import singleton
+import { socket as socketInstance, playerId } from '../socket'; // Import singleton and persistent ID
 import { useGameStore } from '../store/gameStore';
 import {
     SOCKET_EVENTS,
@@ -17,7 +17,6 @@ import {
 export function useSocket() {
     const socketRef = useRef<Socket>(socketInstance); // Use singleton
     const [isConnected, setIsConnected] = useState(socketInstance.connected);
-    const playerIdRef = useRef<string>(crypto.randomUUID());
     const setConnectionStatus = useGameStore((state) => state.setConnectionStatus);
 
     useEffect(() => {
@@ -69,6 +68,13 @@ export function useSocket() {
             console.log('📊 Game state update:', payload);
             // Update game state in store
             useGameStore.getState().setGameState(payload);
+
+            // Reset tie-breaker state when entering tie_breaker phase (for first-time correct title)
+            const currentPhase = useGameStore.getState().gamePhase;
+            if (payload.phase === 'tie_breaker' && currentPhase !== 'tie_breaker') {
+                useGameStore.getState().resetTieBreakerState();
+            }
+
             // Always update game phase to stay in sync with server
             useGameStore.getState().setGamePhase(payload.phase as GamePhase);
         };
@@ -114,6 +120,42 @@ export function useSocket() {
             useGameStore.getState().incrementTieBreakerRetry();
         };
 
+        const onTurnSkipped = () => {
+            console.log('⏭️ Turn skipped - no movable pieces');
+            useGameStore.getState().setShowTurnSkipped(true);
+        };
+
+        const onSessionRestored = (payload: { color: PlayerColor; phase: string; gameState: unknown; sessionId: string }) => {
+            console.log('🔄 Session restored:', payload);
+            useGameStore.getState().setPlayerInfo(playerId, payload.color);
+            useGameStore.getState().setSessionId(payload.sessionId);
+            useGameStore.getState().setGamePhase(payload.phase as GamePhase);
+
+            if (payload.phase === 'setup') {
+                const setupState = payload.gameState as { board: PlayerCellView[][]; hasPlacedKingPit: boolean; hasShuffled: boolean; isReady: boolean; opponentReady: boolean };
+                useGameStore.getState().setSetupState({
+                    board: setupState.board,
+                    hasPlacedKingPit: setupState.hasPlacedKingPit,
+                    hasShuffled: setupState.hasShuffled,
+                    isReady: setupState.isReady,
+                    opponentReady: setupState.opponentReady,
+                });
+            } else {
+                const gameView = payload.gameState as { board: PlayerCellView[][]; currentTurn: PlayerColor | null; phase: string; isMyTurn: boolean };
+                useGameStore.getState().setGameState(gameView);
+            }
+        };
+
+        const onOpponentReconnecting = () => {
+            console.log('⏳ Opponent is reconnecting...');
+            // Could show a toast/notification here
+        };
+
+        const onOpponentReconnected = () => {
+            console.log('✅ Opponent reconnected!');
+            // Could show a toast/notification here
+        };
+
         socket.on('connect', onConnect);
         socket.on('disconnect', onDisconnect);
         socket.on('connect_error', onConnectError);
@@ -124,6 +166,10 @@ export function useSocket() {
         socket.on(SOCKET_EVENTS.REMATCH_REQUESTED, onRematchRequested);
         socket.on(SOCKET_EVENTS.REMATCH_ACCEPTED, onRematchAccepted);
         socket.on(SOCKET_EVENTS.TIE_BREAKER_RETRY, onTieBreakerRetry);
+        socket.on(SOCKET_EVENTS.TURN_SKIPPED, onTurnSkipped);
+        socket.on(SOCKET_EVENTS.SESSION_RESTORED, onSessionRestored);
+        socket.on(SOCKET_EVENTS.OPPONENT_RECONNECTING, onOpponentReconnecting);
+        socket.on(SOCKET_EVENTS.OPPONENT_RECONNECTED, onOpponentReconnected);
         socket.on(SOCKET_EVENTS.ERROR, onError);
 
         // Sync state immediately if socket is already connected (handles race condition on mount)
@@ -143,6 +189,10 @@ export function useSocket() {
             socket.off(SOCKET_EVENTS.REMATCH_REQUESTED, onRematchRequested);
             socket.off(SOCKET_EVENTS.REMATCH_ACCEPTED, onRematchAccepted);
             socket.off(SOCKET_EVENTS.TIE_BREAKER_RETRY, onTieBreakerRetry);
+            socket.off(SOCKET_EVENTS.TURN_SKIPPED, onTurnSkipped);
+            socket.off(SOCKET_EVENTS.SESSION_RESTORED, onSessionRestored);
+            socket.off(SOCKET_EVENTS.OPPONENT_RECONNECTING, onOpponentReconnecting);
+            socket.off(SOCKET_EVENTS.OPPONENT_RECONNECTED, onOpponentReconnected);
             socket.off(SOCKET_EVENTS.ERROR, onError);
             // Do NOT disconnect base socket on unmount of hook, usually
         };
@@ -150,7 +200,7 @@ export function useSocket() {
 
     const joinQueue = () => {
         socketRef.current?.emit(SOCKET_EVENTS.JOIN_QUEUE, {
-            playerId: playerIdRef.current,
+            playerId: playerId,
         });
     };
 

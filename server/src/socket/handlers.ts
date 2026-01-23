@@ -10,6 +10,46 @@ export function setupSocketHandlers(io: Server): void {
     io.on('connection', (socket: Socket) => {
         console.log(`✅ Client connected: ${socket.id}`);
 
+        // Get the persistent player ID from auth
+        const playerId = socket.handshake.auth?.playerId as string | undefined;
+
+        if (playerId) {
+            // Check if this player has an active session to reconnect to
+            const reconnectResult = gameService.handleReconnect(playerId, socket.id);
+
+            if (reconnectResult.success && reconnectResult.session && reconnectResult.color) {
+                console.log(`🔄 Player ${playerId} reconnected to session ${reconnectResult.session.sessionId}`);
+
+                // Join the session room
+                socket.join(reconnectResult.session.sessionId);
+
+                // Get the appropriate view based on game phase
+                let gameView;
+                if (reconnectResult.session.phase === 'setup') {
+                    gameView = gameService.getPlayerSetupView(socket.id);
+                } else {
+                    gameView = gameService.getPlayerGameView(socket.id);
+                }
+
+                // Send session restored event with full state
+                socket.emit(SOCKET_EVENTS.SESSION_RESTORED, {
+                    color: reconnectResult.color,
+                    phase: reconnectResult.session.phase,
+                    gameState: gameView,
+                    sessionId: reconnectResult.session.sessionId
+                });
+
+                // Notify opponent that player reconnected
+                const opponentId = gameService.getOpponentSocketId(socket.id);
+                if (opponentId) {
+                    io.to(opponentId).emit(SOCKET_EVENTS.OPPONENT_RECONNECTED);
+                }
+            } else {
+                // No active session - register as new player
+                gameService.registerPlayer(playerId, socket.id);
+            }
+        }
+
         socket.on(SOCKET_EVENTS.JOIN_QUEUE, (_payload: JoinQueuePayload) => {
             matchmakingService.addToQueue(socket.id);
         });
@@ -129,6 +169,41 @@ export function setupSocketHandlers(io: Server): void {
                         winner: session.winner,
                         reason: session.winReason || 'king_captured'
                     });
+                } else if (session.phase === 'playing') {
+                    // Check for draw condition (both players only have immovable pieces)
+                    if (gameService.checkDraw(session.sessionId)) {
+                        gameService.setDraw(session.sessionId);
+                        io.to(session.sessionId).emit(SOCKET_EVENTS.GAME_OVER, {
+                            winner: null,
+                            reason: 'draw'
+                        });
+                        return;
+                    }
+
+                    // Check if next player has movable pieces
+                    const nextPlayerId = session.currentTurn === 'red'
+                        ? session.players.red?.socketId
+                        : session.players.blue?.socketId;
+
+                    if (nextPlayerId && !gameService.hasMovablePieces(nextPlayerId)) {
+                        // Next player cannot move - notify and skip their turn
+                        io.to(nextPlayerId).emit(SOCKET_EVENTS.TURN_SKIPPED, { reason: 'no_movable_pieces' });
+
+                        // Skip the turn
+                        gameService.skipTurn(nextPlayerId);
+
+                        // Send updated game state after turn skip
+                        if (opponentId) {
+                            const updatedOpponentView = gameService.getPlayerGameView(opponentId);
+                            if (updatedOpponentView) {
+                                io.to(opponentId).emit(SOCKET_EVENTS.GAME_STATE, updatedOpponentView);
+                            }
+                        }
+                        const updatedPlayerView = gameService.getPlayerGameView(socket.id);
+                        if (updatedPlayerView) {
+                            socket.emit(SOCKET_EVENTS.GAME_STATE, updatedPlayerView);
+                        }
+                    }
                 }
             }
         });
@@ -235,22 +310,27 @@ export function setupSocketHandlers(io: Server): void {
             // 1. Remove from queue if they are waiting
             matchmakingService.removeFromQueue(socket.id);
 
-            // 2. Check if they are in an active game
-            const result = gameService.handleDisconnect(socket.id);
-            if (result && result.opponentId) {
-                // If the game was in setup/waiting phase, automatically requeue the opponent
-                console.log(`🔄 Re-queueing opponent ${result.opponentId} due to disconnect`);
+            // 2. Check if they are in an active game - use grace period instead of immediate end
+            const opponentId = gameService.handleTemporaryDisconnect(socket.id, () => {
+                // This runs after grace period expires without reconnection
+                const result = gameService.handleDisconnect(socket.id);
+                if (result && result.opponentId) {
+                    console.log(`🔄 Grace period expired. Re-queueing opponent ${result.opponentId}`);
 
-                const opponentSocket = io.sockets.sockets.get(result.opponentId);
+                    const opponentSocket = io.sockets.sockets.get(result.opponentId);
 
+                    if (opponentSocket && opponentSocket.connected) {
+                        io.to(result.opponentId).emit(SOCKET_EVENTS.OPPONENT_DISCONNECTED);
+                        matchmakingService.addToQueue(result.opponentId);
+                    }
+                }
+            });
+
+            // Notify opponent that player is reconnecting (not fully disconnected yet)
+            if (opponentId) {
+                const opponentSocket = io.sockets.sockets.get(opponentId);
                 if (opponentSocket && opponentSocket.connected) {
-                    // Notify them (optional, maybe just a toast on client side saying "Opponent disconnected, finding new match...")
-                    io.to(result.opponentId).emit(SOCKET_EVENTS.OPPONENT_DISCONNECTED);
-
-                    // Add them back to queue!
-                    matchmakingService.addToQueue(result.opponentId);
-                } else {
-                    console.log(`⚠️ Opponent socket ${result.opponentId} not found or disconnected, skipping re-queue`);
+                    io.to(opponentId).emit(SOCKET_EVENTS.OPPONENT_RECONNECTING);
                 }
             }
         });

@@ -27,6 +27,10 @@ export class GameService {
     private sessions: Map<string, GameState> = new Map();
     private playerSessionMap: Map<string, string> = new Map(); // socketId -> sessionId
     private setupStates: Map<string, SetupState> = new Map(); // socketId -> SetupState
+    private playerIdToSocketId: Map<string, string> = new Map(); // playerId -> socketId
+    private socketIdToPlayerId: Map<string, string> = new Map(); // socketId -> playerId
+    private disconnectTimers: Map<string, NodeJS.Timeout> = new Map(); // playerId -> timeout
+    private readonly RECONNECT_GRACE_PERIOD = 30000; // 30 seconds
 
     public createSession(id: string, player1Id: string, player1Color: PlayerColor, player2Id: string, player2Color: PlayerColor): GameState {
         const initialBoard: Cell[][] = Array(BOARD_ROWS).fill(null).map((_, row) =>
@@ -343,21 +347,25 @@ export class GameService {
         const player = session.players[color];
         const opponent = session.players[color === 'red' ? 'blue' : 'red'];
 
-        // Build board view with fog of war
+        // Build board view - during setup, opponent pieces are completely hidden (not shown at all)
         const boardView: PlayerCellView[][] = session.board.map(row =>
             row.map(cell => {
                 let pieceView: PlayerPieceView | null = null;
 
                 if (cell.piece) {
                     const isOwnPiece = cell.piece.owner === color;
-                    pieceView = {
-                        id: cell.piece.id,
-                        owner: cell.piece.owner,
-                        type: isOwnPiece || cell.piece.isRevealed ? cell.piece.type : 'hidden',
-                        position: cell.piece.position,
-                        isRevealed: cell.piece.isRevealed,
-                        hasHalo: cell.piece.hasHalo
-                    };
+                    // During setup, only show player's own pieces
+                    if (isOwnPiece) {
+                        pieceView = {
+                            id: cell.piece.id,
+                            owner: cell.piece.owner,
+                            type: cell.piece.type,
+                            position: cell.piece.position,
+                            isRevealed: cell.piece.isRevealed,
+                            hasHalo: cell.piece.hasHalo
+                        };
+                    }
+                    // Opponent pieces are NOT included at all during setup
                 }
 
                 return {
@@ -430,6 +438,86 @@ export class GameService {
         }
 
         return validMoves;
+    }
+
+    /**
+     * Check if a player has any pieces that can make a valid move.
+     * Returns false if player only has King/Pit (which cannot move).
+     */
+    public hasMovablePieces(socketId: string): boolean {
+        const session = this.getSessionBySocketId(socketId);
+        if (!session || session.phase !== 'playing') return false;
+
+        const color = this.getPlayerColor(socketId);
+        if (!color) return false;
+
+        const player = session.players[color];
+        if (!player) return false;
+
+        // Check if player has any RPS pieces (which can move)
+        const movablePieces = player.pieces.filter(p =>
+            p.type !== 'king' && p.type !== 'pit'
+        );
+
+        return movablePieces.length > 0;
+    }
+
+    /**
+     * Skip the current player's turn and switch to opponent.
+     * Used when player has no movable pieces.
+     */
+    public skipTurn(socketId: string): { success: boolean; error?: string } {
+        const session = this.getSessionBySocketId(socketId);
+        if (!session) return { success: false, error: 'Session not found' };
+
+        if (session.phase !== 'playing') {
+            return { success: false, error: 'Game is not in playing phase' };
+        }
+
+        const color = this.getPlayerColor(socketId);
+        if (!color) return { success: false, error: 'Player not found' };
+
+        if (session.currentTurn !== color) {
+            return { success: false, error: 'Not your turn' };
+        }
+
+        // Switch turn
+        session.currentTurn = color === 'red' ? 'blue' : 'red';
+        session.turnStartTime = Date.now();
+
+        console.log(`⏭️ ${color} turn skipped (no movable pieces)`);
+        return { success: true };
+    }
+
+    /**
+     * Check if both players have only immovable pieces (draw condition).
+     */
+    public checkDraw(sessionId: string): boolean {
+        const session = this.sessions.get(sessionId);
+        if (!session || session.phase !== 'playing') return false;
+
+        const redPlayer = session.players.red;
+        const bluePlayer = session.players.blue;
+
+        if (!redPlayer || !bluePlayer) return false;
+
+        const redHasMovable = redPlayer.pieces.some(p => p.type !== 'king' && p.type !== 'pit');
+        const blueHasMovable = bluePlayer.pieces.some(p => p.type !== 'king' && p.type !== 'pit');
+
+        return !redHasMovable && !blueHasMovable;
+    }
+
+    /**
+     * End the game as a draw.
+     */
+    public setDraw(sessionId: string): void {
+        const session = this.sessions.get(sessionId);
+        if (!session) return;
+
+        session.phase = 'finished';
+        session.winner = null;
+        session.winReason = 'draw';
+        console.log(`🤝 Game ${sessionId} ended in a draw (no movable pieces)`);
     }
 
     /**
@@ -947,5 +1035,155 @@ export class GameService {
 
         console.log(`🔄 Session ${sessionId} reset for rematch`);
         return { success: true };
+    }
+
+    /**
+     * Register a player ID to socket ID mapping.
+     */
+    public registerPlayer(playerId: string, socketId: string): void {
+        this.playerIdToSocketId.set(playerId, socketId);
+        this.socketIdToPlayerId.set(socketId, playerId);
+        console.log(`🔗 Registered player ${playerId} with socket ${socketId}`);
+    }
+
+    /**
+     * Get player ID from socket ID.
+     */
+    public getPlayerId(socketId: string): string | undefined {
+        return this.socketIdToPlayerId.get(socketId);
+    }
+
+    /**
+     * Check if a player has an active session they can reconnect to.
+     */
+    public getSessionByPlayerId(playerId: string): { session: GameState; color: PlayerColor } | null {
+        const oldSocketId = this.playerIdToSocketId.get(playerId);
+        if (!oldSocketId) return null;
+
+        const sessionId = this.playerSessionMap.get(oldSocketId);
+        if (!sessionId) return null;
+
+        const session = this.sessions.get(sessionId);
+        if (!session) return null;
+
+        // Determine which color this player is
+        if (session.players.red?.socketId === oldSocketId) {
+            return { session, color: 'red' };
+        }
+        if (session.players.blue?.socketId === oldSocketId) {
+            return { session, color: 'blue' };
+        }
+
+        return null;
+    }
+
+    /**
+     * Handle temporary disconnect - start grace period instead of immediate session end.
+     * Returns opponent socket ID if they should be notified.
+     */
+    public handleTemporaryDisconnect(socketId: string, onTimeout: () => void): string | null {
+        const playerId = this.socketIdToPlayerId.get(socketId);
+        if (!playerId) return null;
+
+        const sessionId = this.playerSessionMap.get(socketId);
+        if (!sessionId) return null;
+
+        const session = this.sessions.get(sessionId);
+        if (!session) return null;
+
+        // Find opponent
+        const opponent = session.players.red?.socketId === socketId ? session.players.blue : session.players.red;
+        const opponentId = opponent?.socketId;
+
+        console.log(`⏳ Starting 30s reconnection grace period for player ${playerId}`);
+
+        // Start the grace period timer
+        const timer = setTimeout(() => {
+            console.log(`⌛ Grace period expired for player ${playerId}`);
+            this.disconnectTimers.delete(playerId);
+            onTimeout();
+        }, this.RECONNECT_GRACE_PERIOD);
+
+        this.disconnectTimers.set(playerId, timer);
+
+        return opponentId ?? null;
+    }
+
+    /**
+     * Handle player reconnection - cancel grace period and restore session.
+     * Returns the restored session info if successful.
+     */
+    public handleReconnect(playerId: string, newSocketId: string): {
+        success: boolean;
+        session?: GameState;
+        color?: PlayerColor;
+        setupState?: SetupState;
+    } {
+        // Cancel any pending disconnect timer
+        const timer = this.disconnectTimers.get(playerId);
+        if (timer) {
+            clearTimeout(timer);
+            this.disconnectTimers.delete(playerId);
+            console.log(`✅ Cancelled disconnect timer for player ${playerId}`);
+        }
+
+        // Find the old socket ID
+        const oldSocketId = this.playerIdToSocketId.get(playerId);
+        if (!oldSocketId) {
+            return { success: false };
+        }
+
+        // Find the session
+        const sessionId = this.playerSessionMap.get(oldSocketId);
+        if (!sessionId) {
+            return { success: false };
+        }
+
+        const session = this.sessions.get(sessionId);
+        if (!session) {
+            return { success: false };
+        }
+
+        // Determine which player this is and update their socket ID
+        let color: PlayerColor | undefined;
+        if (session.players.red?.socketId === oldSocketId) {
+            session.players.red.socketId = newSocketId;
+            color = 'red';
+        } else if (session.players.blue?.socketId === oldSocketId) {
+            session.players.blue.socketId = newSocketId;
+            color = 'blue';
+        } else {
+            return { success: false };
+        }
+
+        // Update all mappings
+        this.playerSessionMap.delete(oldSocketId);
+        this.playerSessionMap.set(newSocketId, sessionId);
+
+        const setupState = this.setupStates.get(oldSocketId);
+        if (setupState) {
+            this.setupStates.delete(oldSocketId);
+            this.setupStates.set(newSocketId, setupState);
+        }
+
+        this.socketIdToPlayerId.delete(oldSocketId);
+        this.socketIdToPlayerId.set(newSocketId, playerId);
+        this.playerIdToSocketId.set(playerId, newSocketId);
+
+        console.log(`🔄 Player ${playerId} reconnected with new socket ${newSocketId}`);
+
+        return {
+            success: true,
+            session,
+            color,
+            setupState
+        };
+    }
+
+    /**
+     * Check if a player has a pending disconnect timer (is in grace period).
+     */
+    public isPlayerReconnecting(playerId: string): boolean {
+        return this.disconnectTimers.has(playerId);
     }
 }

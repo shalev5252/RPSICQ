@@ -67,7 +67,11 @@ export const SOCKET_EVENTS = {
     TIE_BREAKER_RETRY: 'tie_breaker_retry',
     COMBAT_RESULT: 'combat_result',
     TURN_TIMER: 'turn_timer',
+    TURN_SKIPPED: 'turn_skipped',
     GAME_OVER: 'game_over',
     OPPONENT_DISCONNECTED: 'opponent_disconnected',
+    OPPONENT_RECONNECTING: 'opponent_reconnecting',
+    OPPONENT_RECONNECTED: 'opponent_reconnected',
+    SESSION_RESTORED: 'session_restored',
     ERROR: 'error',
 } as const;
