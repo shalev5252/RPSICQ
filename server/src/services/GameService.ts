@@ -129,8 +129,8 @@ export class GameService {
         }
 
         const setupState = this.setupStates.get(socketId);
-        if (!setupState?.hasPlacedKingPit) {
-            return { success: false, error: 'Must place King and Pit first' };
+        if (setupState?.hasShuffled) {
+            return { success: false, error: 'Cannot reposition after shuffling' };
         }
 
         // Validate positions are in player's rows
