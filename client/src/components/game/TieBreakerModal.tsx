@@ -8,23 +8,29 @@ export const TieBreakerModal: React.FC = () => {
     const { socket } = useSocket();
     const [selectedChoice, setSelectedChoice] = useState<CombatElement | null>(null);
     const [hasSubmitted, setHasSubmitted] = useState(false);
+    const [showingTieAgain, setShowingTieAgain] = useState(false);
     const retryCount = useGameStore((state) => state.tieBreakerState.retryCount);
 
-    // Reset local state when retryCount changes (another tie occurred)
+    // Show "tie again" message when retryCount changes, then reset
     useEffect(() => {
         if (retryCount > 0) {
-            setSelectedChoice(null);
-            setHasSubmitted(false);
+            setShowingTieAgain(true);
+            const timer = setTimeout(() => {
+                setShowingTieAgain(false);
+                setSelectedChoice(null);
+                setHasSubmitted(false);
+            }, 2000); // Show for 2 seconds
+            return () => clearTimeout(timer);
         }
     }, [retryCount]);
 
     const handleSelect = (choice: CombatElement) => {
-        if (hasSubmitted) return;
+        if (hasSubmitted || showingTieAgain) return;
         setSelectedChoice(choice);
     };
 
     const handleConfirm = () => {
-        if (!selectedChoice || !socket || hasSubmitted) return;
+        if (!selectedChoice || !socket || hasSubmitted || showingTieAgain) return;
 
         socket.emit(SOCKET_EVENTS.COMBAT_CHOICE, { element: selectedChoice });
         setHasSubmitted(true);
@@ -42,7 +48,17 @@ export const TieBreakerModal: React.FC = () => {
                     Choose a new element for your piece
                 </div>
 
-                {!hasSubmitted ? (
+                {showingTieAgain ? (
+                    <div className="tie-breaker-modal__tie-again">
+                        <div className="tie-breaker-modal__tie-again-icon">🔄</div>
+                        <div className="tie-breaker-modal__tie-again-text">
+                            It's a tie again!
+                        </div>
+                        <div className="tie-breaker-modal__tie-again-subtext">
+                            Choose again...
+                        </div>
+                    </div>
+                ) : !hasSubmitted ? (
                     <>
                         <div className="tie-breaker-modal__choices">
                             <button

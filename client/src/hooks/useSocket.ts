@@ -8,6 +8,9 @@ import {
     GameStartPayload,
     ErrorPayload,
     SetupStatePayload,
+    PlayerCellView,
+    PlayerColor,
+    GamePhase,
 } from '@rps/shared';
 
 
@@ -54,7 +57,7 @@ export function useSocket() {
             const myColor = useGameStore.getState().myColor;
             if (payload.gameState && myColor) {
                 useGameStore.getState().setGameState({
-                    board: payload.gameState.board as any, // Server sends full board, client will filter
+                    board: payload.gameState.board as PlayerCellView[][],
                     currentTurn: payload.gameState.currentTurn,
                     phase: payload.gameState.phase,
                     isMyTurn: payload.gameState.currentTurn === myColor
@@ -62,19 +65,19 @@ export function useSocket() {
             }
         };
 
-        const onGameState = (payload: { board: any; currentTurn: any; phase: string; isMyTurn: boolean }) => {
+        const onGameState = (payload: { board: PlayerCellView[][]; currentTurn: PlayerColor | null; phase: string; isMyTurn: boolean }) => {
             console.log('📊 Game state update:', payload);
             // Update game state in store
             useGameStore.getState().setGameState(payload);
             // Always update game phase to stay in sync with server
-            useGameStore.getState().setGamePhase(payload.phase as 'waiting' | 'setup' | 'playing' | 'tie_breaker' | 'finished');
+            useGameStore.getState().setGamePhase(payload.phase as GamePhase);
         };
 
         const onError = (payload: ErrorPayload) => {
             console.error('❌ Server error:', payload);
         };
 
-        const onGameOver = (payload: { winner: any; reason: string }) => {
+        const onGameOver = (payload: { winner: PlayerColor | null; reason: string }) => {
             console.log('🏁 Game Over:', payload);
             useGameStore.getState().setGamePhase('finished');
             useGameStore.getState().setGameState({
