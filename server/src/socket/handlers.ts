@@ -60,11 +60,25 @@ export function setupSocketHandlers(io: Server): void {
                 // Both players are ready - start the game
                 const session = gameService.getSessionBySocketId(socket.id);
                 if (session) {
-                    // Send GAME_START to both players
-                    io.to(session.sessionId).emit(SOCKET_EVENTS.GAME_START, {
-                        startingPlayer: session.currentTurn,
-                        gameState: session
-                    });
+                    // Send GAME_START to each player with their specific view (fog of war)
+                    const redSocketId = session.players.red?.socketId;
+                    const blueSocketId = session.players.blue?.socketId;
+
+                    if (redSocketId) {
+                        const redView = gameService.getPlayerGameView(redSocketId);
+                        io.to(redSocketId).emit(SOCKET_EVENTS.GAME_START, {
+                            startingPlayer: session.currentTurn,
+                            gameState: redView
+                        });
+                    }
+
+                    if (blueSocketId) {
+                        const blueView = gameService.getPlayerGameView(blueSocketId);
+                        io.to(blueSocketId).emit(SOCKET_EVENTS.GAME_START, {
+                            startingPlayer: session.currentTurn,
+                            gameState: blueView
+                        });
+                    }
                 }
             } else {
                 // Only this player is ready - notify opponent
@@ -81,8 +95,41 @@ export function setupSocketHandlers(io: Server): void {
             }
         });
 
-        socket.on(SOCKET_EVENTS.MAKE_MOVE, (_payload: MakeMovePayload) => {
-            console.log(`♟️ Player ${socket.id} making move`);
+        socket.on(SOCKET_EVENTS.MAKE_MOVE, (payload: MakeMovePayload) => {
+            console.log(`♟️ Player ${socket.id} making move:`, payload);
+
+            const result = gameService.makeMove(socket.id, payload.from, payload.to);
+
+            if (!result.success) {
+                socket.emit(SOCKET_EVENTS.ERROR, { code: 'MOVE_ERROR', message: result.error });
+                return;
+            }
+
+            // If combat occurred, we'll handle it separately in future
+            if (result.combat) {
+                // TODO: Implement combat phase
+                console.log('Combat phase not yet implemented');
+                return;
+            }
+
+            // Send updated game view to both players
+            const session = gameService.getSessionBySocketId(socket.id);
+            if (session) {
+                // Send to current player
+                const playerView = gameService.getPlayerGameView(socket.id);
+                if (playerView) {
+                    socket.emit(SOCKET_EVENTS.GAME_STATE, playerView);
+                }
+
+                // Send to opponent
+                const opponentId = gameService.getOpponentSocketId(socket.id);
+                if (opponentId) {
+                    const opponentView = gameService.getPlayerGameView(opponentId);
+                    if (opponentView) {
+                        io.to(opponentId).emit(SOCKET_EVENTS.GAME_STATE, opponentView);
+                    }
+                }
+            }
         });
 
         socket.on(SOCKET_EVENTS.COMBAT_CHOICE, (_payload: CombatChoicePayload) => {

@@ -6,7 +6,6 @@ import {
     SOCKET_EVENTS,
     GameFoundPayload,
     GameStartPayload,
-    GameStateUpdatePayload,
     ErrorPayload,
 } from '@rps/shared';
 
@@ -48,10 +47,28 @@ export function useSocket() {
 
         const onGameStart = (payload: GameStartPayload) => {
             console.log('🚀 Game started:', payload);
+            // Transition to playing phase
+            useGameStore.getState().setGamePhase('playing');
+            // Set initial game state
+            const myColor = useGameStore.getState().myColor;
+            if (payload.gameState && myColor) {
+                useGameStore.getState().setGameState({
+                    board: payload.gameState.board as any, // Server sends full board, client will filter
+                    currentTurn: payload.gameState.currentTurn,
+                    phase: payload.gameState.phase,
+                    isMyTurn: payload.gameState.currentTurn === myColor
+                });
+            }
         };
 
-        const onGameState = (payload: GameStateUpdatePayload) => {
+        const onGameState = (payload: { board: any; currentTurn: any; phase: string; isMyTurn: boolean }) => {
             console.log('📊 Game state update:', payload);
+            // Update game state in store
+            useGameStore.getState().setGameState(payload);
+            // Update game phase if changed
+            if (payload.phase === 'playing') {
+                useGameStore.getState().setGamePhase('playing');
+            }
         };
 
         const onError = (payload: ErrorPayload) => {

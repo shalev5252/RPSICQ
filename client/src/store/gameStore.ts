@@ -30,6 +30,14 @@ interface GameStore {
     setSetupState: (state: Partial<SetupState>) => void;
     setKingPosition: (position: Position | null) => void;
     setPitPosition: (position: Position | null) => void;
+    // Game state for playing phase
+    gameState: {
+        board: PlayerCellView[][];
+        currentTurn: PlayerColor | null;
+        phase: string;
+        isMyTurn: boolean;
+    } | null;
+    setGameState: (state: { board: PlayerCellView[][]; currentTurn: PlayerColor | null; phase: string; isMyTurn: boolean } | null) => void;
     reset: () => void;
 }
 
@@ -52,6 +60,7 @@ const initialState = {
     gameView: null,
     isSearching: false,
     setupState: initialSetupState,
+    gameState: null,
 };
 
 export const useGameStore = create<GameStore>((set) => ({
@@ -71,5 +80,6 @@ export const useGameStore = create<GameStore>((set) => ({
     setPitPosition: (position) => set((prev) => ({
         setupState: { ...prev.setupState, pitPosition: position }
     })),
+    setGameState: (gameState) => set({ gameState }),
     reset: () => set(initialState),
 }));

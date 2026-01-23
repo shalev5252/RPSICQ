@@ -19,6 +19,13 @@ export const SetupScreen: React.FC = () => {
 
     const validDropRows = myColor === 'red' ? RED_SETUP_ROWS : BLUE_SETUP_ROWS;
 
+    // Convert rows to Position array for Board component
+    const validDropCells = draggingPiece
+        ? validDropRows.flatMap(row =>
+            Array.from({ length: BOARD_COLS }, (_, col) => ({ row, col }))
+        )
+        : [];
+
     const kingPlaced = setupState.kingPosition !== null;
     const pitPlaced = setupState.pitPosition !== null;
     const canReposition = !setupState.hasShuffled;
@@ -136,7 +143,7 @@ export const SetupScreen: React.FC = () => {
         }
     }, [draggingPiece, socket, myColor, setupState.kingPosition, setupState.pitPosition, setupState.hasShuffled, gamePhase, setKingPosition, setPitPosition]);
 
-    const handlePieceDragFromBoard = useCallback((pieceType: PieceType) => {
+    const handlePieceDragFromBoard = useCallback((pieceType: PieceType, _row: number, _col: number) => {
         if (!canReposition) return;
         handleDragStart(pieceType);
     }, [canReposition, handleDragStart]);
@@ -185,7 +192,7 @@ export const SetupScreen: React.FC = () => {
                     <Board
                         board={displayBoard}
                         myColor={myColor}
-                        validDropRows={draggingPiece ? validDropRows : []}
+                        validDropCells={validDropCells}
                         onCellDrop={handleCellDrop}
                         onPieceDrag={canReposition ? handlePieceDragFromBoard : undefined}
                         onPieceDragEnd={handleDragEnd}

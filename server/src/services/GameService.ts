@@ -13,7 +13,8 @@ import {
     BOARD_COLS,
     RED_SETUP_ROWS,
     BLUE_SETUP_ROWS,
-    PIECES_PER_PLAYER
+    PIECES_PER_PLAYER,
+    MOVEMENT_DIRECTIONS
 } from '@rps/shared';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -388,6 +389,170 @@ export class GameService {
 
         const opponent = session.players[color === 'red' ? 'blue' : 'red'];
         return opponent?.socketId ?? null;
+    }
+
+    /**
+     * Get valid moves for a piece. King and Pit cannot move.
+     * Rock/Paper/Scissors can move one step in 4 directions.
+     */
+    public getValidMoves(socketId: string, pieceId: string): Position[] {
+        const session = this.getSessionBySocketId(socketId);
+        if (!session || session.phase !== 'playing') return [];
+
+        const color = this.getPlayerColor(socketId);
+        if (!color) return [];
+
+        // Find the piece
+        const player = session.players[color];
+        const piece = player?.pieces.find(p => p.id === pieceId);
+        if (!piece || piece.owner !== color) return [];
+
+        // King and Pit cannot move
+        if (piece.type === 'king' || piece.type === 'pit') {
+            return [];
+        }
+
+        const validMoves: Position[] = [];
+        const { row, col } = piece.position;
+
+        for (const dir of MOVEMENT_DIRECTIONS) {
+            const newRow = row + dir.row;
+            const newCol = col + dir.col;
+
+            // Check bounds
+            if (newRow < 0 || newRow >= BOARD_ROWS || newCol < 0 || newCol >= BOARD_COLS) {
+                continue;
+            }
+
+            const targetCell = session.board[newRow][newCol];
+
+            // Can move to empty cell or cell with enemy piece
+            if (!targetCell.piece || targetCell.piece.owner !== color) {
+                validMoves.push({ row: newRow, col: newCol });
+            }
+        }
+
+        return validMoves;
+    }
+
+    /**
+     * Execute a move. Returns success/error and whether combat occurred.
+     */
+    public makeMove(
+        socketId: string,
+        from: Position,
+        to: Position
+    ): { success: boolean; error?: string; combat?: boolean } {
+        const session = this.getSessionBySocketId(socketId);
+        if (!session) return { success: false, error: 'Session not found' };
+
+        if (session.phase !== 'playing') {
+            return { success: false, error: 'Game is not in playing phase' };
+        }
+
+        const color = this.getPlayerColor(socketId);
+        if (!color) return { success: false, error: 'Player not found' };
+
+        // Validate it's this player's turn
+        if (session.currentTurn !== color) {
+            return { success: false, error: 'Not your turn' };
+        }
+
+        const player = session.players[color];
+        if (!player) return { success: false, error: 'Player state not found' };
+
+        // Find the piece at 'from' position
+        const piece = player.pieces.find(
+            p => p.position.row === from.row && p.position.col === from.col
+        );
+        if (!piece) {
+            return { success: false, error: 'No piece at source position' };
+        }
+
+        // Validate piece can move (not King/Pit)
+        if (piece.type === 'king' || piece.type === 'pit') {
+            return { success: false, error: 'This piece cannot move' };
+        }
+
+        // Validate target is a valid move
+        const validMoves = this.getValidMoves(socketId, piece.id);
+        const isValidTarget = validMoves.some(m => m.row === to.row && m.col === to.col);
+        if (!isValidTarget) {
+            return { success: false, error: 'Invalid move target' };
+        }
+
+        const targetCell = session.board[to.row][to.col];
+
+        // Check if combat will occur
+        if (targetCell.piece && targetCell.piece.owner !== color) {
+            // Combat will be handled separately
+            // For now, just flag that combat is needed
+            console.log(`⚔️ Combat initiated: ${piece.type} vs ${targetCell.piece.type}`);
+            return { success: true, combat: true };
+        }
+
+        // Move to empty cell
+        // Update board
+        session.board[from.row][from.col].piece = null;
+        session.board[to.row][to.col].piece = piece;
+
+        // Update piece position
+        piece.position = { row: to.row, col: to.col };
+
+        // Switch turn
+        session.currentTurn = color === 'red' ? 'blue' : 'red';
+        session.turnStartTime = Date.now();
+
+        console.log(`♟️ ${color} moved ${piece.type} from (${from.row},${from.col}) to (${to.row},${to.col})`);
+        return { success: true, combat: false };
+    }
+
+    /**
+     * Get a player's game view during playing phase.
+     */
+    public getPlayerGameView(socketId: string): {
+        board: PlayerCellView[][];
+        currentTurn: PlayerColor | null;
+        phase: string;
+        isMyTurn: boolean;
+    } | null {
+        const session = this.getSessionBySocketId(socketId);
+        if (!session) return null;
+
+        const color = this.getPlayerColor(socketId);
+        if (!color) return null;
+
+        // Build board view with fog of war
+        const boardView: PlayerCellView[][] = session.board.map(row =>
+            row.map(cell => {
+                let pieceView: PlayerPieceView | null = null;
+
+                if (cell.piece) {
+                    const isOwnPiece = cell.piece.owner === color;
+                    pieceView = {
+                        id: cell.piece.id,
+                        owner: cell.piece.owner,
+                        type: isOwnPiece || cell.piece.isRevealed ? cell.piece.type : 'hidden',
+                        position: cell.piece.position,
+                        isRevealed: cell.piece.isRevealed,
+                        hasHalo: cell.piece.hasHalo
+                    };
+                }
+
+                return {
+                    row: cell.row,
+                    col: cell.col,
+                    piece: pieceView
+                };
+            })
+        );
+
+        return {
+            board: boardView,
+            currentTurn: session.currentTurn,
+            phase: session.phase,
+            isMyTurn: session.currentTurn === color
+        };
     }
 
     public removeSession(sessionId: string): void {
