@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSocket } from '../../hooks/useSocket';
+import { useGameStore } from '../../store/gameStore';
 import { SOCKET_EVENTS, CombatElement } from '@rps/shared';
 import './TieBreakerModal.css';
 
@@ -7,6 +8,15 @@ export const TieBreakerModal: React.FC = () => {
     const { socket } = useSocket();
     const [selectedChoice, setSelectedChoice] = useState<CombatElement | null>(null);
     const [hasSubmitted, setHasSubmitted] = useState(false);
+    const retryCount = useGameStore((state) => state.tieBreakerState.retryCount);
+
+    // Reset local state when retryCount changes (another tie occurred)
+    useEffect(() => {
+        if (retryCount > 0) {
+            setSelectedChoice(null);
+            setHasSubmitted(false);
+        }
+    }, [retryCount]);
 
     const handleSelect = (choice: CombatElement) => {
         if (hasSubmitted) return;

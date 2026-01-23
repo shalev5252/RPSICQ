@@ -106,6 +106,11 @@ export function useSocket() {
             }
         };
 
+        const onTieBreakerRetry = () => {
+            console.log('🔄 Tie-breaker tied again, retrying');
+            useGameStore.getState().incrementTieBreakerRetry();
+        };
+
         socket.on('connect', onConnect);
         socket.on('disconnect', onDisconnect);
         socket.on('connect_error', onConnectError);
@@ -115,6 +120,7 @@ export function useSocket() {
         socket.on(SOCKET_EVENTS.GAME_OVER, onGameOver);
         socket.on(SOCKET_EVENTS.REMATCH_REQUESTED, onRematchRequested);
         socket.on(SOCKET_EVENTS.REMATCH_ACCEPTED, onRematchAccepted);
+        socket.on(SOCKET_EVENTS.TIE_BREAKER_RETRY, onTieBreakerRetry);
         socket.on(SOCKET_EVENTS.ERROR, onError);
 
         // Sync state immediately if socket is already connected (handles race condition on mount)
@@ -133,6 +139,7 @@ export function useSocket() {
             socket.off(SOCKET_EVENTS.GAME_OVER, onGameOver);
             socket.off(SOCKET_EVENTS.REMATCH_REQUESTED, onRematchRequested);
             socket.off(SOCKET_EVENTS.REMATCH_ACCEPTED, onRematchAccepted);
+            socket.off(SOCKET_EVENTS.TIE_BREAKER_RETRY, onTieBreakerRetry);
             socket.off(SOCKET_EVENTS.ERROR, onError);
             // Do NOT disconnect base socket on unmount of hook, usually
         };

@@ -21,10 +21,13 @@ const io = new Server(httpServer, {
     cors: {
         origin: CLIENT_URL,
         methods: ['GET', 'POST'],
+        credentials: true,
     },
-    pingTimeout: 60000,      // How long to wait for pong before considering connection closed
-    pingInterval: 25000,     // How often to send ping (keep connection alive)
+    pingTimeout: 60000,      // 60s to wait for pong (more lenient for slow networks)
+    pingInterval: 25000,     // Ping every 25s (less aggressive, reduces overhead)
     transports: ['websocket', 'polling'],
+    allowUpgrades: true,
+    perMessageDeflate: false, // Disable compression (can cause issues with some proxies)
 });
 
 setupSocketHandlers(io);

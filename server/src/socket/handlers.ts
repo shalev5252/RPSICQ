@@ -108,7 +108,7 @@ export function setupSocketHandlers(io: Server): void {
             // Send updated game view to both players (for both combat and non-combat scenarios)
             const session = gameService.getSessionBySocketId(socket.id);
             if (session) {
-                    // Send updated game state to current player
+                // Send updated game state to current player
                 const playerView = gameService.getPlayerGameView(socket.id);
                 if (playerView) {
                     socket.emit(SOCKET_EVENTS.GAME_STATE, playerView);
@@ -170,6 +170,22 @@ export function setupSocketHandlers(io: Server): void {
                             winner: session.winner,
                             reason: session.winReason || 'king_captured'
                         });
+                    }
+                }
+            } else if (result.isTieAgain) {
+                // Another tie occurred - notify both players to choose again
+                const session = gameService.getSessionBySocketId(socket.id);
+                if (session) {
+                    const redSocketId = session.players.red?.socketId;
+                    const blueSocketId = session.players.blue?.socketId;
+
+                    console.log(`🔄 Tie-breaker tie! Notifying both players to retry.`);
+
+                    if (redSocketId) {
+                        io.to(redSocketId).emit(SOCKET_EVENTS.TIE_BREAKER_RETRY);
+                    }
+                    if (blueSocketId) {
+                        io.to(blueSocketId).emit(SOCKET_EVENTS.TIE_BREAKER_RETRY);
                     }
                 }
             }

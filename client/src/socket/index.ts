@@ -16,9 +16,11 @@ const URL = getSocketUrl();
 export const socket = io(URL, {
     autoConnect: true,
     reconnection: true,
-    reconnectionAttempts: 10,
+    reconnectionAttempts: Infinity,  // Keep trying
     reconnectionDelay: 1000,
     reconnectionDelayMax: 5000,
     timeout: 20000,
-    transports: ['websocket', 'polling'], // Prefer websocket
+    transports: ['polling', 'websocket'],  // Start with polling, upgrade to websocket
+    upgrade: true,                   // Allow upgrade from polling to websocket
+    withCredentials: true,
 });

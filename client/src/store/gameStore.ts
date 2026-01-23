@@ -16,6 +16,10 @@ interface RematchState {
     opponentRequested: boolean;
 }
 
+interface TieBreakerState {
+    retryCount: number;
+}
+
 interface GameStore {
     connectionStatus: 'connecting' | 'connected' | 'disconnected';
     setConnectionStatus: (status: 'connecting' | 'connected' | 'disconnected') => void;
@@ -48,6 +52,10 @@ interface GameStore {
     rematchState: RematchState;
     setRematchState: (state: Partial<RematchState>) => void;
     resetForRematch: () => void;
+    // Tie-breaker state
+    tieBreakerState: TieBreakerState;
+    incrementTieBreakerRetry: () => void;
+    resetTieBreakerState: () => void;
     reset: () => void;
 }
 
@@ -66,6 +74,10 @@ const initialRematchState: RematchState = {
     opponentRequested: false,
 };
 
+const initialTieBreakerState: TieBreakerState = {
+    retryCount: 0,
+};
+
 const initialState = {
     connectionStatus: 'connecting' as const,
     playerId: null,
@@ -77,6 +89,7 @@ const initialState = {
     setupState: initialSetupState,
     gameState: null,
     rematchState: initialRematchState,
+    tieBreakerState: initialTieBreakerState,
 };
 
 export const useGameStore = create<GameStore>((set) => ({
@@ -105,7 +118,12 @@ export const useGameStore = create<GameStore>((set) => ({
         setupState: initialSetupState,
         gameState: null,
         rematchState: initialRematchState,
+        tieBreakerState: initialTieBreakerState,
         // Keep sessionId, playerId, and myColor
     }),
+    incrementTieBreakerRetry: () => set((prev) => ({
+        tieBreakerState: { retryCount: prev.tieBreakerState.retryCount + 1 }
+    })),
+    resetTieBreakerState: () => set({ tieBreakerState: initialTieBreakerState }),
     reset: () => set(initialState),
 }));

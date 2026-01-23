@@ -677,7 +677,7 @@ export class GameService {
     public submitTieBreakerChoice(
         socketId: string,
         choice: 'rock' | 'paper' | 'scissors'
-    ): { success: boolean; error?: string; bothChosen?: boolean } {
+    ): { success: boolean; error?: string; bothChosen?: boolean; isTieAgain?: boolean } {
         const session = this.getSessionBySocketId(socketId);
         if (!session) return { success: false, error: 'Session not found' };
 
@@ -735,7 +735,7 @@ export class GameService {
                 session.combatState.attackerChoice = undefined;
                 session.combatState.defenderChoice = undefined;
                 console.log(`🤝 Another tie! Continue tie breaker.`);
-                return { success: true, bothChosen: false };
+                return { success: true, bothChosen: false, isTieAgain: true };
             }
 
             // Combat resolved
