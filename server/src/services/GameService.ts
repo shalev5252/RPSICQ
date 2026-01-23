@@ -124,10 +124,13 @@ export class GameService {
         if (session.phase !== 'setup') {
             return { success: false, error: 'Not in setup phase' };
         }
+        if (player.isReady) {
+            return { success: false, error: 'Setup already confirmed' };
+        }
 
         const setupState = this.setupStates.get(socketId);
-        if (setupState?.hasShuffled) {
-            return { success: false, error: 'Cannot place King/Pit after shuffling' };
+        if (!setupState?.hasPlacedKingPit) {
+            return { success: false, error: 'Must place King and Pit first' };
         }
 
         // Validate positions are in player's rows
@@ -215,9 +218,16 @@ export class GameService {
         const player = session.players[color];
         if (!player) return { success: false, error: 'Player state not found' };
 
+        if (player.isReady) {
+            return { success: false, error: 'Cannot reshuffle when ready' };
+        }
+
         const setupState = this.setupStates.get(socketId);
         if (!setupState?.hasPlacedKingPit) {
             return { success: false, error: 'Must place King and Pit first' };
+        }
+        if (setupState.hasShuffled) {
+            return { success: false, error: 'Cannot reshuffle after shuffling' };
         }
 
         // Get all cells in player's setup rows

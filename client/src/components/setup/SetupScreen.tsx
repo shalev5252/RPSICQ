@@ -50,29 +50,41 @@ export const SetupScreen: React.FC = () => {
             // Add king at local position
             if (setupState.kingPosition) {
                 const { row, col } = setupState.kingPosition;
-                const kingPiece: PlayerPieceView = {
-                    id: 'local-king',
-                    owner: myColor,
-                    type: 'king',
-                    position: setupState.kingPosition,
-                    isRevealed: false,
-                    hasHalo: false,
-                };
-                baseBoard[row][col].piece = kingPiece;
+                if (typeof row === 'number' && typeof col === 'number' &&
+                    row >= 0 && row < baseBoard.length &&
+                    col >= 0 && col < baseBoard[row].length) {
+                    const kingPiece: PlayerPieceView = {
+                        id: 'local-king',
+                        owner: myColor,
+                        type: 'king',
+                        position: setupState.kingPosition,
+                        isRevealed: false,
+                        hasHalo: false,
+                    };
+                    baseBoard[row][col].piece = kingPiece;
+                } else {
+                    console.warn(`Invalid king position for ${myColor}:`, setupState.kingPosition);
+                }
             }
 
             // Add pit at local position
             if (setupState.pitPosition) {
                 const { row, col } = setupState.pitPosition;
-                const pitPiece: PlayerPieceView = {
-                    id: 'local-pit',
-                    owner: myColor,
-                    type: 'pit',
-                    position: setupState.pitPosition,
-                    isRevealed: false,
-                    hasHalo: false,
-                };
-                baseBoard[row][col].piece = pitPiece;
+                if (typeof row === 'number' && typeof col === 'number' &&
+                    row >= 0 && row < baseBoard.length &&
+                    col >= 0 && col < baseBoard[row].length) {
+                    const pitPiece: PlayerPieceView = {
+                        id: 'local-pit',
+                        owner: myColor,
+                        type: 'pit',
+                        position: setupState.pitPosition,
+                        isRevealed: false,
+                        hasHalo: false,
+                    };
+                    baseBoard[row][col].piece = pitPiece;
+                } else {
+                    console.warn(`Invalid pit position for ${myColor}:`, setupState.pitPosition);
+                }
             }
         }
 
