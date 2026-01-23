@@ -109,6 +109,14 @@ export interface ErrorPayload {
     message: string;
 }
 
+export interface SetupStatePayload {
+    board: PlayerCellView[][];
+    hasPlacedKingPit: boolean;
+    hasShuffled: boolean;
+    isReady: boolean;
+    opponentReady: boolean;
+}
+
 // Player view types
 export interface PlayerGameView extends Omit<GameState, 'board'> {
     board: PlayerCellView[][];

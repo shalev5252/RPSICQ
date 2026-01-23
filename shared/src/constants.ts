@@ -59,6 +59,7 @@ export const SOCKET_EVENTS = {
     OPPONENT_READY: 'opponent_ready',
     GAME_START: 'game_start',
     GAME_STATE: 'game_state',
+    SETUP_STATE: 'setup_state',
     COMBAT_START: 'combat_start',
     COMBAT_TIE: 'combat_tie',
     COMBAT_RESULT: 'combat_result',

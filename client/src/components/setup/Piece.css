@@ -1,0 +1,97 @@
+.piece {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    user-select: none;
+    position: relative;
+}
+
+.piece--small {
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+}
+
+.piece--medium {
+    width: 52px;
+    height: 52px;
+    font-size: 26px;
+}
+
+.piece--large {
+    width: 68px;
+    height: 68px;
+    font-size: 34px;
+}
+
+.piece--red {
+    background: linear-gradient(135deg, #ff7b7b, #d63031);
+    border: 3px solid #b71c1c;
+    box-shadow:
+        0 4px 12px rgba(214, 48, 49, 0.5),
+        inset 0 2px 4px rgba(255, 255, 255, 0.2);
+}
+
+.piece--blue {
+    background: linear-gradient(135deg, #81d4fa, #1976d2);
+    border: 3px solid #0d47a1;
+    box-shadow:
+        0 4px 12px rgba(25, 118, 210, 0.5),
+        inset 0 2px 4px rgba(255, 255, 255, 0.2);
+}
+
+.piece--halo {
+    animation: halo-pulse 1.5s infinite;
+}
+
+.piece--halo::after {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 3px solid rgba(255, 215, 0, 0.6);
+    animation: halo-ring 1.5s infinite;
+}
+
+.piece--dragging {
+    transform: scale(1.15) rotate(5deg);
+    opacity: 0.85;
+    cursor: grabbing;
+    z-index: 100;
+}
+
+.piece:hover:not(.piece--dragging) {
+    transform: scale(1.08);
+}
+
+.piece__icon {
+    line-height: 1;
+    filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.4));
+}
+
+@keyframes halo-pulse {
+    0%, 100% {
+        box-shadow:
+            0 0 15px 5px rgba(255, 215, 0, 0.5),
+            0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    50% {
+        box-shadow:
+            0 0 25px 8px rgba(255, 215, 0, 0.7),
+            0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+}
+
+@keyframes halo-ring {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 0.6;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.3;
+    }
+}

@@ -18,16 +18,67 @@ export function setupSocketHandlers(io: Server): void {
             matchmakingService.removeFromQueue(socket.id);
         });
 
-        socket.on(SOCKET_EVENTS.PLACE_KING_PIT, (_payload: PlaceKingPitPayload) => {
-            console.log(`👑 Player ${socket.id} placing King and Pit`);
-        });
+        socket.on(SOCKET_EVENTS.PLACE_KING_PIT, (payload: PlaceKingPitPayload) => {
+            const result = gameService.placeKingPit(socket.id, payload.kingPosition, payload.pitPosition);
 
-        socket.on(SOCKET_EVENTS.CONFIRM_SETUP, () => {
-            console.log(`✔️ Player ${socket.id} confirmed setup`);
+            if (!result.success) {
+                socket.emit(SOCKET_EVENTS.ERROR, { code: 'PLACE_KING_PIT_ERROR', message: result.error });
+                return;
+            }
+
+            // Send updated setup state to the player
+            const setupView = gameService.getPlayerSetupView(socket.id);
+            if (setupView) {
+                socket.emit(SOCKET_EVENTS.SETUP_STATE, setupView);
+            }
         });
 
         socket.on(SOCKET_EVENTS.RANDOMIZE_PIECES, () => {
-            console.log(`🎲 Player ${socket.id} randomizing pieces`);
+            const result = gameService.randomizePieces(socket.id);
+
+            if (!result.success) {
+                socket.emit(SOCKET_EVENTS.ERROR, { code: 'RANDOMIZE_ERROR', message: result.error });
+                return;
+            }
+
+            // Send updated setup state to the player
+            const setupView = gameService.getPlayerSetupView(socket.id);
+            if (setupView) {
+                socket.emit(SOCKET_EVENTS.SETUP_STATE, setupView);
+            }
+        });
+
+        socket.on(SOCKET_EVENTS.CONFIRM_SETUP, () => {
+            const result = gameService.confirmSetup(socket.id);
+
+            if (!result.success) {
+                socket.emit(SOCKET_EVENTS.ERROR, { code: 'CONFIRM_ERROR', message: result.error });
+                return;
+            }
+
+            if (result.bothReady) {
+                // Both players are ready - start the game
+                const session = gameService.getSessionBySocketId(socket.id);
+                if (session) {
+                    // Send GAME_START to both players
+                    io.to(session.sessionId).emit(SOCKET_EVENTS.GAME_START, {
+                        startingPlayer: session.currentTurn,
+                        gameState: session
+                    });
+                }
+            } else {
+                // Only this player is ready - notify opponent
+                const opponentId = gameService.getOpponentSocketId(socket.id);
+                if (opponentId) {
+                    io.to(opponentId).emit(SOCKET_EVENTS.OPPONENT_READY);
+                }
+
+                // Send updated setup state to current player
+                const setupView = gameService.getPlayerSetupView(socket.id);
+                if (setupView) {
+                    socket.emit(SOCKET_EVENTS.SETUP_STATE, setupView);
+                }
+            }
         });
 
         socket.on(SOCKET_EVENTS.MAKE_MOVE, (_payload: MakeMovePayload) => {
