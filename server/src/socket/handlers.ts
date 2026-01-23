@@ -60,11 +60,25 @@ export function setupSocketHandlers(io: Server): void {
                 // Both players are ready - start the game
                 const session = gameService.getSessionBySocketId(socket.id);
                 if (session) {
-                    // Send GAME_START to both players
-                    io.to(session.sessionId).emit(SOCKET_EVENTS.GAME_START, {
-                        startingPlayer: session.currentTurn,
-                        gameState: session
-                    });
+                    // Send GAME_START to each player with their specific view (fog of war)
+                    const redSocketId = session.players.red?.socketId;
+                    const blueSocketId = session.players.blue?.socketId;
+
+                    if (redSocketId) {
+                        const redView = gameService.getPlayerGameView(redSocketId);
+                        io.to(redSocketId).emit(SOCKET_EVENTS.GAME_START, {
+                            startingPlayer: session.currentTurn,
+                            gameState: redView
+                        });
+                    }
+
+                    if (blueSocketId) {
+                        const blueView = gameService.getPlayerGameView(blueSocketId);
+                        io.to(blueSocketId).emit(SOCKET_EVENTS.GAME_START, {
+                            startingPlayer: session.currentTurn,
+                            gameState: blueView
+                        });
+                    }
                 }
             } else {
                 // Only this player is ready - notify opponent
@@ -81,16 +95,122 @@ export function setupSocketHandlers(io: Server): void {
             }
         });
 
-        socket.on(SOCKET_EVENTS.MAKE_MOVE, (_payload: MakeMovePayload) => {
-            console.log(`♟️ Player ${socket.id} making move`);
+        socket.on(SOCKET_EVENTS.MAKE_MOVE, (payload: MakeMovePayload) => {
+            console.log(`♟️ Player ${socket.id} making move:`, payload);
+
+            const result = gameService.makeMove(socket.id, payload.from, payload.to);
+
+            if (!result.success) {
+                socket.emit(SOCKET_EVENTS.ERROR, { code: 'MOVE_ERROR', message: result.error });
+                return;
+            }
+
+            // Send updated game view to both players (for both combat and non-combat scenarios)
+            const session = gameService.getSessionBySocketId(socket.id);
+            if (session) {
+                    // Send updated game state to current player
+                const playerView = gameService.getPlayerGameView(socket.id);
+                if (playerView) {
+                    socket.emit(SOCKET_EVENTS.GAME_STATE, playerView);
+                }
+
+                // Send to opponent
+                const opponentId = gameService.getOpponentSocketId(socket.id);
+                if (opponentId) {
+                    const opponentView = gameService.getPlayerGameView(opponentId);
+                    if (opponentView) {
+                        io.to(opponentId).emit(SOCKET_EVENTS.GAME_STATE, opponentView);
+                    }
+                }
+
+                // Check if game ended - emit GAME_OVER after GAME_STATE so clients have final board
+                if (session.phase === 'finished') {
+                    io.to(session.sessionId).emit(SOCKET_EVENTS.GAME_OVER, {
+                        winner: session.winner,
+                        reason: session.winReason || 'king_captured'
+                    });
+                }
+            }
         });
 
-        socket.on(SOCKET_EVENTS.COMBAT_CHOICE, (_payload: CombatChoicePayload) => {
-            console.log(`⚔️ Player ${socket.id} made combat choice`);
+        socket.on(SOCKET_EVENTS.COMBAT_CHOICE, (payload: CombatChoicePayload) => {
+            console.log(`⚔️ Player ${socket.id} chose ${payload.element} for tie breaker`);
+
+            const result = gameService.submitTieBreakerChoice(socket.id, payload.element);
+
+            if (!result.success) {
+                socket.emit(SOCKET_EVENTS.ERROR, { code: 'TIE_BREAKER_ERROR', message: result.error });
+                return;
+            }
+
+            if (result.bothChosen) {
+                // Both players have chosen - resolution complete
+                const session = gameService.getSessionBySocketId(socket.id);
+                if (session) {
+                    // Send updated game state to both players first
+                    const redPlayer = session.players.red;
+                    const bluePlayer = session.players.blue;
+
+                    if (redPlayer?.socketId) {
+                        const redView = gameService.getPlayerGameView(redPlayer.socketId);
+                        if (redView) {
+                            io.to(redPlayer.socketId).emit(SOCKET_EVENTS.GAME_STATE, redView);
+                        }
+                    }
+                    if (bluePlayer?.socketId) {
+                        const blueView = gameService.getPlayerGameView(bluePlayer.socketId);
+                        if (blueView) {
+                            io.to(bluePlayer.socketId).emit(SOCKET_EVENTS.GAME_STATE, blueView);
+                        }
+                    }
+
+                    // Emit GAME_OVER after GAME_STATE so clients have final board
+                    if (session.phase === 'finished') {
+                        io.to(session.sessionId).emit(SOCKET_EVENTS.GAME_OVER, {
+                            winner: session.winner,
+                            reason: session.winReason || 'king_captured'
+                        });
+                    }
+                }
+            }
         });
 
         socket.on(SOCKET_EVENTS.REQUEST_REMATCH, () => {
             console.log(`🔄 Player ${socket.id} requesting rematch`);
+
+            const result = gameService.requestRematch(socket.id);
+
+            if (!result.success) {
+                socket.emit(SOCKET_EVENTS.ERROR, { code: 'REMATCH_ERROR', message: result.error });
+                return;
+            }
+
+            if (result.bothRequested) {
+                // Both players want rematch - reset game and notify both
+                const session = gameService.getSessionBySocketId(socket.id);
+                if (session) {
+                    const resetResult = gameService.resetGameForRematch(session.sessionId);
+                    if (resetResult.success) {
+                        // Emit REMATCH_ACCEPTED to both players
+                        const redSocketId = session.players.red?.socketId;
+                        const blueSocketId = session.players.blue?.socketId;
+
+                        if (redSocketId) {
+                            const redSetupView = gameService.getPlayerSetupView(redSocketId);
+                            io.to(redSocketId).emit(SOCKET_EVENTS.REMATCH_ACCEPTED, { setupState: redSetupView });
+                        }
+                        if (blueSocketId) {
+                            const blueSetupView = gameService.getPlayerSetupView(blueSocketId);
+                            io.to(blueSocketId).emit(SOCKET_EVENTS.REMATCH_ACCEPTED, { setupState: blueSetupView });
+                        }
+                    }
+                }
+            } else {
+                // Only one player has requested - notify opponent
+                if (result.opponentSocketId) {
+                    io.to(result.opponentSocketId).emit(SOCKET_EVENTS.REMATCH_REQUESTED);
+                }
+            }
         });
 
         socket.on('disconnect', (reason: string) => {

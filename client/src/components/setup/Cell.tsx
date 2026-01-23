@@ -12,7 +12,7 @@ interface CellProps {
     myColor: PlayerColor;
     onDrop?: (row: number, col: number) => void;
     onDragOver?: (e: React.DragEvent) => void;
-    onPieceDrag?: (pieceType: PieceType) => void;
+    onPieceDrag?: (pieceType: PieceType, row: number, col: number) => void;
     onPieceDragEnd?: () => void;
     draggablePieceTypes?: PieceType[];
 }
@@ -53,9 +53,11 @@ export const Cell: React.FC<CellProps> = ({
     const handlePieceDragStart = (e: React.DragEvent) => {
         if (!isPieceDraggable || !piece || piece.type === 'hidden') return;
         e.dataTransfer.setData('pieceType', piece.type);
+        e.dataTransfer.setData('pieceRow', String(row));
+        e.dataTransfer.setData('pieceCol', String(col));
         e.dataTransfer.effectAllowed = 'move';
         if (onPieceDrag) {
-            onPieceDrag(piece.type as PieceType);
+            onPieceDrag(piece.type as PieceType, row, col);
         }
     };
 

@@ -3,6 +3,8 @@ import { useGameSession } from './hooks/useGameSession';
 import { useGameStore } from './store/gameStore';
 import { MatchmakingScreen } from './components/MatchmakingScreen';
 import { SetupScreen } from './components/setup';
+import { GameScreen } from './components/game/GameScreen';
+import { GameOverScreen } from './components/game/GameOverScreen';
 import './App.css';
 
 function App() {
@@ -28,17 +30,8 @@ function App() {
                     <>
                         {gamePhase === 'waiting' && <MatchmakingScreen />}
                         {gamePhase === 'setup' && <SetupScreen />}
-                        {gamePhase === 'playing' && (
-                            <div className="game-container">
-                                <h2>Game in Progress</h2>
-                                <p>Playing phase - coming in next proposal</p>
-                            </div>
-                        )}
-                        {gamePhase === 'finished' && (
-                            <div className="game-container">
-                                <h2>Game Over</h2>
-                            </div>
-                        )}
+                        {gamePhase === 'playing' && <GameScreen />}
+                        {gamePhase === 'finished' && <GameOverScreen />}
                     </>
                 )}
             </main>

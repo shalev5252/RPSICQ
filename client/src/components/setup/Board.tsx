@@ -1,5 +1,5 @@
 import React from 'react';
-import type { PlayerCellView, PlayerColor, PieceType } from '@rps/shared';
+import type { PlayerCellView, PlayerColor, PieceType, Position } from '@rps/shared';
 import { BOARD_ROWS, BOARD_COLS, RED_SETUP_ROWS, BLUE_SETUP_ROWS } from '@rps/shared';
 import { Cell } from './Cell';
 import './Board.css';
@@ -7,9 +7,9 @@ import './Board.css';
 interface BoardProps {
     board: PlayerCellView[][];
     myColor: PlayerColor;
-    validDropRows: number[];
+    validDropCells?: Position[];
     onCellDrop?: (row: number, col: number) => void;
-    onPieceDrag?: (pieceType: PieceType) => void;
+    onPieceDrag?: (pieceType: PieceType, row: number, col: number) => void;
     onPieceDragEnd?: () => void;
     draggablePieceTypes?: PieceType[];
 }
@@ -17,7 +17,7 @@ interface BoardProps {
 export const Board: React.FC<BoardProps> = ({
     board,
     myColor,
-    validDropRows,
+    validDropCells = [],
     onCellDrop,
     onPieceDrag,
     onPieceDragEnd,
@@ -51,8 +51,8 @@ export const Board: React.FC<BoardProps> = ({
 
     const displayBoard = getDisplayBoard();
 
-    const isValidDropTarget = (actualRow: number): boolean => {
-        return validDropRows.includes(actualRow);
+    const isValidDropTarget = (row: number, col: number): boolean => {
+        return validDropCells.some(p => p.row === row && p.col === col);
     };
 
     const getMyRows = (): number[] => {
@@ -82,7 +82,7 @@ export const Board: React.FC<BoardProps> = ({
                                 row={actualRowIndex}
                                 col={colIndex}
                                 piece={cell.piece}
-                                isValidDropTarget={isValidDropTarget(actualRowIndex)}
+                                isValidDropTarget={isValidDropTarget(actualRowIndex, colIndex)}
                                 isHighlighted={isMyRow(actualRowIndex)}
                                 myColor={myColor}
                                 onDrop={onCellDrop}

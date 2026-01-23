@@ -6,7 +6,7 @@ export type PlayerColor = 'red' | 'blue';
 export type PlayerRole = PlayerColor;
 export type PieceType = 'king' | 'pit' | 'rock' | 'paper' | 'scissors';
 export type CombatElement = 'rock' | 'paper' | 'scissors';
-export type GamePhase = 'waiting' | 'setup' | 'playing' | 'combat' | 'finished';
+export type GamePhase = 'waiting' | 'setup' | 'playing' | 'combat' | 'finished' | 'tie_breaker';
 
 export interface Position {
     row: number;
@@ -57,6 +57,10 @@ export interface GameState {
     combatState: CombatState | null;
     winner: PlayerColor | null;
     winReason?: 'king_captured' | 'timeout' | 'disconnect' | 'draw';
+    rematchRequests?: {
+        red: boolean;
+        blue: boolean;
+    };
 }
 
 // Socket Event Payloads

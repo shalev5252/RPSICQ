@@ -1,0 +1,77 @@
+.game-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 30px 20px;
+    min-height: 100%;
+    background: radial-gradient(ellipse at center, #1a1a2e 0%, #16213e 50%, #0f0f23 100%);
+}
+
+.game-screen__header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.game-screen__turn-indicator {
+    font-size: 28px;
+    font-weight: 700;
+    padding: 16px 40px;
+    border-radius: 16px;
+    margin-bottom: 16px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    animation: pulse 2s infinite;
+}
+
+.game-screen__turn-indicator--my-turn {
+    background: linear-gradient(135deg, #51cf66, #37b24d);
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(55, 178, 77, 0.5);
+}
+
+.game-screen__turn-indicator--opponent-turn {
+    background: linear-gradient(135deg, #868e96, #495057);
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    animation: none;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 4px 20px rgba(55, 178, 77, 0.5);
+    }
+    50% {
+        transform: scale(1.02);
+        box-shadow: 0 6px 30px rgba(55, 178, 77, 0.7);
+    }
+}
+
+.game-screen__color {
+    display: inline-block;
+    padding: 10px 24px;
+    border-radius: 25px;
+    font-weight: bold;
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.game-screen__color--red {
+    background: linear-gradient(135deg, #ff6b6b, #c92a2a);
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(201, 42, 42, 0.4);
+}
+
+.game-screen__color--blue {
+    background: linear-gradient(135deg, #74c0fc, #1971c2);
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(25, 113, 194, 0.4);
+}
+
+.game-screen__board-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}

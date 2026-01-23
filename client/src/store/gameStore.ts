@@ -11,6 +11,11 @@ interface SetupState {
     pitPosition: Position | null;
 }
 
+interface RematchState {
+    hasRequested: boolean;
+    opponentRequested: boolean;
+}
+
 interface GameStore {
     connectionStatus: 'connecting' | 'connected' | 'disconnected';
     setConnectionStatus: (status: 'connecting' | 'connected' | 'disconnected') => void;
@@ -30,6 +35,19 @@ interface GameStore {
     setSetupState: (state: Partial<SetupState>) => void;
     setKingPosition: (position: Position | null) => void;
     setPitPosition: (position: Position | null) => void;
+    // Game state for playing phase
+    gameState: {
+        board: PlayerCellView[][];
+        currentTurn: PlayerColor | null;
+        phase: string;
+        isMyTurn: boolean;
+        winner?: PlayerColor | null;
+    } | null;
+    setGameState: (state: { board: PlayerCellView[][]; currentTurn: PlayerColor | null; phase: string; isMyTurn: boolean; winner?: PlayerColor | null } | null) => void;
+    // Rematch state
+    rematchState: RematchState;
+    setRematchState: (state: Partial<RematchState>) => void;
+    resetForRematch: () => void;
     reset: () => void;
 }
 
@@ -43,6 +61,11 @@ const initialSetupState: SetupState = {
     pitPosition: null,
 };
 
+const initialRematchState: RematchState = {
+    hasRequested: false,
+    opponentRequested: false,
+};
+
 const initialState = {
     connectionStatus: 'connecting' as const,
     playerId: null,
@@ -52,6 +75,8 @@ const initialState = {
     gameView: null,
     isSearching: false,
     setupState: initialSetupState,
+    gameState: null,
+    rematchState: initialRematchState,
 };
 
 export const useGameStore = create<GameStore>((set) => ({
@@ -71,5 +96,16 @@ export const useGameStore = create<GameStore>((set) => ({
     setPitPosition: (position) => set((prev) => ({
         setupState: { ...prev.setupState, pitPosition: position }
     })),
+    setGameState: (gameState) => set({ gameState }),
+    setRematchState: (state) => set((prev) => ({
+        rematchState: { ...prev.rematchState, ...state }
+    })),
+    resetForRematch: () => set({
+        gamePhase: 'setup' as GamePhase,
+        setupState: initialSetupState,
+        gameState: null,
+        rematchState: initialRematchState,
+        // Keep sessionId, playerId, and myColor
+    }),
     reset: () => set(initialState),
 }));

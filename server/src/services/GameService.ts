@@ -13,7 +13,8 @@ import {
     BOARD_COLS,
     RED_SETUP_ROWS,
     BLUE_SETUP_ROWS,
-    PIECES_PER_PLAYER
+    PIECES_PER_PLAYER,
+    MOVEMENT_DIRECTIONS
 } from '@rps/shared';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -226,9 +227,6 @@ export class GameService {
         if (!setupState?.hasPlacedKingPit) {
             return { success: false, error: 'Must place King and Pit first' };
         }
-        if (setupState.hasShuffled) {
-            return { success: false, error: 'Cannot reshuffle after shuffling' };
-        }
 
         // Get all cells in player's setup rows
         const validRows = this.getSetupRows(color);
@@ -390,6 +388,449 @@ export class GameService {
         return opponent?.socketId ?? null;
     }
 
+    /**
+     * Get valid moves for a piece. King and Pit cannot move.
+     * Rock/Paper/Scissors can move one step in 4 directions.
+     */
+    public getValidMoves(socketId: string, pieceId: string): Position[] {
+        const session = this.getSessionBySocketId(socketId);
+        if (!session || session.phase !== 'playing') return [];
+
+        const color = this.getPlayerColor(socketId);
+        if (!color) return [];
+
+        // Find the piece
+        const player = session.players[color];
+        const piece = player?.pieces.find(p => p.id === pieceId);
+        if (!piece || piece.owner !== color) return [];
+
+        // King and Pit cannot move
+        if (piece.type === 'king' || piece.type === 'pit') {
+            return [];
+        }
+
+        const validMoves: Position[] = [];
+        const { row, col } = piece.position;
+
+        for (const dir of MOVEMENT_DIRECTIONS) {
+            const newRow = row + dir.row;
+            const newCol = col + dir.col;
+
+            // Check bounds
+            if (newRow < 0 || newRow >= BOARD_ROWS || newCol < 0 || newCol >= BOARD_COLS) {
+                continue;
+            }
+
+            const targetCell = session.board[newRow][newCol];
+
+            // Can move to empty cell or cell with enemy piece
+            if (!targetCell.piece || targetCell.piece.owner !== color) {
+                validMoves.push({ row: newRow, col: newCol });
+            }
+        }
+
+        return validMoves;
+    }
+
+    /**
+     * Resolve combat between two pieces.
+     * Returns: 'attacker_wins', 'defender_wins', or 'tie'
+     */
+    private resolveCombat(attacker: Piece, defender: Piece): 'attacker_wins' | 'defender_wins' | 'tie' {
+        // Special case: Attacking the King always wins
+        if (defender.type === 'king') {
+            return 'attacker_wins';
+        }
+
+        // Special case: Pit defeats any attacker
+        if (defender.type === 'pit') {
+            return 'defender_wins';
+        }
+
+        // Standard RPS logic
+        if (attacker.type === 'rock') {
+            if (defender.type === 'scissors') return 'attacker_wins';
+            if (defender.type === 'paper') return 'defender_wins';
+            if (defender.type === 'rock') return 'tie';
+        }
+
+        if (attacker.type === 'paper') {
+            if (defender.type === 'rock') return 'attacker_wins';
+            if (defender.type === 'scissors') return 'defender_wins';
+            if (defender.type === 'paper') return 'tie';
+        }
+
+        if (attacker.type === 'scissors') {
+            if (defender.type === 'paper') return 'attacker_wins';
+            if (defender.type === 'rock') return 'defender_wins';
+            if (defender.type === 'scissors') return 'tie';
+        }
+
+        // King/Pit as attackers (should not happen, but handle gracefully)
+        return 'defender_wins';
+    }
+
+    /**
+     * Execute a move. Returns success/error and whether combat occurred.
+     */
+    public makeMove(
+        socketId: string,
+        from: Position,
+        to: Position
+    ): { success: boolean; error?: string; combat?: boolean } {
+        const session = this.getSessionBySocketId(socketId);
+        if (!session) return { success: false, error: 'Session not found' };
+
+        if (session.phase !== 'playing') {
+            return { success: false, error: 'Game is not in playing phase' };
+        }
+
+        const color = this.getPlayerColor(socketId);
+        if (!color) return { success: false, error: 'Player not found' };
+
+        // Validate it's this player's turn
+        if (session.currentTurn !== color) {
+            return { success: false, error: 'Not your turn' };
+        }
+
+        const player = session.players[color];
+        if (!player) return { success: false, error: 'Player state not found' };
+
+        // Find the piece at 'from' position
+        const piece = player.pieces.find(
+            p => p.position.row === from.row && p.position.col === from.col
+        );
+        if (!piece) {
+            return { success: false, error: 'No piece at source position' };
+        }
+
+        // Validate piece can move (not King/Pit)
+        if (piece.type === 'king' || piece.type === 'pit') {
+            return { success: false, error: 'This piece cannot move' };
+        }
+
+        // Validate target is a valid move
+        const validMoves = this.getValidMoves(socketId, piece.id);
+        const isValidTarget = validMoves.some(m => m.row === to.row && m.col === to.col);
+        if (!isValidTarget) {
+            return { success: false, error: 'Invalid move target' };
+        }
+
+        const targetCell = session.board[to.row][to.col];
+
+        // Check if combat will occur
+        if (targetCell.piece && targetCell.piece.owner !== color) {
+            const defender = targetCell.piece;
+            const defenderOwner = defender.owner;
+
+            console.log(`⚔️ Combat initiated: ${piece.type} (${color}) vs ${defender.type} (${defenderOwner})`);
+
+            // Resolve combat
+            const result = this.resolveCombat(piece, defender);
+
+            if (result === 'tie') {
+                // Transition to tie_breaker phase
+                session.phase = 'tie_breaker';
+                session.combatState = {
+                    attackerId: piece.id,
+                    defenderId: defender.id,
+                    attackerChoice: undefined,
+                    defenderChoice: undefined,
+                    isTie: true
+                };
+                console.log(`🤝 Combat tie! Entering tie breaker phase.`);
+                return { success: true, combat: true };
+            }
+
+            // Determine winner and loser
+            const winner = result === 'attacker_wins' ? piece : defender;
+            const loser = result === 'attacker_wins' ? defender : piece;
+            const winnerOwner = winner.owner;
+            const loserOwner = loser.owner;
+
+            console.log(`✅ Combat resolved: ${winner.type} (${winnerOwner}) defeats ${loser.type} (${loserOwner})`);
+
+            // Check for King capture (game over)
+            if (loser.type === 'king') {
+                // Remove captured king from board and player's pieces
+                const loserPlayer = session.players[loserOwner];
+                if (loserPlayer) {
+                    loserPlayer.pieces = loserPlayer.pieces.filter(p => p.id !== loser.id);
+                }
+                session.board[to.row][to.col].piece = null;
+
+                // Move attacker to king's position
+                session.board[from.row][from.col].piece = null;
+                session.board[to.row][to.col].piece = piece;
+                piece.position = { row: to.row, col: to.col };
+                piece.isRevealed = true;
+                piece.hasHalo = true;
+
+                // Set game over state
+                session.phase = 'finished';
+                session.winner = winnerOwner;
+                session.winReason = 'king_captured';
+                console.log(`👑 ${winnerOwner} wins by capturing the King!`);
+                return { success: true, combat: true };
+            }
+
+            // Remove loser from board
+            const loserPlayer = session.players[loserOwner];
+            if (loserPlayer) {
+                loserPlayer.pieces = loserPlayer.pieces.filter(p => p.id !== loser.id);
+            }
+
+            // Update board: winner takes position
+            if (result === 'attacker_wins') {
+                // Attacker wins: move attacker to target
+                session.board[from.row][from.col].piece = null;
+                session.board[to.row][to.col].piece = piece;
+                piece.position = { row: to.row, col: to.col };
+            } else {
+                // Defender wins: remove attacker, defender stays
+                session.board[from.row][from.col].piece = null;
+                const attackerPlayer = session.players[color];
+                if (attackerPlayer) {
+                    attackerPlayer.pieces = attackerPlayer.pieces.filter(p => p.id !== piece.id);
+                }
+            }
+
+            // Reveal and add halo to winner
+            winner.isRevealed = true;
+            winner.hasHalo = true;
+
+            // Switch turn
+            session.currentTurn = color === 'red' ? 'blue' : 'red';
+            session.turnStartTime = Date.now();
+
+            return { success: true, combat: true };
+        }
+
+        // Move to empty cell
+        // Update board
+        session.board[from.row][from.col].piece = null;
+        session.board[to.row][to.col].piece = piece;
+
+        // Update piece position
+        piece.position = { row: to.row, col: to.col };
+
+        // Switch turn
+        session.currentTurn = color === 'red' ? 'blue' : 'red';
+        session.turnStartTime = Date.now();
+
+        console.log(`♟️ ${color} moved ${piece.type} from (${from.row},${from.col}) to (${to.row},${to.col})`);
+        return { success: true, combat: false };
+    }
+
+    /**
+     * Get a player's game view during playing phase.
+     */
+    public getPlayerGameView(socketId: string): {
+        board: PlayerCellView[][];
+        currentTurn: PlayerColor | null;
+        phase: string;
+        isMyTurn: boolean;
+    } | null {
+        const session = this.getSessionBySocketId(socketId);
+        if (!session) return null;
+
+        const color = this.getPlayerColor(socketId);
+        if (!color) return null;
+
+        // Build board view with fog of war
+        const boardView: PlayerCellView[][] = session.board.map(row =>
+            row.map(cell => {
+                let pieceView: PlayerPieceView | null = null;
+
+                if (cell.piece) {
+                    const isOwnPiece = cell.piece.owner === color;
+                    pieceView = {
+                        id: cell.piece.id,
+                        owner: cell.piece.owner,
+                        type: isOwnPiece || cell.piece.isRevealed ? cell.piece.type : 'hidden',
+                        position: cell.piece.position,
+                        isRevealed: cell.piece.isRevealed,
+                        hasHalo: cell.piece.hasHalo
+                    };
+                }
+
+                return {
+                    row: cell.row,
+                    col: cell.col,
+                    piece: pieceView
+                };
+            })
+        );
+
+        return {
+            board: boardView,
+            currentTurn: session.currentTurn,
+            phase: session.phase,
+            isMyTurn: session.currentTurn === color
+        };
+    }
+
+    /**
+     * Handle tie breaker choice submission.
+     * When both players have chosen, re-resolve combat with new types.
+     */
+    public submitTieBreakerChoice(
+        socketId: string,
+        choice: 'rock' | 'paper' | 'scissors'
+    ): { success: boolean; error?: string; bothChosen?: boolean } {
+        const session = this.getSessionBySocketId(socketId);
+        if (!session) return { success: false, error: 'Session not found' };
+
+        if (session.phase !== 'tie_breaker') {
+            return { success: false, error: 'Not in tie breaker phase' };
+        }
+
+        if (!session.combatState) {
+            return { success: false, error: 'No active combat state' };
+        }
+
+        const color = this.getPlayerColor(socketId);
+        if (!color) return { success: false, error: 'Player not found' };
+
+        const player = session.players[color];
+        if (!player) return { success: false, error: 'Player state not found' };
+
+        // Find which piece belongs to this player
+        const attackerPiece = player.pieces.find(p => p.id === session.combatState!.attackerId);
+        const defenderPiece = player.pieces.find(p => p.id === session.combatState!.defenderId);
+
+        if (attackerPiece) {
+            session.combatState.attackerChoice = choice;
+        } else if (defenderPiece) {
+            session.combatState.defenderChoice = choice;
+        } else {
+            return { success: false, error: 'Piece not found in your pieces' };
+        }
+
+        // Check if both players have chosen
+        const bothChosen = session.combatState.attackerChoice !== undefined &&
+            session.combatState.defenderChoice !== undefined;
+
+        if (bothChosen) {
+            // Update piece types permanently
+            const attacker = session.players.red?.pieces.find(p => p.id === session.combatState!.attackerId) ||
+                session.players.blue?.pieces.find(p => p.id === session.combatState!.attackerId);
+            const defender = session.players.red?.pieces.find(p => p.id === session.combatState!.defenderId) ||
+                session.players.blue?.pieces.find(p => p.id === session.combatState!.defenderId);
+
+            if (!attacker || !defender) {
+                return { success: false, error: 'Combat pieces not found' };
+            }
+
+            attacker.type = session.combatState.attackerChoice!;
+            defender.type = session.combatState.defenderChoice!;
+
+            console.log(`🔄 Tie breaker resolved: ${attacker.type} vs ${defender.type}`);
+
+            // Re-resolve combat with new types
+            const result = this.resolveCombat(attacker, defender);
+
+            if (result === 'tie') {
+                // Another tie! Reset choices for another round
+                session.combatState.attackerChoice = undefined;
+                session.combatState.defenderChoice = undefined;
+                console.log(`🤝 Another tie! Continue tie breaker.`);
+                return { success: true, bothChosen: false };
+            }
+
+            // Combat resolved
+            const winner = result === 'attacker_wins' ? attacker : defender;
+            const loser = result === 'attacker_wins' ? defender : attacker;
+            const winnerOwner = winner.owner;
+            const loserOwner = loser.owner;
+
+            console.log(`✅ Final combat: ${winner.type} (${winnerOwner}) defeats ${loser.type} (${loserOwner})`);
+
+            // Check for King capture
+            if (loser.type === 'king') {
+                // Remove captured king from board and player's pieces
+                const loserPlayer = session.players[loserOwner];
+                if (loserPlayer) {
+                    loserPlayer.pieces = loserPlayer.pieces.filter(p => p.id !== loser.id);
+                }
+                // Remove king from board
+                for (const row of session.board) {
+                    for (const cell of row) {
+                        if (cell.piece?.id === loser.id) {
+                            cell.piece = null;
+                        }
+                    }
+                }
+
+                // Move attacker to king's position
+                const defenderPos = defender.position;
+                for (const row of session.board) {
+                    for (const cell of row) {
+                        if (cell.piece?.id === attacker.id) {
+                            cell.piece = null;
+                        }
+                    }
+                }
+                session.board[defenderPos.row][defenderPos.col].piece = attacker;
+                attacker.position = defenderPos;
+                attacker.isRevealed = true;
+                attacker.hasHalo = true;
+
+                // Set game over state
+                session.phase = 'finished';
+                session.winner = winnerOwner;
+                session.winReason = 'king_captured';
+                session.combatState = null;
+                console.log(`👑 ${winnerOwner} wins by capturing the King!`);
+                return { success: true, bothChosen: true };
+            }
+
+            // Remove loser
+            const loserPlayer = session.players[loserOwner];
+            if (loserPlayer) {
+                loserPlayer.pieces = loserPlayer.pieces.filter(p => p.id !== loser.id);
+                // Remove from board
+                for (const row of session.board) {
+                    for (const cell of row) {
+                        if (cell.piece?.id === loser.id) {
+                            cell.piece = null;
+                        }
+                    }
+                }
+            }
+
+            // Winner takes position if attacker won
+            if (result === 'attacker_wins') {
+                const defenderPos = defender.position;
+                // Remove attacker from old position
+                for (const row of session.board) {
+                    for (const cell of row) {
+                        if (cell.piece?.id === attacker.id) {
+                            cell.piece = null;
+                        }
+                    }
+                }
+                // Place attacker at defender's position
+                session.board[defenderPos.row][defenderPos.col].piece = attacker;
+                attacker.position = defenderPos;
+            }
+
+            // Reveal and add halo to winner
+            winner.isRevealed = true;
+            winner.hasHalo = true;
+
+            // Return to playing phase
+            session.phase = 'playing';
+            session.combatState = null;
+
+            // Switch turn
+            session.currentTurn = session.currentTurn === 'red' ? 'blue' : 'red';
+            session.turnStartTime = Date.now();
+        }
+
+        return { success: true, bothChosen };
+    }
+
     public removeSession(sessionId: string): void {
         const session = this.sessions.get(sessionId);
         if (session) {
@@ -423,5 +864,88 @@ export class GameService {
         this.removeSession(sessionId);
 
         return { sessionId, opponentId };
+    }
+
+    /**
+     * Request a rematch. Returns status indicating if both players have requested.
+     */
+    public requestRematch(socketId: string): {
+        success: boolean;
+        error?: string;
+        bothRequested?: boolean;
+        opponentSocketId?: string;
+    } {
+        const session = this.getSessionBySocketId(socketId);
+        if (!session) return { success: false, error: 'Session not found' };
+
+        if (session.phase !== 'finished') {
+            return { success: false, error: 'Game is not finished' };
+        }
+
+        const color = this.getPlayerColor(socketId);
+        if (!color) return { success: false, error: 'Player not found' };
+
+        // Initialize rematchRequests if not present
+        if (!session.rematchRequests) {
+            session.rematchRequests = { red: false, blue: false };
+        }
+
+        // Mark this player's rematch request
+        session.rematchRequests[color] = true;
+
+        const opponent = session.players[color === 'red' ? 'blue' : 'red'];
+        const opponentSocketId = opponent?.socketId;
+
+        // Check if both players have requested rematch
+        const bothRequested = session.rematchRequests.red && session.rematchRequests.blue;
+
+        console.log(`🔄 Player ${socketId} (${color}) requested rematch. Both requested: ${bothRequested}`);
+
+        return {
+            success: true,
+            bothRequested,
+            opponentSocketId
+        };
+    }
+
+    /**
+     * Reset game state for rematch. Clears board, pieces, setup state, and transitions to setup phase.
+     */
+    public resetGameForRematch(sessionId: string): { success: boolean; error?: string } {
+        const session = this.sessions.get(sessionId);
+        if (!session) return { success: false, error: 'Session not found' };
+
+        // Reset board to empty
+        session.board = Array(BOARD_ROWS).fill(null).map((_, row) =>
+            Array(BOARD_COLS).fill(null).map((_, col) => ({
+                row,
+                col,
+                piece: null
+            }))
+        );
+
+        // Reset player states
+        if (session.players.red) {
+            session.players.red.pieces = [];
+            session.players.red.isReady = false;
+            this.setupStates.set(session.players.red.socketId, { hasPlacedKingPit: false, hasShuffled: false });
+        }
+        if (session.players.blue) {
+            session.players.blue.pieces = [];
+            session.players.blue.isReady = false;
+            this.setupStates.set(session.players.blue.socketId, { hasPlacedKingPit: false, hasShuffled: false });
+        }
+
+        // Reset game state
+        session.phase = 'setup';
+        session.currentTurn = null;
+        session.turnStartTime = null;
+        session.combatState = null;
+        session.winner = null;
+        session.winReason = undefined;
+        session.rematchRequests = undefined;
+
+        console.log(`🔄 Session ${sessionId} reset for rematch`);
+        return { success: true };
     }
 }
