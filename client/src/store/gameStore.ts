@@ -1,5 +1,15 @@
 import { create } from 'zustand';
-import type { PlayerColor, GamePhase, PlayerGameView } from '@rps/shared';
+import type { PlayerColor, GamePhase, PlayerGameView, PlayerCellView, Position } from '@rps/shared';
+
+interface SetupState {
+    board: PlayerCellView[][];
+    hasPlacedKingPit: boolean;
+    hasShuffled: boolean;
+    isReady: boolean;
+    opponentReady: boolean;
+    kingPosition: Position | null;
+    pitPosition: Position | null;
+}
 
 interface GameStore {
     connectionStatus: 'connecting' | 'connected' | 'disconnected';
@@ -15,8 +25,23 @@ interface GameStore {
     setGameView: (view: PlayerGameView) => void;
     isSearching: boolean;
     setIsSearching: (isSearching: boolean) => void;
+    // Setup state
+    setupState: SetupState;
+    setSetupState: (state: Partial<SetupState>) => void;
+    setKingPosition: (position: Position | null) => void;
+    setPitPosition: (position: Position | null) => void;
     reset: () => void;
 }
+
+const initialSetupState: SetupState = {
+    board: [],
+    hasPlacedKingPit: false,
+    hasShuffled: false,
+    isReady: false,
+    opponentReady: false,
+    kingPosition: null,
+    pitPosition: null,
+};
 
 const initialState = {
     connectionStatus: 'connecting' as const,
@@ -25,7 +50,8 @@ const initialState = {
     sessionId: null,
     gamePhase: 'waiting' as GamePhase,
     gameView: null,
-    isSearching: false, // Default to not searching
+    isSearching: false,
+    setupState: initialSetupState,
 };
 
 export const useGameStore = create<GameStore>((set) => ({
@@ -36,5 +62,14 @@ export const useGameStore = create<GameStore>((set) => ({
     setGamePhase: (phase) => set({ gamePhase: phase }),
     setGameView: (view) => set({ gameView: view }),
     setIsSearching: (isSearching) => set({ isSearching }),
+    setSetupState: (state) => set((prev) => ({
+        setupState: { ...prev.setupState, ...state }
+    })),
+    setKingPosition: (position) => set((prev) => ({
+        setupState: { ...prev.setupState, kingPosition: position }
+    })),
+    setPitPosition: (position) => set((prev) => ({
+        setupState: { ...prev.setupState, pitPosition: position }
+    })),
     reset: () => set(initialState),
 }));
