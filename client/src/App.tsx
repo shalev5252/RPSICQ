@@ -30,7 +30,7 @@ function App() {
                     <>
                         {gamePhase === 'waiting' && <MatchmakingScreen />}
                         {gamePhase === 'setup' && <SetupScreen />}
-                        {gamePhase === 'playing' && <GameScreen />}
+                        {(gamePhase === 'playing' || gamePhase === 'tie_breaker') && <GameScreen />}
                         {gamePhase === 'finished' && <GameOverScreen />}
                     </>
                 )}
