@@ -22,6 +22,9 @@ const io = new Server(httpServer, {
         origin: CLIENT_URL,
         methods: ['GET', 'POST'],
     },
+    pingTimeout: 60000,      // How long to wait for pong before considering connection closed
+    pingInterval: 25000,     // How often to send ping (keep connection alive)
+    transports: ['websocket', 'polling'],
 });
 
 setupSocketHandlers(io);
