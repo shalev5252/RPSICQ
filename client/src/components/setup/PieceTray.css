@@ -75,6 +75,13 @@
     border: 1px solid rgba(74, 222, 128, 0.2);
 }
 
+/* Highlight selected piece for tap-to-place */
+.piece-tray__item--selected {
+    background: linear-gradient(145deg, #37b24d, #2b8a3e);
+    border-color: #51cf66;
+    box-shadow: 0 0 15px rgba(81, 207, 102, 0.4);
+}
+
 /* Mobile layout: < 768px */
 @media (max-width: 767px) {
     .piece-tray {
@@ -121,10 +128,5 @@
         font-size: 13px;
     }
 
-    /* Highlight selected piece for tap-to-place */
-    .piece-tray__item--selected {
-        background: linear-gradient(145deg, #37b24d, #2b8a3e);
-        border-color: #51cf66;
-        box-shadow: 0 0 15px rgba(81, 207, 102, 0.4);
-    }
+
 }

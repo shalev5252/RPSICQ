@@ -17,4 +17,4 @@ Some users prefer click-based interaction over drag & drop, especially on touch 
 - **Out of Scope**: Touch gesture optimization, mobile-specific interactions, settings/preferences UI
 
 ## Related Specs
-- [piece-movement](file:///Users/shalevshasha/rps/openspec/specs/piece-movement/spec.md) - Modified to add click-based selection and movement
+- [piece-movement](specs/piece-movement/spec.md) - Modified to add click-based selection and movement

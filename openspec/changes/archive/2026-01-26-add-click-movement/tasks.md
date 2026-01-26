@@ -38,7 +38,6 @@ Implement short-click detection that distinguishes from drag start. Show valid m
 Create CSS classes for selected piece and valid move highlighting with glowing animated border.
 
 **Acceptance**:
-- [x] `.cell--selected` class with gold glow
 - [x] `.cell--valid-move` class with green glowing border
 - [x] Pulse animation on valid move cells
 - [x] Styles don't conflict with existing drag highlighting
@@ -65,7 +64,6 @@ Pass click handlers through Board to Cell components, add CSS classes based on s
 
 **Acceptance**:
 - [x] Cells receive `onClick` prop
-- [x] Cells apply `cell--selected` when piece is selected
 - [x] Cells apply `cell--valid-move` when in validMoves array
 - [x] Click events propagate correctly
 

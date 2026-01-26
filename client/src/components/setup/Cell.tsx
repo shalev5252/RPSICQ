@@ -97,7 +97,6 @@ export const Cell: React.FC<CellProps> = ({
     const cellClassName = [
         'cell',
         isValidDropTarget ? 'cell--valid-target cell--valid-move' : '',
-        isSelected ? 'cell--selected' : '',
     ].filter(Boolean).join(' ');
 
     return (

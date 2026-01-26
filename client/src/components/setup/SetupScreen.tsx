@@ -162,10 +162,15 @@ export const SetupScreen: React.FC = () => {
                 if (clickedCellPiece.type === 'king') setKingPosition(currentPosOfActive);
                 else setPitPosition(currentPosOfActive);
 
-                socket.emit(SOCKET_EVENTS.PLACE_KING_PIT, {
-                    kingPosition: pieceToPlace === 'king' ? newPosForActive : (clickedCellPiece.type === 'king' ? currentPosOfActive : setupState.kingPosition),
-                    pitPosition: pieceToPlace === 'pit' ? newPosForActive : (clickedCellPiece.type === 'pit' ? currentPosOfActive : setupState.pitPosition),
-                });
+                const finalKingPos = pieceToPlace === 'king' ? newPosForActive : (clickedCellPiece.type === 'king' ? currentPosOfActive : setupState.kingPosition);
+                const finalPitPos = pieceToPlace === 'pit' ? newPosForActive : (clickedCellPiece.type === 'pit' ? currentPosOfActive : setupState.pitPosition);
+
+                if (finalKingPos && finalPitPos) {
+                    socket.emit(SOCKET_EVENTS.PLACE_KING_PIT, {
+                        kingPosition: finalKingPos,
+                        pitPosition: finalPitPos,
+                    });
+                }
 
                 setSelectedTrayPiece(null); // Clear selection after swap
                 return;
