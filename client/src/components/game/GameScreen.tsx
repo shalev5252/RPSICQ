@@ -14,6 +14,9 @@ export const GameScreen: React.FC = () => {
     const gameState = useGameStore((state) => state.gameState);
     const [selectedPiece, setSelectedPiece] = useState<{ id: string; position: Position } | null>(null);
     const [validMoves, setValidMoves] = useState<Position[]>([]);
+    // Click-to-move state for double-click detection
+    const [lastClickTime, setLastClickTime] = useState<number>(0);
+    const [lastClickedCell, setLastClickedCell] = useState<Position | null>(null);
 
     const isMyTurn = gameState?.currentTurn === myColor;
     const board = gameState?.board ?? [];
@@ -71,6 +74,8 @@ export const GameScreen: React.FC = () => {
         if (from.row === to.row && from.col === to.col) {
             setSelectedPiece(null);
             setValidMoves([]);
+            setLastClickTime(0);
+            setLastClickedCell(null);
             return;
         }
 
@@ -79,6 +84,8 @@ export const GameScreen: React.FC = () => {
         if (!isValid) {
             setSelectedPiece(null);
             setValidMoves([]);
+            setLastClickTime(0);
+            setLastClickedCell(null);
             return;
         }
 
@@ -87,12 +94,72 @@ export const GameScreen: React.FC = () => {
 
         setSelectedPiece(null);
         setValidMoves([]);
+        setLastClickTime(0);
+        setLastClickedCell(null);
     }, [socket, selectedPiece, isMyTurn, validMoves]);
 
-    const handleDragEnd = useCallback(() => {
+    // Helper to clear all selection state
+    const clearSelection = useCallback(() => {
         setSelectedPiece(null);
         setValidMoves([]);
+        setLastClickTime(0);
+        setLastClickedCell(null);
     }, []);
+
+    // Helper to check if a piece is movable
+    const isMovablePiece = useCallback((piece: PlayerPieceView): boolean => {
+        return piece.owner === myColor &&
+            piece.type !== 'king' &&
+            piece.type !== 'pit' &&
+            piece.type !== 'hidden';
+    }, [myColor]);
+
+    // Handle cell click for click-to-move feature
+    const handleCellClick = useCallback((row: number, col: number) => {
+        if (!isMyTurn || !socket) return;
+
+        const now = Date.now();
+        const cell = board[row]?.[col];
+
+        // Check for double-click on valid move cell
+        const isValidMoveCell = validMoves.some(m => m.row === row && m.col === col);
+        const isSameCell = lastClickedCell?.row === row && lastClickedCell?.col === col;
+        const isDoubleClick = isSameCell && (now - lastClickTime < 400);
+
+        if (isDoubleClick && isValidMoveCell && selectedPiece) {
+            // Execute the move
+            const from = selectedPiece.position;
+            const to = { row, col };
+            socket.emit(SOCKET_EVENTS.MAKE_MOVE, { from, to });
+            clearSelection();
+            return;
+        }
+
+        // Update click tracking for next potential double-click
+        setLastClickTime(now);
+        setLastClickedCell({ row, col });
+
+        // Check if clicking on own movable piece
+        if (cell?.piece && isMovablePiece(cell.piece)) {
+            // Toggle selection if clicking same piece
+            if (selectedPiece?.id === cell.piece.id) {
+                clearSelection();
+            } else {
+                // Select new piece
+                const moves = calculateValidMoves(cell.piece);
+                setSelectedPiece({ id: cell.piece.id, position: { row, col } });
+                setValidMoves(moves);
+            }
+        } else if (!isValidMoveCell) {
+            // Clicked on invalid cell (not a valid move) - clear selection
+            clearSelection();
+        }
+        // If clicking on valid move cell, don't clear - wait for potential double-click
+    }, [isMyTurn, socket, board, validMoves, lastClickedCell, lastClickTime, selectedPiece, calculateValidMoves, clearSelection, isMovablePiece]);
+
+    const handleDragEnd = useCallback(() => {
+        clearSelection();
+    }, [clearSelection]);
 
     // validMoves already contains exact Position[]
 
@@ -125,6 +192,8 @@ export const GameScreen: React.FC = () => {
                     onPieceDrag={isMyTurn ? handlePieceDrag : undefined}
                     onPieceDragEnd={handleDragEnd}
                     draggablePieceTypes={draggablePieceTypes}
+                    onCellClick={isMyTurn ? handleCellClick : undefined}
+                    selectedPiecePosition={selectedPiece?.position ?? null}
                 />
             </div>
 

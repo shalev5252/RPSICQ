@@ -12,6 +12,9 @@ interface BoardProps {
     onPieceDrag?: (pieceType: PieceType, row: number, col: number) => void;
     onPieceDragEnd?: () => void;
     draggablePieceTypes?: PieceType[];
+    // Click-to-move props
+    onCellClick?: (row: number, col: number) => void;
+    selectedPiecePosition?: Position | null;
 }
 
 export const Board: React.FC<BoardProps> = ({
@@ -22,6 +25,8 @@ export const Board: React.FC<BoardProps> = ({
     onPieceDrag,
     onPieceDragEnd,
     draggablePieceTypes = [],
+    onCellClick,
+    selectedPiecePosition,
 }) => {
     // Transform board so each player's rows appear at the bottom
     // Red rows are 0-1, Blue rows are 4-5
@@ -90,6 +95,8 @@ export const Board: React.FC<BoardProps> = ({
                                 onPieceDrag={onPieceDrag}
                                 onPieceDragEnd={onPieceDragEnd}
                                 draggablePieceTypes={draggablePieceTypes}
+                                onClick={onCellClick}
+                                isSelected={selectedPiecePosition?.row === actualRowIndex && selectedPiecePosition?.col === colIndex}
                             />
                         ))}
                     </div>

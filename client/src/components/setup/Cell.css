@@ -10,10 +10,6 @@
     position: relative;
 }
 
-.cell:nth-child(even) {
-    background: linear-gradient(145deg, #2a2a4a, #222240);
-}
-
 .cell--valid-target {
     background: linear-gradient(145deg, #1e4620, #153318);
     border-color: #2d6930;
@@ -26,15 +22,13 @@
     box-shadow: inset 0 0 20px rgba(45, 105, 48, 0.5);
 }
 
-.cell--highlighted {
-    background: linear-gradient(145deg, #2d2d1a, #252518);
-    border-color: #4a4a2e;
-}
-
 @keyframes valid-pulse {
-    0%, 100% {
+
+    0%,
+    100% {
         box-shadow: inset 0 0 10px rgba(45, 105, 48, 0.3);
     }
+
     50% {
         box-shadow: inset 0 0 20px rgba(45, 105, 48, 0.5);
     }
@@ -46,4 +40,37 @@
 
 .cell__piece--draggable:active {
     cursor: grabbing;
+}
+
+/* Click-to-move: Valid move destination cells */
+.cell--valid-move {
+    outline: 3px solid #00ff88;
+    outline-offset: -3px;
+    box-shadow: 0 0 15px rgba(0, 255, 136, 0.5);
+    cursor: pointer;
+    animation: valid-move-pulse 1.5s ease-in-out infinite;
+    z-index: 2;
+    /* Override valid-target styles with standard cell background */
+    background: linear-gradient(145deg, #252542, #1e1e35);
+    border-color: transparent;
+}
+
+
+.cell--valid-move:hover {
+    /* Only show the glowing effect on hover */
+    box-shadow: 0 0 25px rgba(0, 255, 136, 0.8);
+    /* Keep standard background on hover */
+    background: linear-gradient(145deg, #252542, #1e1e35);
+}
+
+@keyframes valid-move-pulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 15px rgba(0, 255, 136, 0.5);
+    }
+
+    50% {
+        box-shadow: 0 0 25px rgba(0, 255, 136, 0.7);
+    }
 }

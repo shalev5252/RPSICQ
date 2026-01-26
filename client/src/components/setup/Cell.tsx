@@ -15,6 +15,9 @@ interface CellProps {
     onPieceDrag?: (pieceType: PieceType, row: number, col: number) => void;
     onPieceDragEnd?: () => void;
     draggablePieceTypes?: PieceType[];
+    // Click-to-move props
+    onClick?: (row: number, col: number) => void;
+    isSelected?: boolean;
 }
 
 export const Cell: React.FC<CellProps> = ({
@@ -22,14 +25,17 @@ export const Cell: React.FC<CellProps> = ({
     col,
     piece,
     isValidDropTarget,
-    isHighlighted,
     myColor,
     onDrop,
     onDragOver,
     onPieceDrag,
     onPieceDragEnd,
     draggablePieceTypes = [],
+    onClick,
+    isSelected = false,
 }) => {
+    // Track mouseDown time for short-click vs long-press detection
+    const mouseDownTimeRef = React.useRef<number>(0);
     const handleDrop = (e: React.DragEvent) => {
         e.preventDefault();
         if (onDrop && isValidDropTarget) {
@@ -56,6 +62,8 @@ export const Cell: React.FC<CellProps> = ({
         e.dataTransfer.setData('pieceRow', String(row));
         e.dataTransfer.setData('pieceCol', String(col));
         e.dataTransfer.effectAllowed = 'move';
+        // Reset mouseDown time so click won't fire after drag
+        mouseDownTimeRef.current = 0;
         if (onPieceDrag) {
             onPieceDrag(piece.type as PieceType, row, col);
         }
@@ -67,11 +75,38 @@ export const Cell: React.FC<CellProps> = ({
         }
     };
 
+    // Short-click detection handlers
+    const handleMouseDown = () => {
+        mouseDownTimeRef.current = Date.now();
+    };
+
+    const handleMouseUp = () => {
+        if (!onClick) return;
+
+        const mouseDownTime = mouseDownTimeRef.current;
+        if (mouseDownTime === 0) return; // Was reset by drag
+
+        const clickDuration = Date.now() - mouseDownTime;
+        // Short click: less than 300ms
+        if (clickDuration < 300) {
+            onClick(row, col);
+        }
+        mouseDownTimeRef.current = 0;
+    };
+
+    const cellClassName = [
+        'cell',
+        isValidDropTarget ? 'cell--valid-target cell--valid-move' : '',
+        isSelected ? 'cell--selected' : '',
+    ].filter(Boolean).join(' ');
+
     return (
         <div
-            className={`cell ${isValidDropTarget ? 'cell--valid-target' : ''} ${isHighlighted ? 'cell--highlighted' : ''}`}
+            className={cellClassName}
             onDrop={handleDrop}
             onDragOver={handleDragOver}
+            onMouseDown={handleMouseDown}
+            onMouseUp={handleMouseUp}
         >
             {piece && (
                 piece.type === 'hidden' ? (
