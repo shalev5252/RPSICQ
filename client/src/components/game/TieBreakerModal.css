@@ -225,3 +225,62 @@
         opacity: 0.5;
     }
 }
+
+/* Mobile layout: < 768px */
+@media (max-width: 767px) {
+    .tie-breaker-modal__card {
+        min-width: auto;
+        width: calc(100vw - 32px);
+        padding: 30px 20px;
+        margin: 16px;
+        border-radius: 16px;
+    }
+
+    .tie-breaker-modal__title {
+        font-size: 28px;
+        margin-bottom: 10px;
+    }
+
+    .tie-breaker-modal__subtitle {
+        font-size: 14px;
+        margin-bottom: 24px;
+    }
+
+    .tie-breaker-modal__choices {
+        gap: 12px;
+        margin-bottom: 24px;
+    }
+
+    .tie-breaker-modal__choice {
+        padding: 16px 12px;
+        min-width: 80px;
+        border-radius: 12px;
+        gap: 10px;
+    }
+
+    .tie-breaker-modal__icon {
+        font-size: 36px;
+    }
+
+    .tie-breaker-modal__label {
+        font-size: 12px;
+    }
+
+    .tie-breaker-modal__confirm {
+        padding: 14px 30px;
+        font-size: 14px;
+        width: 100%;
+    }
+
+    .tie-breaker-modal__tie-again-icon {
+        font-size: 50px;
+    }
+
+    .tie-breaker-modal__tie-again-text {
+        font-size: 20px;
+    }
+
+    .tie-breaker-modal__tie-again-subtext {
+        font-size: 14px;
+    }
+}

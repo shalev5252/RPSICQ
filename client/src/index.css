@@ -1,1 +1,24 @@
 /* Global styles */
+
+/* ===========================================
+   Mobile Responsiveness - CSS Custom Properties
+   =========================================== */
+
+:root {
+    /* Board configuration */
+    --board-columns: 7;
+    --board-padding: 16px;
+
+    /* Default desktop cell size */
+    --cell-size: 70px;
+}
+
+/* Mobile breakpoint: screens smaller than 768px */
+@media (max-width: 767px) {
+    :root {
+        /* Screen padding (32px) + Board borders (8px) + Safety (2px) = 42px */
+        --board-padding: 42px;
+        /* Dynamic cell sizing: fill screen width */
+        --cell-size: calc((100vw - var(--board-padding)) / var(--board-columns));
+    }
+}
