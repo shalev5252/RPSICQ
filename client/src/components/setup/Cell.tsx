@@ -32,7 +32,6 @@ export const Cell: React.FC<CellProps> = ({
     onPieceDragEnd,
     draggablePieceTypes = [],
     onClick,
-    isSelected = false,
 }) => {
     // Track mouseDown time for short-click vs long-press detection
     const mouseDownTimeRef = React.useRef<number>(0);
