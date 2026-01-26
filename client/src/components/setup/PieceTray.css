@@ -74,3 +74,57 @@
     border-radius: 12px;
     border: 1px solid rgba(74, 222, 128, 0.2);
 }
+
+/* Mobile layout: < 768px */
+@media (max-width: 767px) {
+    .piece-tray {
+        min-width: auto;
+        padding: 16px 12px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .piece-tray__title {
+        font-size: 16px;
+        margin-bottom: 4px;
+    }
+
+    .piece-tray__subtitle {
+        display: none;
+        /* Hide subtitle to save space */
+    }
+
+    .piece-tray__pieces {
+        flex-direction: row;
+        gap: 12px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .piece-tray__item {
+        padding: 8px 16px;
+        gap: 6px;
+        flex-direction: row;
+        /* Horizontal item layout */
+    }
+
+    .piece-tray__item:hover {
+        transform: none;
+    }
+
+    .piece-tray__label {
+        font-size: 12px;
+    }
+
+    .piece-tray__complete {
+        padding: 12px;
+        font-size: 13px;
+    }
+
+    /* Highlight selected piece for tap-to-place */
+    .piece-tray__item--selected {
+        background: linear-gradient(145deg, #37b24d, #2b8a3e);
+        border-color: #51cf66;
+        box-shadow: 0 0 15px rgba(81, 207, 102, 0.4);
+    }
+}

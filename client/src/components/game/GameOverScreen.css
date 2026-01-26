@@ -97,9 +97,12 @@
 }
 
 @keyframes pulse {
-    0%, 100% {
+
+    0%,
+    100% {
         transform: scale(1);
     }
+
     50% {
         transform: scale(1.02);
     }
@@ -149,4 +152,36 @@
 
 .game-over-screen__button:active:not(:disabled) {
     transform: translateY(0);
+}
+
+/* Mobile layout: < 768px */
+@media (max-width: 767px) {
+    .game-over-screen__card {
+        width: calc(100vw - 32px);
+        padding: 40px 24px;
+        margin: 16px;
+        border-radius: 16px;
+    }
+
+    .game-over-screen__result {
+        font-size: 40px;
+        margin-bottom: 20px;
+        letter-spacing: 2px;
+    }
+
+    .game-over-screen__message {
+        font-size: 16px;
+        margin-bottom: 30px;
+    }
+
+    .game-over-screen__notification {
+        font-size: 14px;
+        padding: 10px 16px;
+    }
+
+    .game-over-screen__button {
+        padding: 14px 30px;
+        font-size: 16px;
+        letter-spacing: 1px;
+    }
 }

@@ -121,13 +121,16 @@ export const GameScreen: React.FC = () => {
         const now = Date.now();
         const cell = board[row]?.[col];
 
-        // Check for double-click on valid move cell
+        // Check for valid move cell
         const isValidMoveCell = validMoves.some(m => m.row === row && m.col === col);
         const isSameCell = lastClickedCell?.row === row && lastClickedCell?.col === col;
         const isDoubleClick = isSameCell && (now - lastClickTime < 400);
 
-        if (isDoubleClick && isValidMoveCell && selectedPiece) {
-            // Execute the move
+        // Mobile detection: single click moves on small screens (no drag available)
+        const isMobile = window.innerWidth <= 767;
+
+        // Execute move on: double-click (desktop) OR single click on valid move (mobile)
+        if (isValidMoveCell && selectedPiece && (isDoubleClick || isMobile)) {
             const from = selectedPiece.position;
             const to = { row, col };
             socket.emit(SOCKET_EVENTS.MAKE_MOVE, { from, to });

@@ -1,6 +1,6 @@
 .cell {
-    width: 70px;
-    height: 70px;
+    width: var(--cell-size);
+    height: var(--cell-size);
     background: linear-gradient(145deg, #252542, #1e1e35);
     border: 1px solid #3d3d5c;
     display: flex;

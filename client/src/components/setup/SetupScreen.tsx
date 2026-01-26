@@ -16,11 +16,14 @@ export const SetupScreen: React.FC = () => {
     const setPitPosition = useGameStore((state) => state.setPitPosition);
 
     const [draggingPiece, setDraggingPiece] = useState<PieceType | null>(null);
+    const [selectedTrayPiece, setSelectedTrayPiece] = useState<PieceType | null>(null);
 
     const validDropRows = myColor === 'red' ? RED_SETUP_ROWS : BLUE_SETUP_ROWS;
 
     // Convert rows to Position array for Board component
-    const validDropCells = draggingPiece
+    // Valid cells are shown if dragging OR if a piece is selected
+    const activePiece = draggingPiece || selectedTrayPiece;
+    const validDropCells = activePiece
         ? validDropRows.flatMap(row =>
             Array.from({ length: BOARD_COLS }, (_, col) => ({ row, col }))
         )
@@ -29,6 +32,13 @@ export const SetupScreen: React.FC = () => {
     const kingPlaced = setupState.kingPosition !== null;
     const pitPlaced = setupState.pitPosition !== null;
     const canReposition = !setupState.hasShuffled;
+
+    // Calculate selected piece position on board for highlighting
+    const selectedPiecePosition = useMemo(() => {
+        if (activePiece === 'king' && setupState.kingPosition) return setupState.kingPosition;
+        if (activePiece === 'pit' && setupState.pitPosition) return setupState.pitPosition;
+        return null;
+    }, [activePiece, setupState.kingPosition, setupState.pitPosition]);
 
     // Merge local king/pit positions with server board to show pieces immediately
     const displayBoard = useMemo((): PlayerCellView[][] => {
@@ -100,15 +110,24 @@ export const SetupScreen: React.FC = () => {
 
     const handleDragStart = useCallback((pieceType: PieceType) => {
         setDraggingPiece(pieceType);
+        setSelectedTrayPiece(pieceType); // Select on drag too
     }, []);
 
     const handleDragEnd = useCallback(() => {
         setDraggingPiece(null);
     }, []);
 
-    const handleCellDrop = useCallback((row: number, col: number) => {
+    const handleTrayPieceClick = useCallback((pieceType: PieceType) => {
+        // Toggle selection
+        setSelectedTrayPiece(prev => prev === pieceType ? null : pieceType);
+    }, []);
+
+    // Rename to handleCellInteraction to reflect it handles both drop and click
+    const handleCellInteraction = useCallback((row: number, col: number) => {
+        const pieceToPlace = draggingPiece || selectedTrayPiece;
+
         // Defensive guards
-        if (!draggingPiece || !socket || !myColor) return;
+        if (!socket || !myColor) return;
 
         // Validate bounds
         if (row < 0 || row >= BOARD_ROWS || col < 0 || col >= BOARD_COLS) return;
@@ -116,14 +135,74 @@ export const SetupScreen: React.FC = () => {
         // Validate game phase and state
         if (gamePhase !== 'setup' || setupState.hasShuffled) return;
 
+        // Check content of clicked cell
+        // We use setupState positions directly for accuracy, or displayBoard
+        // displayBoard has the most up-to-date visual state including our local overrides
+        const clickedCellPiece = displayBoard[row][col]?.piece;
+        const isMyPiece = clickedCellPiece?.owner === myColor;
+
+        // Logic for clicking on an existing piece (Selection / Swap / Deselect)
+        if (isMyPiece && clickedCellPiece) {
+            if (pieceToPlace === clickedCellPiece.type) {
+                // Clicked the same piece we are holding -> Deselect
+                setSelectedTrayPiece(null);
+                return;
+            } else if (pieceToPlace) {
+                // Holding a different piece -> SWAP
+                const newPosForActive: Position = { row, col };
+                const currentPosOfActive = pieceToPlace === 'king' ? setupState.kingPosition : setupState.pitPosition;
+
+                // Perform swap: 
+                // Active piece goes to {row, col}
+                // Clicked piece goes to where active piece was (or tray if null)
+
+                if (pieceToPlace === 'king') setKingPosition(newPosForActive);
+                else setPitPosition(newPosForActive);
+
+                if (clickedCellPiece.type === 'king') setKingPosition(currentPosOfActive);
+                else setPitPosition(currentPosOfActive);
+
+                socket.emit(SOCKET_EVENTS.PLACE_KING_PIT, {
+                    kingPosition: pieceToPlace === 'king' ? newPosForActive : (clickedCellPiece.type === 'king' ? currentPosOfActive : setupState.kingPosition),
+                    pitPosition: pieceToPlace === 'pit' ? newPosForActive : (clickedCellPiece.type === 'pit' ? currentPosOfActive : setupState.pitPosition),
+                });
+
+                setSelectedTrayPiece(null); // Clear selection after swap
+                return;
+            } else {
+                // Not holding anything -> Select this piece
+                if (clickedCellPiece.type !== 'hidden') {
+                    setSelectedTrayPiece(clickedCellPiece.type);
+                }
+                return;
+            }
+        }
+
+        // If we get here, we clicked an empty cell (or opponent's, but that shouldn't happen in setup rows normally, 
+        // though validDropRows check handles that)
+
+        // Validate valid setup rows
+        const isValidRow = validDropRows.includes(row);
+        if (!isValidRow) {
+            // Clicked on invalid row -> clear selection if not dragging
+            if (!draggingPiece) setSelectedTrayPiece(null);
+            return;
+        }
+
+        // If we are not holding a piece, nothing to do on empty cell
+        if (!pieceToPlace) return;
+
+        // Move piece to empty cell
         const newPosition: Position = { row, col };
 
-        if (draggingPiece === 'king') {
+        if (pieceToPlace === 'king') {
+            // Prevent placing king on pit
             if (setupState.pitPosition?.row === row && setupState.pitPosition?.col === col) {
                 return;
             }
             setKingPosition(newPosition);
-        } else if (draggingPiece === 'pit') {
+        } else if (pieceToPlace === 'pit') {
+            // Prevent placing pit on king
             if (setupState.kingPosition?.row === row && setupState.kingPosition?.col === col) {
                 return;
             }
@@ -131,9 +210,10 @@ export const SetupScreen: React.FC = () => {
         }
 
         setDraggingPiece(null);
+        setSelectedTrayPiece(null); // Clear selection after placement
 
-        const kingPos = draggingPiece === 'king' ? newPosition : setupState.kingPosition;
-        const pitPos = draggingPiece === 'pit' ? newPosition : setupState.pitPosition;
+        const kingPos = pieceToPlace === 'king' ? newPosition : setupState.kingPosition;
+        const pitPos = pieceToPlace === 'pit' ? newPosition : setupState.pitPosition;
 
         if (kingPos && pitPos) {
             socket.emit(SOCKET_EVENTS.PLACE_KING_PIT, {
@@ -141,7 +221,7 @@ export const SetupScreen: React.FC = () => {
                 pitPosition: pitPos,
             });
         }
-    }, [draggingPiece, socket, myColor, setupState.kingPosition, setupState.pitPosition, setupState.hasShuffled, gamePhase, setKingPosition, setPitPosition]);
+    }, [draggingPiece, selectedTrayPiece, socket, myColor, setupState.kingPosition, setupState.pitPosition, setupState.hasShuffled, gamePhase, validDropRows, setKingPosition, setPitPosition, displayBoard]);
 
     const handlePieceDragFromBoard = useCallback((pieceType: PieceType, _row: number, _col: number) => {
         if (!canReposition) return;
@@ -169,8 +249,15 @@ export const SetupScreen: React.FC = () => {
         <div className="setup-screen">
             <div className="setup-screen__header">
                 <h2 className="setup-screen__title">Setup Your Army</h2>
-                <div className={`setup-screen__color setup-screen__color--${myColor}`}>
-                    You are {myColor.toUpperCase()}
+                <div className="setup-screen__status-row">
+                    <div className={`setup-screen__color setup-screen__color--${myColor}`}>
+                        You are {myColor.toUpperCase()}
+                    </div>
+                    {setupState.opponentReady && (
+                        <div className="setup-screen__opponent-ready setup-screen__opponent-ready--mobile">
+                            Opponent Ready!
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -182,6 +269,8 @@ export const SetupScreen: React.FC = () => {
                         pitPlaced={pitPlaced}
                         onDragStart={handleDragStart}
                         onDragEnd={handleDragEnd}
+                        selectedPiece={selectedTrayPiece}
+                        onPieceClick={handleTrayPieceClick}
                     />
                 </div>
 
@@ -193,10 +282,12 @@ export const SetupScreen: React.FC = () => {
                         board={displayBoard}
                         myColor={myColor}
                         validDropCells={validDropCells}
-                        onCellDrop={handleCellDrop}
+                        onCellDrop={handleCellInteraction}
+                        onCellClick={handleCellInteraction}
                         onPieceDrag={canReposition ? handlePieceDragFromBoard : undefined}
                         onPieceDragEnd={handleDragEnd}
                         draggablePieceTypes={canReposition ? ['king', 'pit'] : []}
+                        selectedPiecePosition={selectedPiecePosition}
                     />
                     <div className="setup-screen__board-label setup-screen__board-label--mine">
                         Your Territory
