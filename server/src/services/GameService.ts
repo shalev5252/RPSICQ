@@ -897,6 +897,19 @@ export class GameService {
             winner.isRevealed = true;
             winner.hasHalo = true;
 
+            // --- AI Inference Integration ---
+            if (session.opponentType === 'ai') {
+                const aiColor = this.getAIColor(session.sessionId);
+                if (aiColor) {
+                    if (winner.owner !== aiColor) {
+                        this.aiService.recordCombatOutcome(session.sessionId, winner.id, winner.type, winner.position);
+                    }
+                    if (loser.owner !== aiColor) {
+                        this.aiService.recordCombatOutcome(session.sessionId, loser.id, loser.type, loser.position);
+                    }
+                }
+            }
+
             // Switch turn
             session.currentTurn = color === 'red' ? 'blue' : 'red';
             session.turnStartTime = Date.now();

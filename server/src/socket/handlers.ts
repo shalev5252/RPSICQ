@@ -235,7 +235,12 @@ export function setupSocketHandlers(io: Server): void {
             // In singleplayer, perform AI setup first, then confirm human
             if (session && session.opponentType === 'ai') {
                 // Perform AI setup before human confirm (so both ready at once)
-                gameService.performAISetup(session.sessionId);
+                const aiSetupResult = gameService.performAISetup(session.sessionId);
+                if (!aiSetupResult.success) {
+                    console.error(`❌ AI Setup Failed for session ${session.sessionId}: ${aiSetupResult.error}`);
+                    socket.emit(SOCKET_EVENTS.ERROR, { code: 'AI_SETUP_ERROR', message: 'Failed to setup AI opponent.' });
+                    return;
+                }
             }
 
             const result = gameService.confirmSetup(socket.id);
@@ -394,16 +399,18 @@ export function setupSocketHandlers(io: Server): void {
             const session = gameService.getSessionBySocketId(socket.id);
             const isSingleplayer = session?.opponentType === 'ai';
 
-            // In singleplayer, schedule AI tie-breaker choice after human submits
-            if (isSingleplayer && session) {
-                scheduleAITieBreaker(session.sessionId, socket);
-            }
+            // In singleplayer, schedule AI tie-breaker choice AFTER human submits successfully
+            // (Moved down to avoid race condition)
 
             const result = gameService.submitTieBreakerChoice(socket.id, payload.element);
 
             if (!result.success) {
                 socket.emit(SOCKET_EVENTS.ERROR, { code: 'TIE_BREAKER_ERROR', message: result.error });
                 return;
+            }
+
+            if (isSingleplayer && session) {
+                scheduleAITieBreaker(session.sessionId, socket);
             }
 
             if (result.bothChosen) {
