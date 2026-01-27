@@ -2,9 +2,10 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { useSocket } from '../../hooks/useSocket';
 import { useGameStore } from '../../store/gameStore';
 import type { PieceType, Position, PlayerCellView, PlayerPieceView } from '@rps/shared';
-import { SOCKET_EVENTS, RED_SETUP_ROWS, BLUE_SETUP_ROWS, BOARD_ROWS, BOARD_COLS } from '@rps/shared';
+import { SOCKET_EVENTS, RED_SETUP_ROWS, BLUE_SETUP_ROWS, BOARD_CONFIG } from '@rps/shared';
 import { Board } from './Board';
 import { PieceTray } from './PieceTray';
+import { RulesModal } from '../game/RulesModal';
 import './SetupScreen.css';
 
 export const SetupScreen: React.FC = () => {
@@ -12,20 +13,24 @@ export const SetupScreen: React.FC = () => {
     const myColor = useGameStore((state) => state.myColor);
     const setupState = useGameStore((state) => state.setupState);
     const gamePhase = useGameStore((state) => state.gamePhase);
+    const gameMode = useGameStore((state) => state.gameMode);
     const setKingPosition = useGameStore((state) => state.setKingPosition);
     const setPitPosition = useGameStore((state) => state.setPitPosition);
 
     const [draggingPiece, setDraggingPiece] = useState<PieceType | null>(null);
     const [selectedTrayPiece, setSelectedTrayPiece] = useState<PieceType | null>(null);
+    const [showRules, setShowRules] = useState(false);
 
     const validDropRows = myColor === 'red' ? RED_SETUP_ROWS : BLUE_SETUP_ROWS;
+    const activeRows = BOARD_CONFIG[gameMode].rows;
+    const activeCols = BOARD_CONFIG[gameMode].cols;
 
     // Convert rows to Position array for Board component
     // Valid cells are shown if dragging OR if a piece is selected
     const activePiece = draggingPiece || selectedTrayPiece;
     const validDropCells = activePiece
         ? validDropRows.flatMap(row =>
-            Array.from({ length: BOARD_COLS }, (_, col) => ({ row, col }))
+            Array.from({ length: activeCols }, (_, col) => ({ row, col }))
         )
         : [];
 
@@ -45,8 +50,8 @@ export const SetupScreen: React.FC = () => {
         // Start with empty board or server board
         const baseBoard: PlayerCellView[][] = setupState.board.length > 0
             ? setupState.board.map(row => row.map(cell => ({ ...cell, piece: cell.piece ? { ...cell.piece } : null })))
-            : Array(BOARD_ROWS).fill(null).map((_, row) =>
-                Array(BOARD_COLS).fill(null).map((_, col) => ({
+            : Array(activeRows).fill(null).map((_, row) =>
+                Array(activeCols).fill(null).map((_, col) => ({
                     row,
                     col,
                     piece: null,
@@ -106,7 +111,7 @@ export const SetupScreen: React.FC = () => {
         }
 
         return baseBoard;
-    }, [setupState.board, setupState.kingPosition, setupState.pitPosition, setupState.hasShuffled, myColor]);
+    }, [setupState.board, setupState.kingPosition, setupState.pitPosition, setupState.hasShuffled, myColor, activeRows, activeCols]);
 
     const handleDragStart = useCallback((pieceType: PieceType) => {
         setDraggingPiece(pieceType);
@@ -130,7 +135,7 @@ export const SetupScreen: React.FC = () => {
         if (!socket || !myColor) return;
 
         // Validate bounds
-        if (row < 0 || row >= BOARD_ROWS || col < 0 || col >= BOARD_COLS) return;
+        if (row < 0 || row >= activeRows || col < 0 || col >= activeCols) return;
 
         // Validate game phase and state
         if (gamePhase !== 'setup' || setupState.hasShuffled) return;
@@ -226,7 +231,7 @@ export const SetupScreen: React.FC = () => {
                 pitPosition: pitPos,
             });
         }
-    }, [draggingPiece, selectedTrayPiece, socket, myColor, setupState.kingPosition, setupState.pitPosition, setupState.hasShuffled, gamePhase, validDropRows, setKingPosition, setPitPosition, displayBoard]);
+    }, [draggingPiece, selectedTrayPiece, socket, myColor, setupState.kingPosition, setupState.pitPosition, setupState.hasShuffled, gamePhase, validDropRows, setKingPosition, setPitPosition, displayBoard, activeRows, activeCols]);
 
     const handlePieceDragFromBoard = useCallback((pieceType: PieceType, _row: number, _col: number) => {
         if (!canReposition) return;
@@ -253,7 +258,16 @@ export const SetupScreen: React.FC = () => {
     return (
         <div className="setup-screen">
             <div className="setup-screen__header">
-                <h2 className="setup-screen__title">Setup Your Army</h2>
+                <div className="setup-screen__title-row">
+                    <h2 className="setup-screen__title">Setup Your Army</h2>
+                    <button
+                        className="setup-screen__rules-btn"
+                        onClick={() => setShowRules(true)}
+                        title="Game Rules"
+                    >
+                        ℹ️
+                    </button>
+                </div>
                 <div className="setup-screen__status-row">
                     <div className={`setup-screen__color setup-screen__color--${myColor}`}>
                         You are {myColor.toUpperCase()}
@@ -276,6 +290,7 @@ export const SetupScreen: React.FC = () => {
                         onDragEnd={handleDragEnd}
                         selectedPiece={selectedTrayPiece}
                         onPieceClick={handleTrayPieceClick}
+                        gameMode={gameMode}
                     />
                 </div>
 
@@ -322,6 +337,12 @@ export const SetupScreen: React.FC = () => {
                     )}
                 </div>
             </div>
+
+            <RulesModal
+                isOpen={showRules}
+                onClose={() => setShowRules(false)}
+                gameMode={gameMode}
+            />
         </div>
     );
 };

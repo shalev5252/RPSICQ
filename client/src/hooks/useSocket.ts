@@ -11,6 +11,7 @@ import {
     PlayerCellView,
     PlayerColor,
     GamePhase,
+    GameMode,
 } from '@rps/shared';
 import { useSound } from '../context/SoundContext';
 
@@ -191,11 +192,12 @@ export function useSocket() {
             useGameStore.getState().setShowTurnSkipped(true);
         };
 
-        const onSessionRestored = (payload: { color: PlayerColor; phase: string; gameState: unknown; sessionId: string }) => {
+        const onSessionRestored = (payload: { color: PlayerColor; phase: string; gameMode: GameMode; gameState: unknown; sessionId: string }) => {
             console.log('🔄 Session restored:', payload);
             useGameStore.getState().setPlayerInfo(playerId, payload.color);
             useGameStore.getState().setSessionId(payload.sessionId);
             useGameStore.getState().setGamePhase(payload.phase as GamePhase);
+            useGameStore.getState().setGameMode(payload.gameMode);
 
             if (payload.phase === 'setup') {
                 const setupState = payload.gameState as { board: PlayerCellView[][]; hasPlacedKingPit: boolean; hasShuffled: boolean; isReady: boolean; opponentReady: boolean };

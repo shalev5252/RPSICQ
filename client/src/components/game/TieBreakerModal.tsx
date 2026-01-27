@@ -10,6 +10,7 @@ export const TieBreakerModal: React.FC = () => {
     const [hasSubmitted, setHasSubmitted] = useState(false);
     const [showingTieAgain, setShowingTieAgain] = useState(false);
     const retryCount = useGameStore((state) => state.tieBreakerState.retryCount);
+    const gameMode = useGameStore((state) => state.gameMode);
 
     // Show "tie again" message when retryCount changes, then reset
     useEffect(() => {
@@ -84,6 +85,26 @@ export const TieBreakerModal: React.FC = () => {
                                 <span className="tie-breaker-modal__icon">✂️</span>
                                 <span className="tie-breaker-modal__label">Scissors</span>
                             </button>
+
+                            {gameMode === 'rpsls' && (
+                                <>
+                                    <button
+                                        className={`tie-breaker-modal__choice ${selectedChoice === 'lizard' ? 'tie-breaker-modal__choice--selected' : ''}`}
+                                        onClick={() => handleSelect('lizard')}
+                                    >
+                                        <span className="tie-breaker-modal__icon">🦎</span>
+                                        <span className="tie-breaker-modal__label">Lizard</span>
+                                    </button>
+
+                                    <button
+                                        className={`tie-breaker-modal__choice ${selectedChoice === 'spock' ? 'tie-breaker-modal__choice--selected' : ''}`}
+                                        onClick={() => handleSelect('spock')}
+                                    >
+                                        <span className="tie-breaker-modal__icon">🖖</span>
+                                        <span className="tie-breaker-modal__label">Spock</span>
+                                    </button>
+                                </>
+                            )}
                         </div>
 
                         <button

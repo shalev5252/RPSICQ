@@ -12,12 +12,14 @@ interface PieceProps {
     layoutId?: string;
 }
 
-const PIECE_ICONS: Record<PieceType | 'hidden', string> = {
+export const PIECE_ICONS: Record<PieceType | 'hidden', string> = {
     king: '\u{1F451}',
     pit: '\u{1F573}\u{FE0F}',
     rock: '\u{1FAA8}',
     paper: '\u{1F4C4}',
     scissors: '\u{2702}\u{FE0F}',
+    lizard: '\u{1F98E}',
+    spock: '\u{1F596}',
     hidden: '',
 };
 
