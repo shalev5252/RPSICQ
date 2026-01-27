@@ -107,35 +107,19 @@ export const Cell: React.FC<CellProps> = ({
             onMouseUp={handleMouseUp}
         >
             {piece && (
-                piece.type === 'hidden' ? (
-                    <div
-                        draggable={isPieceDraggable}
-                        onDragStart={handlePieceDragStart}
-                        onDragEnd={handlePieceDragEnd}
-                        className={`cell__piece--hidden ${isPieceDraggable ? 'cell__piece--draggable' : ''}`}
-                        style={{
-                            width: '80%',
-                            height: '80%',
-                            borderRadius: '50%',
-                            backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                            border: '2px dashed rgba(255, 255, 255, 0.2)',
-                            boxShadow: '0 0 10px rgba(0, 0, 0, 0.3)',
-                        }}
+                <div
+                    draggable={isPieceDraggable}
+                    onDragStart={handlePieceDragStart}
+                    onDragEnd={handlePieceDragEnd}
+                    className={isPieceDraggable ? 'cell__piece--draggable' : ''}
+                >
+                    <Piece
+                        type={piece.type}
+                        owner={piece.owner}
+                        hasHalo={piece.hasHalo}
+                        layoutId={piece.id}
                     />
-                ) : (
-                    <div
-                        draggable={isPieceDraggable}
-                        onDragStart={handlePieceDragStart}
-                        onDragEnd={handlePieceDragEnd}
-                        className={isPieceDraggable ? 'cell__piece--draggable' : ''}
-                    >
-                        <Piece
-                            type={piece.type}
-                            owner={piece.owner}
-                            hasHalo={piece.hasHalo}
-                        />
-                    </div>
-                )
+                </div>
             )}
         </div>
     );
