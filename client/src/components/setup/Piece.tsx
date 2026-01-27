@@ -1,5 +1,6 @@
 import React from 'react';
 import type { PieceType, PlayerColor } from '@rps/shared';
+import { motion } from 'framer-motion';
 import './Piece.css';
 
 interface PieceProps {
@@ -8,6 +9,7 @@ interface PieceProps {
     hasHalo?: boolean;
     isDragging?: boolean;
     size?: 'small' | 'medium' | 'large';
+    layoutId?: string;
 }
 
 const PIECE_ICONS: Record<PieceType | 'hidden', string> = {
@@ -16,7 +18,7 @@ const PIECE_ICONS: Record<PieceType | 'hidden', string> = {
     rock: '\u{1FAA8}',
     paper: '\u{1F4C4}',
     scissors: '\u{2702}\u{FE0F}',
-    hidden: '?',
+    hidden: '',
 };
 
 export const Piece: React.FC<PieceProps> = ({
@@ -25,14 +27,18 @@ export const Piece: React.FC<PieceProps> = ({
     hasHalo = false,
     isDragging = false,
     size = 'medium',
+    layoutId,
 }) => {
     const icon = PIECE_ICONS[type];
 
     return (
-        <div
+        <motion.div
+            layoutId={layoutId}
+            layout
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
             className={`piece piece--${owner} piece--${size} ${hasHalo ? 'piece--halo' : ''} ${isDragging ? 'piece--dragging' : ''}`}
         >
             <span className="piece__icon">{icon}</span>
-        </div>
+        </motion.div>
     );
 };
