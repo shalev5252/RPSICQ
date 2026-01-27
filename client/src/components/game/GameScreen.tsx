@@ -171,7 +171,7 @@ export const GameScreen: React.FC = () => {
 
     // Get draggable piece types (movable pieces during player's turn)
     const draggablePieceTypes: PieceType[] = isMyTurn
-        ? ['rock', 'paper', 'scissors']
+        ? ['rock', 'paper', 'scissors', 'lizard', 'spock']
         : [];
 
     if (!myColor) {
