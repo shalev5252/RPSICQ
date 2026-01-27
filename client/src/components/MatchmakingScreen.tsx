@@ -27,7 +27,7 @@ export const MatchmakingScreen: React.FC = () => {
 
     return (
         <div className="matchmaking-screen">
-            <h2>RPS Battle</h2>
+
 
             <ModeSelect
                 selectedMode={gameMode}

@@ -3,9 +3,9 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100vh;
-    background-color: #242424;
-    color: white;
+    width: 100%;
+    margin: 0 auto;
+    /* Removed background-color and fixed height to blend with main app background */
 }
 
 .actions {

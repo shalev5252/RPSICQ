@@ -655,12 +655,20 @@ export class GameService {
         const player = session.players[color];
         if (!player) return false;
 
-        // Check if player has any RPS pieces (which can move)
+        // Check if player has any RPS pieces that can actually move
         const movablePieces = player.pieces.filter(p =>
             p.type !== 'king' && p.type !== 'pit'
         );
 
-        return movablePieces.length > 0;
+        // If no movable pieces (only King/Pit), then obviously false
+        if (movablePieces.length === 0) return false;
+
+        // CRITICAL FIX: Check if any of these pieces have at least one valid move
+        // Previously we only checked if the player HAD pieces, not if they were blocked
+        return movablePieces.some(p => {
+            const validMoves = this.getValidMoves(socketId, p.id);
+            return validMoves.length > 0;
+        });
     }
 
     /**

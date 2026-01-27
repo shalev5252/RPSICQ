@@ -173,7 +173,7 @@ export class AIOpponentService {
     ): number {
         let score = 0;
         const targetCell = gameState.board[to.row][to.col];
-        const opponent = gameState.players[opponentColor];
+        const _opponent = gameState.players[opponentColor];
         const ownPlayer = gameState.players[aiColor];
 
         // --- Pit avoidance (strongest signal) ---
