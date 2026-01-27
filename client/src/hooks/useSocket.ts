@@ -12,17 +12,18 @@ import {
     PlayerColor,
     GamePhase,
 } from '@rps/shared';
-
+import { useSound } from '../context/SoundContext';
 
 export function useSocket() {
     const socketRef = useRef<Socket>(socketInstance); // Use singleton
     const [isConnected, setIsConnected] = useState(socketInstance.connected);
     const setConnectionStatus = useGameStore((state) => state.setConnectionStatus);
+    const { playSound } = useSound();
 
     useEffect(() => {
         const socket = socketRef.current;
 
-        // Force connection if not connected (optional, but good if autoConnect is false or was disconnected)
+        // ... (connection logic remains)
         if (!socket.connected) {
             socket.connect();
         }
@@ -64,13 +65,68 @@ export function useSocket() {
             }
         };
 
+        const countPieces = (board: PlayerCellView[][]) => {
+            let count = 0;
+            board.forEach(row => row.forEach(cell => {
+                if (cell.piece) count++;
+            }));
+            return count;
+        };
+
+        const areBoardsEqual = (b1: PlayerCellView[][], b2: PlayerCellView[][]) => {
+            if (b1.length !== b2.length) return false;
+            for (let r = 0; r < b1.length; r++) {
+                if (b1[r].length !== b2[r].length) return false;
+                for (let c = 0; c < b1[r].length; c++) {
+                    const p1 = b1[r][c].piece;
+                    const p2 = b2[r][c].piece;
+                    if (p1?.id !== p2?.id) return false;
+                    if (p1?.type !== p2?.type) return false;
+                }
+            }
+            return true;
+        };
+
         const onGameState = (payload: { board: PlayerCellView[][]; currentTurn: PlayerColor | null; phase: string; isMyTurn: boolean }) => {
             console.log('📊 Game state update:', payload);
+
+            // Sound Effect Logic
+            const prevState = useGameStore.getState().gameState;
+            const currentPhase = useGameStore.getState().gamePhase;
+
+            // Only play sounds if we are in playing/tie_breaker phase
+            // and the turn actually changed
+            // and the board actually changed (prevents sounds on TURN_SKIPPED which changes turn but not board)
+            if (prevState && (currentPhase === 'playing' || currentPhase === 'tie_breaker')) {
+                const turnChanged = prevState.currentTurn !== payload.currentTurn;
+                const boardChanged = !areBoardsEqual(prevState.board, payload.board);
+
+                if (turnChanged && boardChanged) {
+                    const prevCount = countPieces(prevState.board);
+                    const newCount = countPieces(payload.board);
+
+                    // Identify who just moved (the player who LOST the turn, i.e., the previous turn holder)
+                    const validPrevTurn = prevState.currentTurn;
+
+                    if (newCount < prevCount) {
+                        // Capture happened -> Battle
+                        playSound('battle');
+                    } else if (payload.phase === 'tie_breaker' || prevState.phase === 'tie_breaker') {
+                        // Tie breaker transition usually implies battle/tie
+                        playSound('battle');
+                    } else if (validPrevTurn) {
+                        // Regular move
+                        // Assign sound based on color: Red=move1, Blue=move2
+                        const sound = validPrevTurn === 'red' ? 'move1' : 'move2';
+                        playSound(sound);
+                    }
+                }
+            }
+
             // Update game state in store
             useGameStore.getState().setGameState(payload);
 
             // Reset tie-breaker state when entering tie_breaker phase (for first-time correct title)
-            const currentPhase = useGameStore.getState().gamePhase;
             if (payload.phase === 'tie_breaker' && currentPhase !== 'tie_breaker') {
                 useGameStore.getState().resetTieBreakerState();
             }
@@ -85,6 +141,16 @@ export function useSocket() {
 
         const onGameOver = (payload: { winner: PlayerColor | null; reason: string }) => {
             console.log('🏁 Game Over:', payload);
+
+            const myColor = useGameStore.getState().myColor;
+            if (myColor && payload.winner) {
+                if (payload.winner === myColor) {
+                    playSound('winner');
+                } else {
+                    playSound('looser');
+                }
+            }
+
             useGameStore.getState().setGamePhase('finished');
             useGameStore.getState().setGameState({
                 board: useGameStore.getState().gameState?.board || [],
