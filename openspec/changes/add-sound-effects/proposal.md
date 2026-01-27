@@ -16,13 +16,13 @@ The user requested auditory feedback to make the game more immersive.
 ## Scope
 - **In Scope**:
     - `client/src/assets/sounds/` directory creation.
-    - `SoundContext` / `SoundManager` for handling audio playback.
-    - Integration with `GameScreen` for movement/battle sounds.
-    - Integration with `GameOverScreen` for result sounds.
+    - `SoundContext` / `SoundManager` for handling audio playback (`client/src/context/SoundContext.tsx:21`).
+    - Integration with `GameScreen` for movement/battle sounds (`client/src/hooks/useSocket.ts:80`).
+    - Integration with `GameOverScreen` for result sounds (`client/src/hooks/useSocket.ts:135`).
     - Volume control (optional but good practice, though not explicitly requested, "calm background music" implies unobtrusive). I'll stick to fixed volume for now unless requested, or simple mute toggle if easy. *User didn't ask for toggle, but autoplay policies might block audio.* I'll assume standard auto-play handling (user interaction required).
 - **Out of Scope**:
     - Advanced audio settings (volume sliders).
     - Dynamic music changing based on game state (unless implied by "calm background music").
 
 ## Related Specs
-- None directly, but touches `game-screen` and `game-over` flows.
+- None directly, but touches `game-screen` and `game-over` flows (`openspec/changes/add-sound-effects/specs/sound-effects/spec.md:5`).

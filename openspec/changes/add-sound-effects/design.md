@@ -37,12 +37,12 @@ In `GameScreen` or `useGameSession`, when the game initializes:
 
 ### 4. Integration Points
 
-- **`App.tsx`**: Wrap with `SoundProvider`.
-- **`GameScreen.tsx`**:
-    - `handleCellDrop` / `socket.on(MAKE_MOVE)`: Trigger move sound.
-    - *Wait*: We need to know *who* moved to play *their* sound. The `board` update or socket event contains the `from`/`to`.
-    - `socket.on(GAME_OVER)`: Stop BGM? Or just play result sound? Usually victory music replaces BGM.
-- **`GameOverScreen.tsx`**: Play win/loss sound on mount.
+- **`client/src/App.tsx:38`**: Wrap with `SoundProvider`.
+- **`client/src/components/game/GameScreen.tsx:41`**:
+  - `handleCellDrop` / `socket.on(MAKE_MOVE)`: Trigger move sound.
+  - *Wait*: We need to know *who* moved to play *their* sound. The `board` update or socket event contains the `from`/`to`.
+  - `socket.on(GAME_OVER)`: Stop BGM? Or just play result sound? Usually victory music replaces BGM.
+- **`client/src/components/game/GameOverScreen.tsx:45`**: Play win/loss sound on mount.
 
 ## Technical Considerations
 - **Autoplay Policy**: Browsers block audio until user interaction. The "Start Game" or any click in Setup will likely unlock Audio context. BGM might need a "Enable Sound" button if it starts immediately, but usually `App` mount is too early. We'll try to start BGM on first interaction or explicitly in Setup/Lobby.
