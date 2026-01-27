@@ -1,8 +1,7 @@
-# matchmaking Specification
+# Matchmaking Specification
 
-## Purpose
-TBD - created by archiving change implement-matchmaking. Update Purpose after archive.
-## Requirements
+## MODIFIED Requirements
+
 ### Requirement: Queue Management
 The system MUST maintain separate queues of players waiting to play a game for each game mode. Players can join and leave these queues at will.
 
@@ -26,16 +25,3 @@ The system MUST maintain separate queues of players waiting to play a game for e
 #### Scenario: No Cross-Mode Matching
 - **WHEN** one player selects "Classic" and another selects "RPSLS"
 - **THEN** they must NOT be placed in the same match
-
-### Requirement: Session Initialization
-When two players are available in the queue, the system MUST create a new game session, assign roles, and notify both players.
-
-#### Scenario: Two players match
-- **Given** Player A is in the matchmaking queue
-- **When** Player B sends a `JOIN_QUEUE` event
-- **Then** the server removes both Player A and Player B from the queue
-- **And** the server creates a unique session ID
-- **And** the server randomly assigns one player as 'red' and the other as 'blue'
-- **And** the server emits a `GAME_START` event to Player A with `{ sessionId, role: <RoleA> }`
-- **And** the server emits a `GAME_START` event to Player B with `{ sessionId, role: <RoleB> }`
-

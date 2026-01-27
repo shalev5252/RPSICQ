@@ -14,6 +14,8 @@ export const useGameSession = (socket: Socket) => {
     const setSetupState = useGameStore((state) => state.setSetupState);
     const reset = useGameStore((state) => state.reset);
 
+    const setGameMode = useGameStore((state) => state.setGameMode);
+
     useEffect(() => {
         const onGameFound = (payload: GameFoundPayload) => {
             console.log('Game found!', payload);
@@ -43,6 +45,7 @@ export const useGameSession = (socket: Socket) => {
         const onGameStart = (payload: GameStartPayload) => {
             console.log('Game starting!', payload);
             setGamePhase('playing');
+            setGameMode(payload.gameState.gameMode);
             // TODO: Set full game state when playing phase is implemented
         };
 

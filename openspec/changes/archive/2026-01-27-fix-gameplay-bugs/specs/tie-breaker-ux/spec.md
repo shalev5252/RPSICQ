@@ -3,7 +3,7 @@
 ## Purpose
 Fix tie-breaker modal title to correctly distinguish between first tie and subsequent ties.
 
-## MODIFIED Requirements
+## ADDED Requirements
 
 ### Requirement: Tie-Breaker Modal Display
 The tie-breaker modal SHALL accurately indicate whether this is the first tie or a retry.

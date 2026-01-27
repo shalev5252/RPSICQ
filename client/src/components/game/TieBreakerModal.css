@@ -249,17 +249,21 @@
     .tie-breaker-modal__choices {
         gap: 12px;
         margin-bottom: 24px;
+        flex-wrap: wrap;
+        justify-content: center;
     }
 
     .tie-breaker-modal__choice {
-        padding: 16px 12px;
-        min-width: 80px;
+        padding: 12px 8px;
+        min-width: 70px;
+        width: 85px;
+        /* Fixed width for consistency */
         border-radius: 12px;
-        gap: 10px;
+        gap: 8px;
     }
 
     .tie-breaker-modal__icon {
-        font-size: 36px;
+        font-size: 32px;
     }
 
     .tie-breaker-modal__label {

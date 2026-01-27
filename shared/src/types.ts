@@ -4,8 +4,9 @@
 
 export type PlayerColor = 'red' | 'blue';
 export type PlayerRole = PlayerColor;
-export type PieceType = 'king' | 'pit' | 'rock' | 'paper' | 'scissors';
-export type CombatElement = 'rock' | 'paper' | 'scissors';
+export type GameMode = 'classic' | 'rpsls';
+export type PieceType = 'king' | 'pit' | 'rock' | 'paper' | 'scissors' | 'lizard' | 'spock';
+export type CombatElement = 'rock' | 'paper' | 'scissors' | 'lizard' | 'spock';
 export type GamePhase = 'waiting' | 'setup' | 'playing' | 'combat' | 'finished' | 'tie_breaker';
 
 export interface Position {
@@ -46,6 +47,7 @@ export interface CombatState {
 
 export interface GameState {
     sessionId: string;
+    gameMode: GameMode;
     phase: GamePhase;
     currentTurn: PlayerColor | null;
     board: Cell[][];
@@ -66,6 +68,7 @@ export interface GameState {
 // Socket Event Payloads
 export interface JoinQueuePayload {
     playerId: string;
+    gameMode: GameMode;
 }
 
 export interface PlaceKingPitPayload {

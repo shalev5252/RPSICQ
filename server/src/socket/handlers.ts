@@ -35,6 +35,7 @@ export function setupSocketHandlers(io: Server): void {
                 socket.emit(SOCKET_EVENTS.SESSION_RESTORED, {
                     color: reconnectResult.color,
                     phase: reconnectResult.session.phase,
+                    gameMode: reconnectResult.session.gameMode,
                     gameState: gameView,
                     sessionId: reconnectResult.session.sessionId
                 });
@@ -50,8 +51,10 @@ export function setupSocketHandlers(io: Server): void {
             }
         }
 
-        socket.on(SOCKET_EVENTS.JOIN_QUEUE, (_payload: JoinQueuePayload) => {
-            matchmakingService.addToQueue(socket.id);
+        socket.on(SOCKET_EVENTS.JOIN_QUEUE, (payload: JoinQueuePayload) => {
+            // Default to classic if gameMode is not provided (for fallback compatibility)
+            const mode = payload.gameMode || 'classic';
+            matchmakingService.addToQueue(socket.id, mode);
         });
 
         socket.on(SOCKET_EVENTS.LEAVE_QUEUE, () => {
