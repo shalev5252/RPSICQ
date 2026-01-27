@@ -1,7 +1,6 @@
 import React from 'react';
-import type { PieceType, PlayerColor, GameMode } from '@rps/shared';
-import { BOARD_CONFIG } from '@rps/shared';
-import { Piece, PIECE_ICONS } from './Piece';
+import type { PieceType, PlayerColor } from '@rps/shared';
+import { Piece } from './Piece';
 import './PieceTray.css';
 
 interface PieceTrayProps {
@@ -13,7 +12,6 @@ interface PieceTrayProps {
     // New props for tap-to-place
     selectedPiece?: PieceType | null;
     onPieceClick?: (pieceType: PieceType) => void;
-    gameMode?: GameMode;
 }
 
 export const PieceTray: React.FC<PieceTrayProps> = ({
@@ -24,7 +22,6 @@ export const PieceTray: React.FC<PieceTrayProps> = ({
     onDragEnd,
     selectedPiece = null,
     onPieceClick,
-    gameMode = 'classic',
 }) => {
     const handleDragStart = (pieceType: PieceType) => (e: React.DragEvent) => {
         e.dataTransfer.setData('pieceType', pieceType);
@@ -40,32 +37,8 @@ export const PieceTray: React.FC<PieceTrayProps> = ({
         }
     };
 
-    const config = BOARD_CONFIG[gameMode];
-
-    // Helper to format piece name
-    const formatName = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
-
-    // List of pawn types to show counts for
-    const pawnTypes = Object.entries(config.pieces).filter(([type]) => type !== 'king' && type !== 'pit');
-
     if (kingPlaced && pitPlaced) {
-        // Show only composition summary when done placing
-        return (
-            <div className="piece-tray piece-tray--completed">
-                <h3 className="piece-tray__title">Army Ready</h3>
-                <div className="piece-tray__composition">
-                    <p className="piece-tray__subtitle">Auto-deployed units:</p>
-                    <div className="piece-tray__counts">
-                        {pawnTypes.filter(([_, count]) => count > 0).map(([type, count]) => (
-                            <div key={type} className="piece-tray__count-item">
-                                <span className="piece-tray__count-icon">{PIECE_ICONS[type as PieceType]}</span>
-                                <span className="piece-tray__count-text">x {count} {formatName(type)}</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
-        );
+        return null;
     }
 
     return (
@@ -97,18 +70,6 @@ export const PieceTray: React.FC<PieceTrayProps> = ({
                         <span className="piece-tray__label">Pit</span>
                     </div>
                 )}
-            </div>
-
-            <div className="piece-tray__composition">
-                <p className="piece-tray__subtitle">Auto-deployed units:</p>
-                <div className="piece-tray__counts">
-                    {pawnTypes.filter(([_, count]) => count > 0).map(([type, count]) => (
-                        <div key={type} className="piece-tray__count-item">
-                            <span className="piece-tray__count-icon">{PIECE_ICONS[type as PieceType]}</span>
-                            <span className="piece-tray__count-text">x {count}</span>
-                        </div>
-                    ))}
-                </div>
             </div>
         </div>
     );

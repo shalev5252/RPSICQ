@@ -1,109 +1,132 @@
 .piece-tray {
-    background: rgba(255, 255, 255, 0.05);
-    padding: 20px;
+    background: linear-gradient(145deg, #1e1e35, #16162a);
+    border: 2px solid #3d3d5c;
     border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    min-width: 200px;
+    padding: 24px;
     text-align: center;
-}
-
-.piece-tray--completed {
-    background: rgba(74, 222, 128, 0.1);
-    border-color: rgba(74, 222, 128, 0.2);
+    min-width: 180px;
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .piece-tray__title {
     color: #fff;
     margin: 0 0 8px 0;
     font-size: 18px;
-    font-weight: 700;
+    font-weight: 600;
+    letter-spacing: 0.5px;
 }
 
 .piece-tray__subtitle {
-    color: #a0a0b0;
-    margin: 0 0 16px 0;
-    font-size: 14px;
+    color: #8888aa;
+    margin: 0 0 24px 0;
+    font-size: 13px;
 }
 
 .piece-tray__pieces {
     display: flex;
-    justify-content: center;
-    gap: 20px;
-    margin-bottom: 24px;
+    flex-direction: column;
+    gap: 16px;
+    align-items: center;
 }
 
 .piece-tray__item {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     cursor: grab;
-    transition: transform 0.2s;
-    padding: 8px;
+    padding: 16px 24px;
     border-radius: 12px;
-}
-
-.piece-tray__item--selected {
-    background: rgba(255, 255, 255, 0.15);
-    box-shadow: 0 0 0 2px var(--primary);
+    background: linear-gradient(145deg, #252542, #1e1e35);
+    border: 2px solid transparent;
+    transition: all 0.2s ease;
 }
 
 .piece-tray__item:hover {
-    transform: translateY(-5px);
-    background: rgba(255, 255, 255, 0.05);
+    background: linear-gradient(145deg, #2d2d4a, #25253d);
+    border-color: #4d4d6c;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 }
 
 .piece-tray__item:active {
     cursor: grabbing;
+    transform: scale(0.98);
 }
 
 .piece-tray__label {
-    color: #fff;
+    color: #b8b8d0;
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
-.piece-tray__composition {
-    margin-top: 16px;
-    padding-top: 16px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+.piece-tray__complete {
+    color: #4ade80;
+    font-size: 14px;
+    padding: 24px 16px;
+    text-align: center;
+    line-height: 1.5;
+    background: linear-gradient(145deg, rgba(74, 222, 128, 0.1), rgba(74, 222, 128, 0.05));
+    border-radius: 12px;
+    border: 1px solid rgba(74, 222, 128, 0.2);
 }
 
-.piece-tray__counts {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-    justify-items: start;
+/* Highlight selected piece for tap-to-place */
+.piece-tray__item--selected {
+    background: linear-gradient(145deg, #37b24d, #2b8a3e);
+    border-color: #51cf66;
+    box-shadow: 0 0 15px rgba(81, 207, 102, 0.4);
 }
 
-.piece-tray__count-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    color: #ccc;
-    background: rgba(0, 0, 0, 0.2);
-    padding: 4px 8px;
-    border-radius: 8px;
-    width: 100%;
-}
-
-.piece-tray__count-icon {
-    font-size: 16px;
-}
-
+/* Mobile layout: < 768px */
 @media (max-width: 767px) {
     .piece-tray {
-        width: 100%;
-        padding: 12px;
         min-width: auto;
+        padding: 16px 12px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .piece-tray__title {
+        font-size: 16px;
+        margin-bottom: 4px;
+    }
+
+    .piece-tray__subtitle {
+        display: none;
+        /* Hide subtitle to save space */
     }
 
     .piece-tray__pieces {
-        margin-bottom: 12px;
+        flex-direction: row;
+        gap: 12px;
+        justify-content: center;
+        flex-wrap: wrap;
     }
 
-    .piece-tray__counts {
-        grid-template-columns: repeat(3, 1fr);
+    .piece-tray__item {
+        padding: 8px 16px;
+        gap: 6px;
+        flex-direction: row;
+        /* Horizontal item layout */
     }
+
+    .piece-tray__item:hover {
+        transform: none;
+    }
+
+    .piece-tray__label {
+        font-size: 12px;
+    }
+
+    .piece-tray__complete {
+        padding: 12px;
+        font-size: 13px;
+    }
+
+
 }

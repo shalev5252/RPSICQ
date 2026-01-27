@@ -4,7 +4,7 @@
 TBD - created by archiving change implement-board-setup. Update Purpose after archive.
 ## Requirements
 ### Requirement: Board Display
-The system SHALL display a game board appropriately sized for the game mode (6x7 for Classic, 6x6 for RPSLS) when two players enter the setup phase, with each player seeing their designated rows at the bottom of the screen.
+The system SHALL display a 6x7 game board when two players enter the setup phase, with each player seeing their designated rows at the bottom of the screen.
 
 #### Scenario: Red player sees their rows at bottom
 - **GIVEN** a red player has entered the setup phase
@@ -48,7 +48,7 @@ Players MUST manually place their King and Pit pieces on their designated rows v
 - **AND** the Pit returns to the piece tray
 
 ### Requirement: Shuffle RPS Pieces
-Players MUST use a shuffle button to randomly distribute their pieces (Rock, Paper, Scissors, and optional others) in the remaining empty cells of their designated rows, based on the specific counts for the active game mode.
+Players MUST use a shuffle button to randomly distribute their Rock, Paper, and Scissors pieces in the remaining empty cells of their designated rows.
 
 #### Scenario: Shuffle button enabled after King and Pit placed
 - **GIVEN** a player has placed both their King and Pit
@@ -60,24 +60,17 @@ Players MUST use a shuffle button to randomly distribute their pieces (Rock, Pap
 - **WHEN** the setup screen is displayed
 - **THEN** the shuffle button is disabled
 
-#### Scenario: Player shuffles pieces in Classic Mode
-- **GIVEN** the game mode is "Classic"
-- **AND** a player has placed their King and Pit
+#### Scenario: Player shuffles pieces
+- **GIVEN** a player has placed their King and Pit
 - **WHEN** the player taps the shuffle button
-- **THEN** the server randomly distributes 4 Rock, 4 Paper, and 4 Scissors pieces into the remaining 12 empty cells
+- **THEN** the server randomly distributes 4 Rock, 4 Paper, and 4 Scissors pieces into the remaining 12 empty cells in the player's designated rows
 - **AND** the King and Pit remain in their placed positions
-
-#### Scenario: Player shuffles pieces in RPSLS Mode
-- **GIVEN** the game mode is "RPSLS"
-- **AND** a player has placed their King and Pit
-- **WHEN** the player taps the shuffle button
-- **THEN** the server randomly distributes 2 Rock, 2 Paper, 2 Scissors, 2 Lizard, and 2 Spock pieces into the remaining 10 empty cells
-- **AND** the King and Pit remain in their placed positions
+- **AND** the updated board state is sent to the player
 
 #### Scenario: Player reshuffles pieces
 - **GIVEN** a player has already shuffled their RPS pieces
 - **WHEN** the player taps the shuffle button again
-- **THEN** the server re-randomizes only the pawn piece positions
+- **THEN** the server re-randomizes only the RPS piece positions
 - **AND** the King and Pit remain in their placed positions
 
 ### Requirement: Confirm Setup

@@ -6,17 +6,14 @@ import { SOCKET_EVENTS, BOARD_ROWS, BOARD_COLS, MOVEMENT_DIRECTIONS } from '@rps
 import { Board } from '../setup/Board';
 import { TieBreakerModal } from './TieBreakerModal';
 import { TurnSkippedModal } from './TurnSkippedModal';
-import { RulesModal } from './RulesModal';
 import './GameScreen.css';
 
 export const GameScreen: React.FC = () => {
     const { socket } = useSocket();
     const myColor = useGameStore((state) => state.myColor);
     const gameState = useGameStore((state) => state.gameState);
-    const gameMode = useGameStore((state) => state.gameMode);
     const [selectedPiece, setSelectedPiece] = useState<{ id: string; position: Position } | null>(null);
     const [validMoves, setValidMoves] = useState<Position[]>([]);
-    const [showRules, setShowRules] = useState(false);
     // Click-to-move state for double-click detection
     const [lastClickTime, setLastClickTime] = useState<number>(0);
     const [lastClickedCell, setLastClickedCell] = useState<Position | null>(null);
@@ -181,13 +178,6 @@ export const GameScreen: React.FC = () => {
     return (
         <div className="game-screen">
             <div className="game-screen__header">
-                <button
-                    className="game-screen__rules-btn"
-                    onClick={() => setShowRules(true)}
-                    title="Game Rules"
-                >
-                    ℹ️
-                </button>
                 <div className={`game-screen__turn-indicator ${isMyTurn ? 'game-screen__turn-indicator--my-turn' : 'game-screen__turn-indicator--opponent-turn'}`}>
                     {isMyTurn ? "🎯 Your Turn!" : "⏳ Opponent's Turn"}
                 </div>
@@ -214,12 +204,6 @@ export const GameScreen: React.FC = () => {
             {showTurnSkipped && (
                 <TurnSkippedModal onComplete={() => setShowTurnSkipped(false)} />
             )}
-
-            <RulesModal
-                isOpen={showRules}
-                onClose={() => setShowRules(false)}
-                gameMode={gameMode}
-            />
         </div>
     );
 };

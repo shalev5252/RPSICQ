@@ -18,43 +18,6 @@ export const PIECES_PER_PLAYER = {
 
 export const TOTAL_PIECES_PER_PLAYER = 14;
 
-export const BOARD_CONFIG = {
-    classic: {
-        rows: 6,
-        cols: 7,
-        pieces: {
-            king: 1,
-            pit: 1,
-            rock: 4,
-            paper: 4,
-            scissors: 4,
-            lizard: 0,
-            spock: 0
-        }
-    },
-    rpsls: {
-        rows: 6,
-        cols: 6,
-        pieces: {
-            king: 1,
-            pit: 1,
-            rock: 2,
-            paper: 2,
-            scissors: 2,
-            lizard: 2,
-            spock: 2
-        }
-    }
-} as const;
-
-export const RPSLS_WINS: Record<string, string[]> = {
-    rock: ['scissors', 'lizard'],
-    paper: ['rock', 'spock'],
-    scissors: ['paper', 'lizard'],
-    lizard: ['spock', 'paper'],
-    spock: ['scissors', 'rock']
-};
-
 export const TURN_TIME_MS = 2 * 60 * 1000;
 export const TURN_TIME_SECONDS = 120;
 

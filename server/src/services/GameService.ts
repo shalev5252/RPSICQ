@@ -13,11 +13,8 @@ import {
     BOARD_COLS,
     RED_SETUP_ROWS,
     BLUE_SETUP_ROWS,
-    MOVEMENT_DIRECTIONS,
-    GameMode,
-    CombatElement,
-    BOARD_CONFIG,
-    RPSLS_WINS
+    PIECES_PER_PLAYER,
+    MOVEMENT_DIRECTIONS
 } from '@rps/shared';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -35,10 +32,9 @@ export class GameService {
     private disconnectTimers: Map<string, NodeJS.Timeout> = new Map(); // playerId -> timeout
     private readonly RECONNECT_GRACE_PERIOD = 30000; // 30 seconds
 
-    public createSession(id: string, player1Id: string, player1Color: PlayerColor, player2Id: string, player2Color: PlayerColor, gameMode: GameMode = 'classic'): GameState {
-        const config = BOARD_CONFIG[gameMode];
-        const initialBoard: Cell[][] = Array(config.rows).fill(null).map((_, row) =>
-            Array(config.cols).fill(null).map((_, col) => ({
+    public createSession(id: string, player1Id: string, player1Color: PlayerColor, player2Id: string, player2Color: PlayerColor): GameState {
+        const initialBoard: Cell[][] = Array(BOARD_ROWS).fill(null).map((_, row) =>
+            Array(BOARD_COLS).fill(null).map((_, col) => ({
                 row,
                 col,
                 piece: null
@@ -63,7 +59,6 @@ export class GameService {
 
         const gameState: GameState = {
             sessionId: id,
-            gameMode,
             phase: 'setup',
             currentTurn: null,
             board: initialBoard,
@@ -110,12 +105,11 @@ export class GameService {
         return color === 'red' ? RED_SETUP_ROWS : BLUE_SETUP_ROWS;
     }
 
-    private isValidSetupPosition(position: Position, color: PlayerColor, gameMode: GameMode): boolean {
-        const config = BOARD_CONFIG[gameMode];
+    private isValidSetupPosition(position: Position, color: PlayerColor): boolean {
         const validRows = this.getSetupRows(color);
         return validRows.includes(position.row) &&
             position.col >= 0 &&
-            position.col < config.cols;
+            position.col < BOARD_COLS;
     }
 
     public placeKingPit(
@@ -126,7 +120,6 @@ export class GameService {
         const session = this.getSessionBySocketId(socketId);
         if (!session) return { success: false, error: 'Session not found' };
 
-        const gameMode = session.gameMode;
         const color = this.getPlayerColor(socketId);
         if (!color) return { success: false, error: 'Player not found' };
 
@@ -146,10 +139,10 @@ export class GameService {
         }
 
         // Validate positions are in player's rows
-        if (!this.isValidSetupPosition(kingPosition, color, gameMode)) {
+        if (!this.isValidSetupPosition(kingPosition, color)) {
             return { success: false, error: 'King position not in your rows' };
         }
-        if (!this.isValidSetupPosition(pitPosition, color, gameMode)) {
+        if (!this.isValidSetupPosition(pitPosition, color)) {
             return { success: false, error: 'Pit position not in your rows' };
         }
 
@@ -224,9 +217,6 @@ export class GameService {
         const session = this.getSessionBySocketId(socketId);
         if (!session) return { success: false, error: 'Session not found' };
 
-        const gameMode = session.gameMode;
-        const config = BOARD_CONFIG[gameMode];
-
         const color = this.getPlayerColor(socketId);
         if (!color) return { success: false, error: 'Player not found' };
 
@@ -247,7 +237,7 @@ export class GameService {
         const emptyCells: Position[] = [];
 
         for (const rowIndex of validRows) {
-            for (let col = 0; col < config.cols; col++) {
+            for (let col = 0; col < BOARD_COLS; col++) {
                 const cell = session.board[rowIndex][col];
                 // Cell is empty or has RPS piece (which we'll replace)
                 if (!cell.piece || (cell.piece.owner === color && !['king', 'pit'].includes(cell.piece.type))) {
@@ -262,15 +252,11 @@ export class GameService {
             session.board[pos.row][pos.col].piece = null;
         }
 
-        // Create RPS pieces based on game mode config
+        // Create RPS pieces
         const rpsPieces: PieceType[] = [];
-        const piecesConfig = config.pieces;
-
-        for (let i = 0; i < piecesConfig.rock; i++) rpsPieces.push('rock');
-        for (let i = 0; i < piecesConfig.paper; i++) rpsPieces.push('paper');
-        for (let i = 0; i < piecesConfig.scissors; i++) rpsPieces.push('scissors');
-        for (let i = 0; i < (piecesConfig.lizard || 0); i++) rpsPieces.push('lizard');
-        for (let i = 0; i < (piecesConfig.spock || 0); i++) rpsPieces.push('spock');
+        for (let i = 0; i < PIECES_PER_PLAYER.rock; i++) rpsPieces.push('rock');
+        for (let i = 0; i < PIECES_PER_PLAYER.paper; i++) rpsPieces.push('paper');
+        for (let i = 0; i < PIECES_PER_PLAYER.scissors; i++) rpsPieces.push('scissors');
 
         // Shuffle pieces (Fisher-Yates)
         for (let i = rpsPieces.length - 1; i > 0; i--) {
@@ -297,7 +283,7 @@ export class GameService {
             setupState.hasShuffled = true;
         }
 
-        console.log(`🎲 Player ${socketId} (${color}) shuffled RPS pieces [Mode: ${gameMode}]`);
+        console.log(`🎲 Player ${socketId} (${color}) shuffled RPS pieces`);
         return { success: true };
     }
 
@@ -412,14 +398,12 @@ export class GameService {
 
     /**
      * Get valid moves for a piece. King and Pit cannot move.
-     * Rock/Paper/Scissors/Lizard/Spock can move one step in 4 directions.
+     * Rock/Paper/Scissors can move one step in 4 directions.
      */
     public getValidMoves(socketId: string, pieceId: string): Position[] {
         const session = this.getSessionBySocketId(socketId);
         if (!session || session.phase !== 'playing') return [];
 
-        const gameMode = session.gameMode;
-        const config = BOARD_CONFIG[gameMode];
         const color = this.getPlayerColor(socketId);
         if (!color) return [];
 
@@ -440,8 +424,8 @@ export class GameService {
             const newRow = row + dir.row;
             const newCol = col + dir.col;
 
-            // Check bounds using dynamic mode config
-            if (newRow < 0 || newRow >= config.rows || newCol < 0 || newCol >= config.cols) {
+            // Check bounds
+            if (newRow < 0 || newRow >= BOARD_ROWS || newCol < 0 || newCol >= BOARD_COLS) {
                 continue;
             }
 
@@ -540,11 +524,7 @@ export class GameService {
      * Resolve combat between two pieces.
      * Returns: 'attacker_wins', 'defender_wins', or 'tie'
      */
-    /**
-     * Resolve combat between two pieces.
-     * Returns: 'attacker_wins', 'defender_wins', or 'tie'
-     */
-    private resolveCombat(attacker: Piece, defender: Piece, _gameMode: GameMode): 'attacker_wins' | 'defender_wins' | 'tie' {
+    private resolveCombat(attacker: Piece, defender: Piece): 'attacker_wins' | 'defender_wins' | 'tie' {
         // Special case: Attacking the King always wins
         if (defender.type === 'king') {
             return 'attacker_wins';
@@ -555,23 +535,26 @@ export class GameService {
             return 'defender_wins';
         }
 
-        // RPSLS Logic (which is also backward compatible with standard RPS if configured correctly, 
-        // but we'll use the specific matrix)
-        const attackerType = attacker.type;
-        const defenderType = defender.type;
-
-        // If types are same -> tie
-        if (attackerType === defenderType) {
-            return 'tie';
+        // Standard RPS logic
+        if (attacker.type === 'rock') {
+            if (defender.type === 'scissors') return 'attacker_wins';
+            if (defender.type === 'paper') return 'defender_wins';
+            if (defender.type === 'rock') return 'tie';
         }
 
-        // Check if attacker defeats defender
-        const defeats = RPSLS_WINS[attackerType];
-        if (defeats && defeats.includes(defenderType)) {
-            return 'attacker_wins';
+        if (attacker.type === 'paper') {
+            if (defender.type === 'rock') return 'attacker_wins';
+            if (defender.type === 'scissors') return 'defender_wins';
+            if (defender.type === 'paper') return 'tie';
         }
 
-        // Otherwise defender wins (assuming valid types)
+        if (attacker.type === 'scissors') {
+            if (defender.type === 'paper') return 'attacker_wins';
+            if (defender.type === 'rock') return 'defender_wins';
+            if (defender.type === 'scissors') return 'tie';
+        }
+
+        // King/Pit as attackers (should not happen, but handle gracefully)
         return 'defender_wins';
     }
 
@@ -631,7 +614,7 @@ export class GameService {
             console.log(`⚔️ Combat initiated: ${piece.type} (${color}) vs ${defender.type} (${defenderOwner})`);
 
             // Resolve combat
-            const result = this.resolveCombat(piece, defender, session.gameMode);
+            const result = this.resolveCombat(piece, defender);
 
             if (result === 'tie') {
                 // Transition to tie_breaker phase
@@ -735,7 +718,6 @@ export class GameService {
         currentTurn: PlayerColor | null;
         phase: string;
         isMyTurn: boolean;
-        gameMode: GameMode;
     } | null {
         const session = this.getSessionBySocketId(socketId);
         if (!session) return null;
@@ -772,8 +754,7 @@ export class GameService {
             board: boardView,
             currentTurn: session.currentTurn,
             phase: session.phase,
-            isMyTurn: session.currentTurn === color,
-            gameMode: session.gameMode
+            isMyTurn: session.currentTurn === color
         };
     }
 
@@ -783,7 +764,7 @@ export class GameService {
      */
     public submitTieBreakerChoice(
         socketId: string,
-        choice: CombatElement
+        choice: 'rock' | 'paper' | 'scissors'
     ): { success: boolean; error?: string; bothChosen?: boolean; isTieAgain?: boolean } {
         const session = this.getSessionBySocketId(socketId);
         if (!session) return { success: false, error: 'Session not found' };
@@ -835,7 +816,7 @@ export class GameService {
             console.log(`🔄 Tie breaker resolved: ${attacker.type} vs ${defender.type}`);
 
             // Re-resolve combat with new types
-            const result = this.resolveCombat(attacker, defender, session.gameMode);
+            const result = this.resolveCombat(attacker, defender);
 
             if (result === 'tie') {
                 // Another tie! Reset choices for another round

@@ -3,7 +3,7 @@
 ## Purpose
 Ensure opponent pieces are completely invisible during the setup phase.
 
-## ADDED Requirements
+## MODIFIED Requirements
 
 ### Requirement: Fog of War During Setup
 Players SHALL NOT see ANY opponent pieces during the setup phase - not even their positions.
