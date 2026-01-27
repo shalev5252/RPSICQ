@@ -12,17 +12,18 @@ import {
     PlayerColor,
     GamePhase,
 } from '@rps/shared';
-
+import { useSound } from '../context/SoundContext';
 
 export function useSocket() {
     const socketRef = useRef<Socket>(socketInstance); // Use singleton
     const [isConnected, setIsConnected] = useState(socketInstance.connected);
     const setConnectionStatus = useGameStore((state) => state.setConnectionStatus);
+    const { playSound } = useSound();
 
     useEffect(() => {
         const socket = socketRef.current;
 
-        // Force connection if not connected (optional, but good if autoConnect is false or was disconnected)
+        // ... (connection logic remains)
         if (!socket.connected) {
             socket.connect();
         }
@@ -64,13 +65,49 @@ export function useSocket() {
             }
         };
 
+        const countPieces = (board: PlayerCellView[][]) => {
+            let count = 0;
+            board.forEach(row => row.forEach(cell => {
+                if (cell.piece) count++;
+            }));
+            return count;
+        };
+
         const onGameState = (payload: { board: PlayerCellView[][]; currentTurn: PlayerColor | null; phase: string; isMyTurn: boolean }) => {
             console.log('📊 Game state update:', payload);
+
+            // Sound Effect Logic
+            const prevState = useGameStore.getState().gameState;
+            const currentPhase = useGameStore.getState().gamePhase;
+
+            if (prevState && (currentPhase === 'playing' || currentPhase === 'tie_breaker')) {
+                // Detect Turn Change (Move made)
+                if (prevState.currentTurn !== payload.currentTurn) {
+                    const prevCount = countPieces(prevState.board);
+                    const newCount = countPieces(payload.board);
+
+                    // Identify who just moved (the player who LOST the turn)
+                    const validPrevTurn = prevState.currentTurn;
+
+                    if (newCount < prevCount) {
+                        // Capture happened -> Battle
+                        playSound('battle');
+                    } else if (payload.phase === 'tie_breaker' || prevState.phase === 'tie_breaker') {
+                        // Tie breaker transition usually implies battle/tie
+                        playSound('battle');
+                    } else if (validPrevTurn) {
+                        // Regular move
+                        // Assign sound based on color: Red=move1, Blue=move2
+                        const sound = validPrevTurn === 'red' ? 'move1' : 'move2';
+                        playSound(sound);
+                    }
+                }
+            }
+
             // Update game state in store
             useGameStore.getState().setGameState(payload);
 
             // Reset tie-breaker state when entering tie_breaker phase (for first-time correct title)
-            const currentPhase = useGameStore.getState().gamePhase;
             if (payload.phase === 'tie_breaker' && currentPhase !== 'tie_breaker') {
                 useGameStore.getState().resetTieBreakerState();
             }
@@ -85,6 +122,16 @@ export function useSocket() {
 
         const onGameOver = (payload: { winner: PlayerColor | null; reason: string }) => {
             console.log('🏁 Game Over:', payload);
+
+            const myColor = useGameStore.getState().myColor;
+            if (myColor && payload.winner) {
+                if (payload.winner === myColor) {
+                    playSound('winner');
+                } else {
+                    playSound('looser');
+                }
+            }
+
             useGameStore.getState().setGamePhase('finished');
             useGameStore.getState().setGameState({
                 board: useGameStore.getState().gameState?.board || [],
