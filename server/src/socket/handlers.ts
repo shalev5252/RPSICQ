@@ -1,11 +1,130 @@
 import { Server, Socket } from 'socket.io';
-import { SOCKET_EVENTS, JoinQueuePayload, PlaceKingPitPayload, MakeMovePayload, CombatChoicePayload } from '@rps/shared';
+import { SOCKET_EVENTS, JoinQueuePayload, StartSingleplayerPayload, PlaceKingPitPayload, MakeMovePayload, CombatChoicePayload } from '@rps/shared';
 import { MatchmakingService } from '../services/MatchmakingService.js';
 import { GameService } from '../services/GameService.js';
 
 export function setupSocketHandlers(io: Server): void {
     const gameService = new GameService();
     const matchmakingService = new MatchmakingService(io, gameService);
+
+    // Helper: schedule an AI move with a natural delay, then emit results
+    function scheduleAIMove(sessionId: string, humanSocket: Socket) {
+        const session = gameService.getSession(sessionId);
+        if (!session || session.opponentType !== 'ai') return;
+        if (session.phase !== 'playing') return;
+
+        const aiColor = gameService.getAIColor(sessionId);
+        if (!aiColor) return;
+        if (session.currentTurn !== aiColor) return;
+
+        const aiSocketId = gameService.getAISocketId(sessionId);
+        if (!aiSocketId) return;
+
+        // Check if AI has movable pieces
+        if (!gameService.hasMovablePieces(aiSocketId)) {
+            gameService.skipTurn(aiSocketId);
+            const updatedView = gameService.getPlayerGameView(humanSocket.id);
+            if (updatedView) {
+                humanSocket.emit(SOCKET_EVENTS.GAME_STATE, updatedView);
+            }
+            return;
+        }
+
+        gameService.aiService.scheduleAction(() => {
+            const freshSession = gameService.getSession(sessionId);
+            if (!freshSession || freshSession.phase !== 'playing' || freshSession.currentTurn !== aiColor) return;
+
+            const move = gameService.aiService.selectMove(freshSession, aiColor);
+            if (!move) return;
+
+            const result = gameService.makeMove(aiSocketId, move.from, move.to);
+            if (!result.success) {
+                console.error(`🤖 AI move failed: ${result.error}`);
+                return;
+            }
+
+            // Record combat outcomes for AI inference
+            const afterSession = gameService.getSession(sessionId);
+            if (!afterSession) return;
+
+            // Send updated game state to human player
+            const humanView = gameService.getPlayerGameView(humanSocket.id);
+            if (humanView) {
+                humanSocket.emit(SOCKET_EVENTS.GAME_STATE, humanView);
+            }
+
+            // Check game-ending conditions
+            if (afterSession.phase === 'finished') {
+                humanSocket.emit(SOCKET_EVENTS.GAME_OVER, {
+                    winner: afterSession.winner,
+                    reason: afterSession.winReason || 'king_captured'
+                });
+            } else if (afterSession.phase === 'tie_breaker') {
+                // AI needs to submit tie-breaker choice
+                scheduleAITieBreaker(sessionId, humanSocket);
+            } else if (afterSession.phase === 'playing') {
+                // Check for draw
+                if (gameService.checkDraw(sessionId)) {
+                    gameService.setDraw(sessionId);
+                    humanSocket.emit(SOCKET_EVENTS.GAME_OVER, {
+                        winner: null,
+                        reason: 'draw'
+                    });
+                    return;
+                }
+
+                // Check if human has no movable pieces
+                if (!gameService.hasMovablePieces(humanSocket.id)) {
+                    humanSocket.emit(SOCKET_EVENTS.TURN_SKIPPED, { reason: 'no_movable_pieces' });
+                    gameService.skipTurn(humanSocket.id);
+                    const updatedView = gameService.getPlayerGameView(humanSocket.id);
+                    if (updatedView) {
+                        humanSocket.emit(SOCKET_EVENTS.GAME_STATE, updatedView);
+                    }
+                    // Now it's AI's turn again
+                    scheduleAIMove(sessionId, humanSocket);
+                }
+            }
+        });
+    }
+
+    // Helper: schedule AI tie-breaker choice
+    function scheduleAITieBreaker(sessionId: string, humanSocket: Socket) {
+        const aiSocketId = gameService.getAISocketId(sessionId);
+        if (!aiSocketId) return;
+
+        gameService.aiService.scheduleAction(() => {
+            const tbResult = gameService.performAITieBreakerChoice(sessionId);
+            if (!tbResult.success || !tbResult.choice) return;
+
+            const submitResult = gameService.submitTieBreakerChoice(aiSocketId, tbResult.choice);
+            if (!submitResult.success) return;
+
+            if (submitResult.bothChosen) {
+                const afterSession = gameService.getSession(sessionId);
+                if (!afterSession) return;
+
+                const humanView = gameService.getPlayerGameView(humanSocket.id);
+                if (humanView) {
+                    humanSocket.emit(SOCKET_EVENTS.GAME_STATE, humanView);
+                }
+
+                if (afterSession.phase === 'finished') {
+                    humanSocket.emit(SOCKET_EVENTS.GAME_OVER, {
+                        winner: afterSession.winner,
+                        reason: afterSession.winReason || 'king_captured'
+                    });
+                } else if (afterSession.phase === 'playing') {
+                    // After tie-breaker resolved, check if it's AI's turn
+                    scheduleAIMove(sessionId, humanSocket);
+                }
+            } else if (submitResult.isTieAgain) {
+                // Notify human to choose again
+                humanSocket.emit(SOCKET_EVENTS.TIE_BREAKER_RETRY);
+                // AI will choose again after human chooses
+            }
+        });
+    }
 
     io.on('connection', (socket: Socket) => {
         console.log(`✅ Client connected: ${socket.id}`);
@@ -61,6 +180,25 @@ export function setupSocketHandlers(io: Server): void {
             matchmakingService.removeFromQueue(socket.id);
         });
 
+        // 4.1: Start singleplayer game against AI
+        socket.on(SOCKET_EVENTS.START_SINGLEPLAYER, (payload: StartSingleplayerPayload) => {
+            const mode = payload.gameMode || 'classic';
+            const pId = payload.playerId || playerId || socket.id;
+
+            const session = gameService.createSingleplayerSession(socket.id, pId, mode);
+
+            // Join the session room
+            socket.join(session.sessionId);
+
+            // Emit GAME_FOUND to the human player
+            socket.emit(SOCKET_EVENTS.GAME_FOUND, {
+                sessionId: session.sessionId,
+                color: 'red' // human is always red
+            });
+
+            console.log(`🤖 Singleplayer game started: session=${session.sessionId}, mode=${mode}`);
+        });
+
         socket.on(SOCKET_EVENTS.PLACE_KING_PIT, (payload: PlaceKingPitPayload) => {
             const result = gameService.placeKingPit(socket.id, payload.kingPosition, payload.pitPosition);
 
@@ -92,6 +230,14 @@ export function setupSocketHandlers(io: Server): void {
         });
 
         socket.on(SOCKET_EVENTS.CONFIRM_SETUP, () => {
+            const session = gameService.getSessionBySocketId(socket.id);
+
+            // In singleplayer, perform AI setup first, then confirm human
+            if (session && session.opponentType === 'ai') {
+                // Perform AI setup before human confirm (so both ready at once)
+                gameService.performAISetup(session.sessionId);
+            }
+
             const result = gameService.confirmSetup(socket.id);
 
             if (!result.success) {
@@ -101,32 +247,37 @@ export function setupSocketHandlers(io: Server): void {
 
             if (result.bothReady) {
                 // Both players are ready - start the game
-                const session = gameService.getSessionBySocketId(socket.id);
-                if (session) {
-                    // Send GAME_START to each player with their specific view (fog of war)
-                    const redSocketId = session.players.red?.socketId;
-                    const blueSocketId = session.players.blue?.socketId;
+                const updatedSession = gameService.getSessionBySocketId(socket.id);
+                if (updatedSession) {
+                    // Send GAME_START to each real player with their specific view (fog of war)
+                    const redSocketId = updatedSession.players.red?.socketId;
+                    const blueSocketId = updatedSession.players.blue?.socketId;
 
-                    if (redSocketId) {
+                    if (redSocketId && !gameService.isAIPlayer(redSocketId)) {
                         const redView = gameService.getPlayerGameView(redSocketId);
                         io.to(redSocketId).emit(SOCKET_EVENTS.GAME_START, {
-                            startingPlayer: session.currentTurn,
+                            startingPlayer: updatedSession.currentTurn,
                             gameState: redView
                         });
                     }
 
-                    if (blueSocketId) {
+                    if (blueSocketId && !gameService.isAIPlayer(blueSocketId)) {
                         const blueView = gameService.getPlayerGameView(blueSocketId);
                         io.to(blueSocketId).emit(SOCKET_EVENTS.GAME_START, {
-                            startingPlayer: session.currentTurn,
+                            startingPlayer: updatedSession.currentTurn,
                             gameState: blueView
                         });
+                    }
+
+                    // If it's AI's turn first, schedule AI move
+                    if (updatedSession.opponentType === 'ai') {
+                        scheduleAIMove(updatedSession.sessionId, socket);
                     }
                 }
             } else {
                 // Only this player is ready - notify opponent
                 const opponentId = gameService.getOpponentSocketId(socket.id);
-                if (opponentId) {
+                if (opponentId && !gameService.isAIPlayer(opponentId)) {
                     io.to(opponentId).emit(SOCKET_EVENTS.OPPONENT_READY);
                 }
 
@@ -151,15 +302,17 @@ export function setupSocketHandlers(io: Server): void {
             // Send updated game view to both players (for both combat and non-combat scenarios)
             const session = gameService.getSessionBySocketId(socket.id);
             if (session) {
+                const isSingleplayer = session.opponentType === 'ai';
+
                 // Send updated game state to current player
                 const playerView = gameService.getPlayerGameView(socket.id);
                 if (playerView) {
                     socket.emit(SOCKET_EVENTS.GAME_STATE, playerView);
                 }
 
-                // Send to opponent
+                // Send to opponent (only if human)
                 const opponentId = gameService.getOpponentSocketId(socket.id);
-                if (opponentId) {
+                if (opponentId && !gameService.isAIPlayer(opponentId)) {
                     const opponentView = gameService.getPlayerGameView(opponentId);
                     if (opponentView) {
                         io.to(opponentId).emit(SOCKET_EVENTS.GAME_STATE, opponentView);
@@ -168,18 +321,35 @@ export function setupSocketHandlers(io: Server): void {
 
                 // Check if game ended - emit GAME_OVER after GAME_STATE so clients have final board
                 if (session.phase === 'finished') {
-                    io.to(session.sessionId).emit(SOCKET_EVENTS.GAME_OVER, {
-                        winner: session.winner,
-                        reason: session.winReason || 'king_captured'
-                    });
+                    if (isSingleplayer) {
+                        socket.emit(SOCKET_EVENTS.GAME_OVER, {
+                            winner: session.winner,
+                            reason: session.winReason || 'king_captured'
+                        });
+                    } else {
+                        io.to(session.sessionId).emit(SOCKET_EVENTS.GAME_OVER, {
+                            winner: session.winner,
+                            reason: session.winReason || 'king_captured'
+                        });
+                    }
+                } else if (session.phase === 'tie_breaker' && isSingleplayer) {
+                    // AI needs to submit tie-breaker choice
+                    scheduleAITieBreaker(session.sessionId, socket);
                 } else if (session.phase === 'playing') {
                     // Check for draw condition (both players only have immovable pieces)
                     if (gameService.checkDraw(session.sessionId)) {
                         gameService.setDraw(session.sessionId);
-                        io.to(session.sessionId).emit(SOCKET_EVENTS.GAME_OVER, {
-                            winner: null,
-                            reason: 'draw'
-                        });
+                        if (isSingleplayer) {
+                            socket.emit(SOCKET_EVENTS.GAME_OVER, {
+                                winner: null,
+                                reason: 'draw'
+                            });
+                        } else {
+                            io.to(session.sessionId).emit(SOCKET_EVENTS.GAME_OVER, {
+                                winner: null,
+                                reason: 'draw'
+                            });
+                        }
                         return;
                     }
 
@@ -190,13 +360,15 @@ export function setupSocketHandlers(io: Server): void {
 
                     if (nextPlayerId && !gameService.hasMovablePieces(nextPlayerId)) {
                         // Next player cannot move - notify and skip their turn
-                        io.to(nextPlayerId).emit(SOCKET_EVENTS.TURN_SKIPPED, { reason: 'no_movable_pieces' });
+                        if (!gameService.isAIPlayer(nextPlayerId)) {
+                            io.to(nextPlayerId).emit(SOCKET_EVENTS.TURN_SKIPPED, { reason: 'no_movable_pieces' });
+                        }
 
                         // Skip the turn
                         gameService.skipTurn(nextPlayerId);
 
                         // Send updated game state after turn skip
-                        if (opponentId) {
+                        if (opponentId && !gameService.isAIPlayer(opponentId)) {
                             const updatedOpponentView = gameService.getPlayerGameView(opponentId);
                             if (updatedOpponentView) {
                                 io.to(opponentId).emit(SOCKET_EVENTS.GAME_STATE, updatedOpponentView);
@@ -207,12 +379,25 @@ export function setupSocketHandlers(io: Server): void {
                             socket.emit(SOCKET_EVENTS.GAME_STATE, updatedPlayerView);
                         }
                     }
+
+                    // If it's now AI's turn, schedule AI move
+                    if (isSingleplayer) {
+                        scheduleAIMove(session.sessionId, socket);
+                    }
                 }
             }
         });
 
         socket.on(SOCKET_EVENTS.COMBAT_CHOICE, (payload: CombatChoicePayload) => {
             console.log(`⚔️ Player ${socket.id} chose ${payload.element} for tie breaker`);
+
+            const session = gameService.getSessionBySocketId(socket.id);
+            const isSingleplayer = session?.opponentType === 'ai';
+
+            // In singleplayer, schedule AI tie-breaker choice after human submits
+            if (isSingleplayer && session) {
+                scheduleAITieBreaker(session.sessionId, socket);
+            }
 
             const result = gameService.submitTieBreakerChoice(socket.id, payload.element);
 
@@ -223,19 +408,19 @@ export function setupSocketHandlers(io: Server): void {
 
             if (result.bothChosen) {
                 // Both players have chosen - resolution complete
-                const session = gameService.getSessionBySocketId(socket.id);
-                if (session) {
-                    // Send updated game state to both players first
-                    const redPlayer = session.players.red;
-                    const bluePlayer = session.players.blue;
+                const updatedSession = gameService.getSessionBySocketId(socket.id);
+                if (updatedSession) {
+                    // Send updated game state to human players
+                    const redPlayer = updatedSession.players.red;
+                    const bluePlayer = updatedSession.players.blue;
 
-                    if (redPlayer?.socketId) {
+                    if (redPlayer?.socketId && !gameService.isAIPlayer(redPlayer.socketId)) {
                         const redView = gameService.getPlayerGameView(redPlayer.socketId);
                         if (redView) {
                             io.to(redPlayer.socketId).emit(SOCKET_EVENTS.GAME_STATE, redView);
                         }
                     }
-                    if (bluePlayer?.socketId) {
+                    if (bluePlayer?.socketId && !gameService.isAIPlayer(bluePlayer.socketId)) {
                         const blueView = gameService.getPlayerGameView(bluePlayer.socketId);
                         if (blueView) {
                             io.to(bluePlayer.socketId).emit(SOCKET_EVENTS.GAME_STATE, blueView);
@@ -243,26 +428,36 @@ export function setupSocketHandlers(io: Server): void {
                     }
 
                     // Emit GAME_OVER after GAME_STATE so clients have final board
-                    if (session.phase === 'finished') {
-                        io.to(session.sessionId).emit(SOCKET_EVENTS.GAME_OVER, {
-                            winner: session.winner,
-                            reason: session.winReason || 'king_captured'
-                        });
+                    if (updatedSession.phase === 'finished') {
+                        if (isSingleplayer) {
+                            socket.emit(SOCKET_EVENTS.GAME_OVER, {
+                                winner: updatedSession.winner,
+                                reason: updatedSession.winReason || 'king_captured'
+                            });
+                        } else {
+                            io.to(updatedSession.sessionId).emit(SOCKET_EVENTS.GAME_OVER, {
+                                winner: updatedSession.winner,
+                                reason: updatedSession.winReason || 'king_captured'
+                            });
+                        }
+                    } else if (updatedSession.phase === 'playing' && isSingleplayer) {
+                        // After tie-breaker, check if AI should move next
+                        scheduleAIMove(updatedSession.sessionId, socket);
                     }
                 }
             } else if (result.isTieAgain) {
-                // Another tie occurred - notify both players to choose again
-                const session = gameService.getSessionBySocketId(socket.id);
-                if (session) {
-                    const redSocketId = session.players.red?.socketId;
-                    const blueSocketId = session.players.blue?.socketId;
+                // Another tie occurred - notify human players to choose again
+                const updatedSession = gameService.getSessionBySocketId(socket.id);
+                if (updatedSession) {
+                    const redSocketId = updatedSession.players.red?.socketId;
+                    const blueSocketId = updatedSession.players.blue?.socketId;
 
-                    console.log(`🔄 Tie-breaker tie! Notifying both players to retry.`);
+                    console.log(`🔄 Tie-breaker tie! Notifying players to retry.`);
 
-                    if (redSocketId) {
+                    if (redSocketId && !gameService.isAIPlayer(redSocketId)) {
                         io.to(redSocketId).emit(SOCKET_EVENTS.TIE_BREAKER_RETRY);
                     }
-                    if (blueSocketId) {
+                    if (blueSocketId && !gameService.isAIPlayer(blueSocketId)) {
                         io.to(blueSocketId).emit(SOCKET_EVENTS.TIE_BREAKER_RETRY);
                     }
                 }
@@ -285,23 +480,23 @@ export function setupSocketHandlers(io: Server): void {
                 if (session) {
                     const resetResult = gameService.resetGameForRematch(session.sessionId);
                     if (resetResult.success) {
-                        // Emit REMATCH_ACCEPTED to both players
+                        // Emit REMATCH_ACCEPTED to human players only
                         const redSocketId = session.players.red?.socketId;
                         const blueSocketId = session.players.blue?.socketId;
 
-                        if (redSocketId) {
+                        if (redSocketId && !gameService.isAIPlayer(redSocketId)) {
                             const redSetupView = gameService.getPlayerSetupView(redSocketId);
                             io.to(redSocketId).emit(SOCKET_EVENTS.REMATCH_ACCEPTED, { setupState: redSetupView });
                         }
-                        if (blueSocketId) {
+                        if (blueSocketId && !gameService.isAIPlayer(blueSocketId)) {
                             const blueSetupView = gameService.getPlayerSetupView(blueSocketId);
                             io.to(blueSocketId).emit(SOCKET_EVENTS.REMATCH_ACCEPTED, { setupState: blueSetupView });
                         }
                     }
                 }
             } else {
-                // Only one player has requested - notify opponent
-                if (result.opponentSocketId) {
+                // Only one player has requested - notify opponent (if human)
+                if (result.opponentSocketId && !gameService.isAIPlayer(result.opponentSocketId)) {
                     io.to(result.opponentSocketId).emit(SOCKET_EVENTS.REMATCH_REQUESTED);
                 }
             }

@@ -9,17 +9,18 @@ import {
     PlayerCellView,
     PlayerPieceView,
     SetupStatePayload,
-    BOARD_ROWS,
-    BOARD_COLS,
     RED_SETUP_ROWS,
     BLUE_SETUP_ROWS,
     MOVEMENT_DIRECTIONS,
     GameMode,
     CombatElement,
     BOARD_CONFIG,
-    RPSLS_WINS
+    RPSLS_WINS,
+    AI_ID_PREFIX,
+    AI_SOCKET_PREFIX
 } from '@rps/shared';
 import { v4 as uuidv4 } from 'uuid';
+import { AIOpponentService } from './AIOpponentService.js';
 
 interface SetupState {
     hasPlacedKingPit: boolean;
@@ -34,6 +35,34 @@ export class GameService {
     private socketIdToPlayerId: Map<string, string> = new Map(); // socketId -> playerId
     private disconnectTimers: Map<string, NodeJS.Timeout> = new Map(); // playerId -> timeout
     private readonly RECONNECT_GRACE_PERIOD = 30000; // 30 seconds
+    public readonly aiService = new AIOpponentService();
+
+    public isAIPlayer(socketId: string): boolean {
+        return socketId.startsWith(AI_SOCKET_PREFIX);
+    }
+
+    public isAISession(sessionId: string): boolean {
+        const session = this.sessions.get(sessionId);
+        return session?.opponentType === 'ai';
+    }
+
+    public getAISocketId(sessionId: string): string | null {
+        const session = this.sessions.get(sessionId);
+        if (!session || session.opponentType !== 'ai') return null;
+        const red = session.players.red;
+        const blue = session.players.blue;
+        if (red && this.isAIPlayer(red.socketId)) return red.socketId;
+        if (blue && this.isAIPlayer(blue.socketId)) return blue.socketId;
+        return null;
+    }
+
+    public getAIColor(sessionId: string): PlayerColor | null {
+        const session = this.sessions.get(sessionId);
+        if (!session || session.opponentType !== 'ai') return null;
+        if (session.players.red && this.isAIPlayer(session.players.red.socketId)) return 'red';
+        if (session.players.blue && this.isAIPlayer(session.players.blue.socketId)) return 'blue';
+        return null;
+    }
 
     public createSession(id: string, player1Id: string, player1Color: PlayerColor, player2Id: string, player2Color: PlayerColor, gameMode: GameMode = 'classic'): GameState {
         const config = BOARD_CONFIG[gameMode];
@@ -64,6 +93,7 @@ export class GameService {
         const gameState: GameState = {
             sessionId: id,
             gameMode,
+            opponentType: 'human',
             phase: 'setup',
             currentTurn: null,
             board: initialBoard,
@@ -85,6 +115,74 @@ export class GameService {
         this.setupStates.set(player2Id, { hasPlacedKingPit: false, hasShuffled: false });
 
         console.log(`📝 Session ${id} created and stored.`);
+        return gameState;
+    }
+
+    public createSingleplayerSession(
+        humanSocketId: string,
+        humanPlayerId: string,
+        gameMode: GameMode = 'classic'
+    ): GameState {
+        const sessionId = uuidv4();
+        const config = BOARD_CONFIG[gameMode];
+        const initialBoard: Cell[][] = Array(config.rows).fill(null).map((_, row) =>
+            Array(config.cols).fill(null).map((_, col) => ({
+                row,
+                col,
+                piece: null
+            }))
+        );
+
+        // Human is always red, AI is always blue
+        const humanColor: PlayerColor = 'red';
+        const aiColor: PlayerColor = 'blue';
+        const aiPlayerId = `${AI_ID_PREFIX}${sessionId}`;
+        const aiSocketId = `${AI_SOCKET_PREFIX}${sessionId}`;
+
+        const humanPlayer: PlayerState = {
+            id: humanPlayerId,
+            socketId: humanSocketId,
+            color: humanColor,
+            isReady: false,
+            pieces: []
+        };
+
+        const aiPlayer: PlayerState = {
+            id: aiPlayerId,
+            socketId: aiSocketId,
+            color: aiColor,
+            isReady: false,
+            pieces: []
+        };
+
+        const gameState: GameState = {
+            sessionId,
+            gameMode,
+            opponentType: 'ai',
+            phase: 'setup',
+            currentTurn: null,
+            board: initialBoard,
+            players: {
+                red: humanPlayer,
+                blue: aiPlayer
+            },
+            turnStartTime: null,
+            combatState: null,
+            winner: null
+        };
+
+        this.sessions.set(sessionId, gameState);
+        this.playerSessionMap.set(humanSocketId, sessionId);
+        this.playerSessionMap.set(aiSocketId, sessionId);
+
+        // Initialize setup states for both
+        this.setupStates.set(humanSocketId, { hasPlacedKingPit: false, hasShuffled: false });
+        this.setupStates.set(aiSocketId, { hasPlacedKingPit: false, hasShuffled: false });
+
+        // Initialize AI session tracking
+        this.aiService.initSession(sessionId, aiColor);
+
+        console.log(`🤖 Singleplayer session ${sessionId} created (human=${humanColor}, AI=${aiColor}, mode=${gameMode})`);
         return gameState;
     }
 
@@ -346,6 +444,93 @@ export class GameService {
 
         console.log(`✔️ Player ${socketId} (${color}) confirmed setup. Both ready: ${bothReady}`);
         return { success: true, bothReady };
+    }
+
+    /**
+     * Perform full AI setup: place King/Pit strategically, randomize pieces, confirm.
+     * Called after the human player's setup is done in a singleplayer session.
+     */
+    public performAISetup(sessionId: string): { success: boolean; error?: string } {
+        const session = this.sessions.get(sessionId);
+        if (!session || session.opponentType !== 'ai') {
+            return { success: false, error: 'Not an AI session' };
+        }
+
+        const aiColor = this.getAIColor(sessionId);
+        if (!aiColor) return { success: false, error: 'AI color not found' };
+
+        const aiSocketId = this.getAISocketId(sessionId);
+        if (!aiSocketId) return { success: false, error: 'AI socket not found' };
+
+        // Generate strategic placement
+        const { kingPosition, pitPosition } = this.aiService.generateSetup(session.gameMode, aiColor);
+
+        // Place King and Pit
+        const placeResult = this.placeKingPit(aiSocketId, kingPosition, pitPosition);
+        if (!placeResult.success) {
+            return { success: false, error: `AI King/Pit placement failed: ${placeResult.error}` };
+        }
+
+        // Randomize pieces
+        const randomizeResult = this.randomizePieces(aiSocketId);
+        if (!randomizeResult.success) {
+            return { success: false, error: `AI randomize failed: ${randomizeResult.error}` };
+        }
+
+        // Confirm setup
+        const confirmResult = this.confirmSetup(aiSocketId);
+        if (!confirmResult.success) {
+            return { success: false, error: `AI confirm failed: ${confirmResult.error}` };
+        }
+
+        console.log(`🤖 AI setup complete for session ${sessionId}`);
+        return { success: true };
+    }
+
+    /**
+     * Have the AI submit a tie-breaker choice.
+     * Returns the choice made so the handler can process it.
+     */
+    public performAITieBreakerChoice(sessionId: string): {
+        success: boolean;
+        choice?: CombatElement;
+        error?: string;
+    } {
+        const session = this.sessions.get(sessionId);
+        if (!session || session.opponentType !== 'ai') {
+            return { success: false, error: 'Not an AI session' };
+        }
+        if (!session.combatState) {
+            return { success: false, error: 'No active combat state' };
+        }
+
+        const aiSocketId = this.getAISocketId(sessionId);
+        if (!aiSocketId) return { success: false, error: 'AI socket not found' };
+
+        const aiColor = this.getAIColor(sessionId);
+        if (!aiColor) return { success: false, error: 'AI color not found' };
+
+        // Determine if AI is attacker or defender in this combat
+        const aiPlayer = session.players[aiColor];
+        if (!aiPlayer) return { success: false, error: 'AI player not found' };
+
+        const isAttacker = aiPlayer.pieces.some(p => p.id === session.combatState!.attackerId);
+        const isDefender = aiPlayer.pieces.some(p => p.id === session.combatState!.defenderId);
+        if (!isAttacker && !isDefender) {
+            return { success: false, error: 'AI not involved in this combat' };
+        }
+
+        // Get the opponent's choice if already submitted (for counter-strategy)
+        const opponentChoice = isAttacker
+            ? session.combatState.defenderChoice
+            : session.combatState.attackerChoice;
+
+        const choice = this.aiService.selectTieBreakerChoice(
+            session.gameMode,
+            opponentChoice
+        );
+
+        return { success: true, choice };
     }
 
     public getPlayerSetupView(socketId: string): SetupStatePayload | null {
@@ -951,6 +1136,11 @@ export class GameService {
                 this.setupStates.delete(session.players.blue.socketId);
             }
 
+            // Clean up AI session state
+            if (session.opponentType === 'ai') {
+                this.aiService.clearSession(sessionId);
+            }
+
             this.sessions.delete(sessionId);
         }
     }
@@ -1000,6 +1190,14 @@ export class GameService {
         // Mark this player's rematch request
         session.rematchRequests[color] = true;
 
+        // In singleplayer, AI always accepts rematch
+        if (session.opponentType === 'ai') {
+            const aiColor = this.getAIColor(session.sessionId);
+            if (aiColor) {
+                session.rematchRequests[aiColor] = true;
+            }
+        }
+
         const opponent = session.players[color === 'red' ? 'blue' : 'red'];
         const opponentSocketId = opponent?.socketId;
 
@@ -1022,9 +1220,11 @@ export class GameService {
         const session = this.sessions.get(sessionId);
         if (!session) return { success: false, error: 'Session not found' };
 
-        // Reset board to empty
-        session.board = Array(BOARD_ROWS).fill(null).map((_, row) =>
-            Array(BOARD_COLS).fill(null).map((_, col) => ({
+        const config = BOARD_CONFIG[session.gameMode];
+
+        // Reset board to empty using mode-specific dimensions
+        session.board = Array(config.rows).fill(null).map((_, row) =>
+            Array(config.cols).fill(null).map((_, col) => ({
                 row,
                 col,
                 piece: null
@@ -1051,6 +1251,15 @@ export class GameService {
         session.winner = null;
         session.winReason = undefined;
         session.rematchRequests = undefined;
+
+        // Re-initialize AI session tracking for rematch
+        if (session.opponentType === 'ai') {
+            const aiColor = this.getAIColor(sessionId);
+            if (aiColor) {
+                this.aiService.clearSession(sessionId);
+                this.aiService.initSession(sessionId, aiColor);
+            }
+        }
 
         console.log(`🔄 Session ${sessionId} reset for rematch`);
         return { success: true };
@@ -1101,6 +1310,9 @@ export class GameService {
      * Returns opponent socket ID if they should be notified.
      */
     public handleTemporaryDisconnect(socketId: string, onTimeout: () => void): string | null {
+        // AI players never disconnect
+        if (this.isAIPlayer(socketId)) return null;
+
         const playerId = this.socketIdToPlayerId.get(socketId);
         if (!playerId) return null;
 
@@ -1109,6 +1321,13 @@ export class GameService {
 
         const session = this.sessions.get(sessionId);
         if (!session) return null;
+
+        // For singleplayer sessions, just end the session immediately (no grace period needed)
+        if (session.opponentType === 'ai') {
+            console.log(`🤖 Human disconnected from AI session ${sessionId}, removing session`);
+            this.removeSession(sessionId);
+            return null;
+        }
 
         // Find opponent
         const opponent = session.players.red?.socketId === socketId ? session.players.blue : session.players.red;

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { PlayerColor, GamePhase, PlayerGameView, PlayerCellView, Position, GameMode } from '@rps/shared';
+import type { PlayerColor, GamePhase, PlayerGameView, PlayerCellView, Position, GameMode, OpponentType } from '@rps/shared';
 
 interface SetupState {
     board: PlayerCellView[][];
@@ -28,6 +28,8 @@ interface GameStore {
     setPlayerInfo: (playerId: string, color: PlayerColor) => void;
     gameMode: GameMode;
     setGameMode: (mode: GameMode) => void;
+    opponentType: OpponentType;
+    setOpponentType: (type: OpponentType) => void;
     sessionId: string | null;
     gamePhase: GamePhase;
     gameView: PlayerGameView | null;
@@ -88,6 +90,7 @@ const initialState = {
     playerId: null,
     myColor: null,
     gameMode: 'classic' as GameMode,
+    opponentType: 'human' as OpponentType,
     sessionId: null,
     gamePhase: 'waiting' as GamePhase,
     gameView: null,
@@ -104,6 +107,7 @@ export const useGameStore = create<GameStore>((set) => ({
     setConnectionStatus: (status) => set({ connectionStatus: status }),
     setPlayerInfo: (playerId, color) => set({ playerId, myColor: color }),
     setGameMode: (mode) => set({ gameMode: mode }),
+    setOpponentType: (type) => set({ opponentType: type }),
     setSessionId: (sessionId) => set({ sessionId }),
     setGamePhase: (phase) => set({ gamePhase: phase }),
     setGameView: (view) => set({ gameView: view }),
