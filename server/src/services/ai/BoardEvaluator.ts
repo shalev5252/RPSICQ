@@ -160,7 +160,7 @@ export class BoardEvaluator {
      * Returns small values (0-5) to avoid overriding combat/positional scores.
      */
     public computeInformationGain(
-        attackerType: PieceType,
+        _attackerType: PieceType,
         defenderPieceId: string,
         bayesianState: BayesianState | undefined,
         phase: GamePhase
