@@ -7,8 +7,8 @@ export const LanguageSwitcher: React.FC = () => {
 
     useEffect(() => {
         document.documentElement.dir = i18n.dir();
-        document.documentElement.lang = i18n.language;
-    }, [i18n.language]);
+        document.documentElement.lang = i18n.resolvedLanguage || 'en';
+    }, [i18n.resolvedLanguage]);
 
     const changeLanguage = (lng: string) => {
         i18n.changeLanguage(lng);
@@ -17,14 +17,14 @@ export const LanguageSwitcher: React.FC = () => {
     return (
         <div className="language-switcher">
             <button
-                className={i18n.language === 'en' ? 'active' : ''}
+                className={i18n.resolvedLanguage === 'en' ? 'active' : ''}
                 onClick={() => changeLanguage('en')}
             >
                 EN
             </button>
             <span className="divider">|</span>
             <button
-                className={i18n.language === 'he' ? 'active' : ''}
+                className={i18n.resolvedLanguage === 'he' ? 'active' : ''}
                 onClick={() => changeLanguage('he')}
             >
                 HE

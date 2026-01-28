@@ -63,7 +63,7 @@
     "game": {
         "your_turn": "תורך",
         "opponent_turn": "תור היריב",
-        "time_remaining": "זמן נותר: {{seconds}}שניות",
+        "time_remaining": "זמן נותר: {{seconds}} שניות",
         "combat": "קרב!",
         "won": "ניצחת!",
         "lost": "הפסדת",

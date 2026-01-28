@@ -82,9 +82,9 @@
             "title": "Combat Rules",
             "subtitle_classic": "Rock • Paper • Scissors",
             "subtitle_rpsls": "RPSLS Extended Rules",
-            "instruction": "Tap an icon to see what it beats (green) and what beats it (red)",
-            "beats": "Beats",
-            "beaten_by": "Beaten By"
+            "instruction": "Tap an icon to see what it wins against (green) and what it loses to (red)",
+            "beats": "Wins Against",
+            "beaten_by": "Loses To"
         },
         "tie_breaker": {
             "title": "🤝 It's a Tie!",
