@@ -16,8 +16,6 @@ import {
     PlayerColor,
     Piece,
     Position,
-    PieceType,
-    MOVEMENT_DIRECTIONS,
     RPSLS_WINS
 } from '@rps/shared';
 
@@ -224,7 +222,7 @@ function simulateGame(
     // Human setup: strategic king placement (back row center, pit front row)
     const kingRow = humanSetupRows[0]; // back row
     const kingCol = 1 + Math.floor(Math.random() * (config.cols - 2));
-    let pitRow = humanSetupRows[1]; // front row
+    const pitRow = humanSetupRows[1]; // front row
     const pitOffset = Math.random() < 0.5 ? -1 : 1;
     let pitCol = Math.min(Math.max(0, kingCol + pitOffset), config.cols - 1);
     if (pitRow === kingRow && pitCol === kingCol) {
@@ -429,8 +427,8 @@ const NUM_GAMES = parseInt(process.argv[2] || '100', 10);
 
 const originalLog = console.log;
 const originalError = console.error;
-console.log = () => {};
-console.error = () => {};
+console.log = () => { };
+console.error = () => { };
 
 originalLog(`\n  AI Win Rate Simulation (${NUM_GAMES} games per matchup)\n`);
 originalLog('  Expectimax+Bayesian AI (blue) vs opponent (red)\n');
@@ -457,10 +455,10 @@ printResults('RPSLS vs Greedy', rg);
 originalLog('\n========================================');
 originalLog('  SUMMARY');
 originalLog('========================================');
-originalLog(`  vs Random (classic):  ${((cr.aiWins/cr.totalGames)*100).toFixed(0)}% win`);
-originalLog(`  vs Random (rpsls):    ${((rr.aiWins/rr.totalGames)*100).toFixed(0)}% win`);
-originalLog(`  vs Greedy (classic):  ${((cg.aiWins/cg.totalGames)*100).toFixed(0)}% win`);
-originalLog(`  vs Greedy (rpsls):    ${((rg.aiWins/rg.totalGames)*100).toFixed(0)}% win`);
+originalLog(`  vs Random (classic):  ${((cr.aiWins / cr.totalGames) * 100).toFixed(0)}% win`);
+originalLog(`  vs Random (rpsls):    ${((rr.aiWins / rr.totalGames) * 100).toFixed(0)}% win`);
+originalLog(`  vs Greedy (classic):  ${((cg.aiWins / cg.totalGames) * 100).toFixed(0)}% win`);
+originalLog(`  vs Greedy (rpsls):    ${((rg.aiWins / rg.totalGames) * 100).toFixed(0)}% win`);
 originalLog('========================================\n');
 
 console.log = originalLog;

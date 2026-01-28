@@ -4,9 +4,7 @@ import {
     Piece,
     Position,
     PieceType,
-    BOARD_CONFIG,
-    RPSLS_WINS,
-    MOVEMENT_DIRECTIONS
+    RPSLS_WINS
 } from '@rps/shared';
 import { BayesianState, EvalWeights, ScoredMove, GamePhase } from './types.js';
 import { BoardEvaluator } from './BoardEvaluator.js';
@@ -39,7 +37,7 @@ export class ExpectimaxSearch {
         gameState: GameState,
         aiColor: PlayerColor,
         bayesianState: BayesianState | undefined,
-        tracker: BayesianTracker
+        _tracker: BayesianTracker
     ): { from: Position; to: Position } | null {
         const phase = this.phaseDetector.detectPhase(gameState, aiColor, bayesianState);
         const weights = this.phaseDetector.getWeights(phase);

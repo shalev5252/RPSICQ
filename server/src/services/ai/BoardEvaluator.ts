@@ -8,7 +8,7 @@ import {
     RPSLS_WINS,
     MOVEMENT_DIRECTIONS
 } from '@rps/shared';
-import { EvalWeights, BayesianState, PieceBeliefs, GamePhase } from './types.js';
+import { EvalWeights, BayesianState, GamePhase } from './types.js';
 
 /**
  * Static board evaluation for leaf nodes in the search tree.
@@ -125,7 +125,7 @@ export class BoardEvaluator {
         attacker: Piece,
         defender: Piece,
         bayesianState: BayesianState | undefined,
-        weights: EvalWeights
+        _weights: EvalWeights
     ): number {
         const knownType = this.getKnownOrRevealedType(defender, bayesianState);
 
