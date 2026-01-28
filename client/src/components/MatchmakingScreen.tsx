@@ -2,24 +2,32 @@ import React from 'react';
 import { useMatchmaking } from '../hooks/useMatchmaking';
 import { useGameStore } from '../store/gameStore';
 import { ModeSelect } from './ModeSelect';
+import { socket } from '../socket';
+import { SOCKET_EVENTS } from '@rps/shared';
 import './MatchmakingScreen.css';
 
 export const MatchmakingScreen: React.FC = () => {
     const isSearching = useMatchmaking().isSearching;
     const joinQueue = useMatchmaking().joinQueue;
     const leaveQueue = useMatchmaking().leaveQueue;
-    const { gameMode, setGameMode } = useGameStore((state) => ({
+    const { gameMode, setGameMode, opponentType, setOpponentType } = useGameStore((state) => ({
         gameMode: state.gameMode,
-        setGameMode: state.setGameMode
+        setGameMode: state.setGameMode,
+        opponentType: state.opponentType,
+        setOpponentType: state.setOpponentType
     }));
 
     const handleJoin = () => {
-        joinQueue(gameMode);
+        if (opponentType === 'ai') {
+            socket.emit(SOCKET_EVENTS.START_SINGLEPLAYER, { gameMode });
+        } else {
+            joinQueue(gameMode);
+        }
     };
 
     return (
         <div className="matchmaking-screen">
-            <h2>RPS Battle</h2>
+
 
             <ModeSelect
                 selectedMode={gameMode}
@@ -27,10 +35,32 @@ export const MatchmakingScreen: React.FC = () => {
                 disabled={isSearching}
             />
 
+            <div className="opponent-select">
+                <h3 className="opponent-select__title">Select Opponent</h3>
+                <div className="opponent-select__options">
+                    <button
+                        className={`opponent-select__option ${opponentType === 'human' ? 'opponent-select__option--selected' : ''}`}
+                        onClick={() => setOpponentType('human')}
+                        disabled={isSearching}
+                    >
+                        <div className="opponent-select__icon">&#x1F465;</div>
+                        <div className="opponent-select__label">vs Player</div>
+                    </button>
+                    <button
+                        className={`opponent-select__option ${opponentType === 'ai' ? 'opponent-select__option--selected' : ''}`}
+                        onClick={() => setOpponentType('ai')}
+                        disabled={isSearching}
+                    >
+                        <div className="opponent-select__icon">&#x1F916;</div>
+                        <div className="opponent-select__label">vs Computer</div>
+                    </button>
+                </div>
+            </div>
+
             <div className="actions">
                 {!isSearching ? (
                     <button className="btn-primary" onClick={handleJoin}>
-                        Find Game
+                        {opponentType === 'ai' ? 'Start Game' : 'Find Game'}
                     </button>
                 ) : (
                     <div className="searching-state">

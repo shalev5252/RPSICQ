@@ -3,9 +3,9 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100vh;
-    background-color: #242424;
-    color: white;
+    width: 100%;
+    margin: 0 auto;
+    /* Removed background-color and fixed height to blend with main app background */
 }
 
 .actions {
@@ -61,4 +61,68 @@
     100% {
         transform: rotate(360deg);
     }
+}
+
+.opponent-select {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    width: 100%;
+    max-width: 400px;
+    margin-bottom: 1rem;
+}
+
+.opponent-select__title {
+    color: var(--text-secondary, #aaa);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0;
+    text-align: center;
+}
+
+.opponent-select__options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+
+.opponent-select__option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid transparent;
+    border-radius: 12px;
+    padding: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: white;
+}
+
+.opponent-select__option:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+.opponent-select__option--selected {
+    background: rgba(var(--primary-rgb, 100, 108, 255), 0.25);
+    border-color: var(--primary, #646cff);
+    box-shadow: 0 0 15px rgba(var(--primary-rgb, 100, 108, 255), 0.3);
+}
+
+.opponent-select__option:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.opponent-select__icon {
+    font-size: 1.5rem;
+}
+
+.opponent-select__label {
+    font-weight: 600;
+    font-size: 0.95rem;
 }

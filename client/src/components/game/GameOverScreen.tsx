@@ -9,9 +9,11 @@ export const GameOverScreen: React.FC = () => {
     const gameState = useGameStore((state) => state.gameState);
     const rematchState = useGameStore((state) => state.rematchState);
     const setRematchState = useGameStore((state) => state.setRematchState);
+    const opponentType = useGameStore((state) => state.opponentType);
 
     if (!gameState || !myColor) return null;
 
+    const isSingleplayer = opponentType === 'ai';
     const winner = gameState.winner;
     const isWinner = winner === myColor;
 
@@ -23,7 +25,6 @@ export const GameOverScreen: React.FC = () => {
 
     const handlePlayAgain = () => {
         if (!socket?.connected) {
-            // Socket not connected - show error state instead of getting stuck
             console.error('Cannot request rematch: socket disconnected');
             return;
         }
@@ -37,7 +38,7 @@ export const GameOverScreen: React.FC = () => {
             return 'Starting...';
         }
         if (rematchState.hasRequested) {
-            return 'Waiting for opponent...';
+            return isSingleplayer ? 'Starting...' : 'Waiting for opponent...';
         }
         return 'Play Again';
     };
@@ -56,7 +57,7 @@ export const GameOverScreen: React.FC = () => {
                     }
                 </div>
 
-                {rematchState.opponentRequested && !rematchState.hasRequested && (
+                {!isSingleplayer && rematchState.opponentRequested && !rematchState.hasRequested && (
                     <div className="game-over-screen__notification">
                         Opponent wants to play again!
                     </div>
