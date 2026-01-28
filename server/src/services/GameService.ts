@@ -456,6 +456,11 @@ export class GameService {
             return { success: false, error: 'Not an AI session' };
         }
 
+        // Idempotency check: If AI is already ready, don't repeat setup
+        if (session.aiReady) {
+            return { success: true };
+        }
+
         const aiColor = this.getAIColor(sessionId);
         if (!aiColor) return { success: false, error: 'AI color not found' };
 
@@ -483,6 +488,7 @@ export class GameService {
             return { success: false, error: `AI confirm failed: ${confirmResult.error}` };
         }
 
+        session.aiReady = true;
         console.log(`🤖 AI setup complete for session ${sessionId}`);
         return { success: true };
     }

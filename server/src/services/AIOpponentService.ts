@@ -251,7 +251,8 @@ export class AIOpponentService {
         const forwardDirection = aiColor === 'red' ? 1 : -1;
         const forwardProgress = to.row * forwardDirection;
         // INCREASED WEIGHT: 2 -> 8 to overcome defensive penalties and encourage movement
-        score += forwardProgress * 8;
+        // FIX: Use absolute value to treat progress symmetrically (so blue's negative values don't hurt score)
+        score += Math.abs(forwardProgress) * 8;
 
         // --- Infiltration Bonus ---
         // Bonus for crossing into enemy territory (seeking the King)

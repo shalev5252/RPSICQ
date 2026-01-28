@@ -23,6 +23,12 @@ export function setupSocketHandlers(io: Server): void {
         // Check if AI has movable pieces
         if (!gameService.hasMovablePieces(aiSocketId)) {
             gameService.skipTurn(aiSocketId);
+
+            // Check if Human is also blocked
+            if (!gameService.hasMovablePieces(humanSocket.id)) {
+                gameService.skipTurn(humanSocket.id);
+            }
+
             const updatedView = gameService.getPlayerGameView(humanSocket.id);
             if (updatedView) {
                 humanSocket.emit(SOCKET_EVENTS.GAME_STATE, updatedView);

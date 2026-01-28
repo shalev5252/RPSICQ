@@ -65,6 +65,7 @@ export interface GameState {
         red: boolean;
         blue: boolean;
     };
+    aiReady?: boolean;
 }
 
 // Socket Event Payloads
