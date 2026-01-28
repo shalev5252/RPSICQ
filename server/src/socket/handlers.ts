@@ -280,8 +280,9 @@ export function setupSocketHandlers(io: Server): void {
                         });
                     }
 
-                    // If it's AI's turn first, schedule AI move
+                    // Initialize Bayesian tracker and schedule AI move
                     if (updatedSession.opponentType === 'ai') {
+                        gameService.aiService.initializeTracking(updatedSession.sessionId, updatedSession);
                         scheduleAIMove(updatedSession.sessionId, socket);
                     }
                 }

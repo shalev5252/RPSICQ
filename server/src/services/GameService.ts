@@ -912,6 +912,7 @@ export class GameService {
                     }
                     if (loser.owner !== aiColor) {
                         this.aiService.recordCombatOutcome(session.sessionId, loser.id, loser.type, loser.position);
+                        this.aiService.recordOpponentDeath(session.sessionId, loser.id, loser.type);
                     }
                 }
             }
@@ -930,6 +931,14 @@ export class GameService {
 
         // Update piece position
         piece.position = { row: to.row, col: to.col };
+
+        // --- AI Movement Tracking ---
+        if (session.opponentType === 'ai') {
+            const aiColor = this.getAIColor(session.sessionId);
+            if (aiColor && color !== aiColor) {
+                this.aiService.recordOpponentMovement(session.sessionId, piece.id, to);
+            }
+        }
 
         // Switch turn
         session.currentTurn = color === 'red' ? 'blue' : 'red';
@@ -1278,6 +1287,7 @@ export class GameService {
         session.winner = null;
         session.winReason = undefined;
         session.rematchRequests = undefined;
+        session.aiReady = false;
 
         // Re-initialize AI session tracking for rematch
         if (session.opponentType === 'ai') {
