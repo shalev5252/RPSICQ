@@ -37,6 +37,13 @@ export class BoardEvaluator {
 
         if (!aiPlayer || !opponentPlayer) return 0;
 
+        // --- Terminal State Check ---
+        const ownKing = aiPlayer.pieces.find(p => p.type === 'king');
+        const opponentKing = opponentPlayer.pieces.find(p => p.type === 'king');
+
+        if (!ownKing) return -10000; // AI lost
+        if (!opponentKing) return 10000; // AI won
+
         let score = 0;
 
         // --- Material advantage ---
@@ -45,7 +52,6 @@ export class BoardEvaluator {
         score += (aiPieceCount - opPieceCount) * weights.pieceAdvantage;
 
         // --- Per-piece evaluation for AI pieces ---
-        const ownKing = aiPlayer.pieces.find(p => p.type === 'king');
 
         for (const piece of aiPlayer.pieces) {
             if (piece.type === 'king' || piece.type === 'pit') continue;
