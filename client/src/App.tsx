@@ -31,6 +31,7 @@ function AppContent() {
         <div className="app">
             <header className="app-header">
                 <h1>RPS Battle</h1>
+                <img src="/rps_logo.png" alt="RPS Battle Logo" className="header-logo" />
                 <div className={`connection-status ${isConnected ? 'connected' : 'disconnected'}`}>
                     {isConnected ? 'Connected' : 'Disconnected'}
                 </div>
