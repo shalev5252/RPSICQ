@@ -60,7 +60,7 @@ export const AI_ID_PREFIX = 'ai-';
 export const AI_SOCKET_PREFIX = 'ai-socket-';
 export const AI_DELAY_MIN_MS = 500;
 export const AI_DELAY_MAX_MS = 2000;
-export const AI_SUBOPTIMAL_CHANCE = 0.15; // 15% chance of picking a non-optimal move
+export const AI_SUBOPTIMAL_CHANCE = 0.05; // 5% chance of picking a non-optimal move
 
 export const TURN_TIME_MS = 2 * 60 * 1000;
 export const TURN_TIME_SECONDS = 120;

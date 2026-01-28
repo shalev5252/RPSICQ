@@ -105,6 +105,30 @@ export class AIOpponentService {
 
         const opponentColor: PlayerColor = aiColor === 'red' ? 'blue' : 'red';
 
+        // --- Emergency Mode: Is King in check? ---
+        const ownKing = player.pieces.find(p => p.type === 'king');
+        const threatsToKing: Piece[] = [];
+
+        if (ownKing) {
+            const opponentPieces = gameState.players[opponentColor]?.pieces || [];
+            for (const op of opponentPieces) {
+                const dist = Math.abs(op.position.row - ownKing.position.row) + Math.abs(op.position.col - ownKing.position.col);
+                if (dist === 1) {
+                    // Check if this adjacent piece beats King
+                    const opInference = state?.opponentInferences.get(op.id);
+                    const opType = opInference?.knownType ?? (op.isRevealed ? op.type : null);
+
+                    // Treating UNKNOWN as a threat to be safe.
+                    // King loses to everything except Pit (and ties King).
+                    if (!opType || (opType !== 'king' && opType !== 'pit')) {
+                        threatsToKing.push(op);
+                    }
+                }
+            }
+        }
+
+        const isEmergency = threatsToKing.length > 0;
+
         // Gather all candidate moves
         const candidates: { from: Position; to: Position; score: number }[] = [];
 
@@ -113,8 +137,9 @@ export class AIOpponentService {
 
             const validMoves = this.getValidMovesForPiece(piece, aiColor, gameState, config);
             for (const to of validMoves) {
+                // Pass threats to scoring function
                 const score = this.scoreMoveCandidate(
-                    piece, to, gameState, aiColor, opponentColor, config, state ?? null
+                    piece, to, gameState, aiColor, opponentColor, config, state ?? null, threatsToKing
                 );
                 candidates.push({ from: piece.position, to, score });
             }
@@ -124,6 +149,11 @@ export class AIOpponentService {
 
         // Sort descending by score
         candidates.sort((a, b) => b.score - a.score);
+
+        // If Emergency, ALWAYS pick best move (no randomness)
+        if (isEmergency) {
+            return candidates[0];
+        }
 
         // Controlled imperfection: sometimes pick a non-top move
         if (candidates.length > 1 && Math.random() < AI_SUBOPTIMAL_CHANCE) {
@@ -169,12 +199,26 @@ export class AIOpponentService {
         aiColor: PlayerColor,
         opponentColor: PlayerColor,
         config: { rows: number; cols: number },
-        sessionState: AISessionState | null
+        sessionState: AISessionState | null,
+        threatsToKing: Piece[] = []
     ): number {
         let score = 0;
         const targetCell = gameState.board[to.row][to.col];
         const _opponent = gameState.players[opponentColor];
         const ownPlayer = gameState.players[aiColor];
+
+        // --- Emergency Handling ---
+        let isMovingToSafety = true; // tracked for King
+
+        if (threatsToKing.length > 0) {
+            // 2. If we are not King, can we capture the threat(s)?
+            if (piece.type !== 'king') {
+                const capturesThreat = threatsToKing.some(t => t.position.row === to.row && t.position.col === to.col);
+                if (capturesThreat) {
+                    score += 2000; // HUGE priority
+                }
+            }
+        }
 
         // --- Pit avoidance (strongest signal) ---
         if (sessionState?.knownPitPosition) {
@@ -206,7 +250,23 @@ export class AIOpponentService {
         // Moving toward the opponent's side is generally good
         const forwardDirection = aiColor === 'red' ? 1 : -1;
         const forwardProgress = to.row * forwardDirection;
-        score += forwardProgress * 2;
+        // INCREASED WEIGHT: 2 -> 8 to overcome defensive penalties and encourage movement
+        score += forwardProgress * 8;
+
+        // --- Infiltration Bonus ---
+        // Bonus for crossing into enemy territory (seeking the King)
+        const isRed = aiColor === 'red';
+        // Board is 6 rows. Red starts 0,1. Blue starts 4,5.
+        // Red attacks rows 3,4,5. Blue attacks rows 0,1,2.
+        const isInEnemyHalf = isRed ? to.row >= 3 : to.row <= 2;
+        if (isInEnemyHalf) {
+            score += 20;
+            // Extra bonus for deep infiltration (enemy base rows)
+            const isInEnemyBase = isRed ? to.row >= 4 : to.row <= 1;
+            if (isInEnemyBase) {
+                score += 30;
+            }
+        }
 
         // --- Board center control ---
         const centerCol = (config.cols - 1) / 2;
@@ -224,6 +284,63 @@ export class AIOpponentService {
                     score += 3;
                 }
             }
+        }
+
+        // --- Defensive Lookahead: Am I moving into danger? ---
+        const opponentPieces = gameState.players[opponentColor]?.pieces || [];
+        for (const op of opponentPieces) {
+            if (op.type === 'king' || op.type === 'pit') continue;
+
+            // Check if opponent is adjacent to the target 'to' position
+            const dist = Math.abs(op.position.row - to.row) + Math.abs(op.position.col - to.col);
+            if (dist === 1) {
+                // Opponent 'op' could potentially attack 'to' next turn
+                // Assess threat: Does 'op' beat 'piece' (us)?
+
+                // We use our knowledge of the opponent (inference) to guess 'op's type
+                // But for defensive play, if 'op' is unknown, we should be cautious.
+                const opInference = sessionState?.opponentInferences.get(op.id);
+                const opType = opInference?.knownType ?? (op.isRevealed ? op.type : null);
+
+                let threatLevel = 0;
+
+                if (opType) {
+                    // Known enemy
+                    const theirWins = RPSLS_WINS[opType];
+                    if (theirWins && theirWins.includes(piece.type)) {
+                        // They beat us! Heavy penalty.
+                        threatLevel = 300;
+                        // If we are the King, NEVER do this
+                        if (piece.type === 'king') threatLevel = 1000;
+                    } else if (opType === piece.type) {
+                        // Tie - mild risk
+                        threatLevel = 20;
+                    } else {
+                        // We beat them - actually an opportunity (bait), but slight risk if they have backup
+                        threatLevel = -10; // Bonus!
+                    }
+                } else {
+                    // Unknown enemy.
+                    // Assume risk. Don't put King next to unknown.
+                    if (piece.type === 'king') {
+                        threatLevel = 500;
+                    } else {
+                        // Regular pieces are BRAVE now.
+                        // Reduced from 30 -> 10 to encourage testing/probing
+                        threatLevel = 10;
+                    }
+                }
+
+                if (threatLevel >= 100) {
+                    isMovingToSafety = false;
+                }
+                score -= threatLevel;
+            }
+        }
+
+        // Emergency King Escape Bonus
+        if (threatsToKing.length > 0 && piece.type === 'king' && isMovingToSafety) {
+            score += 2000; // Saving the King by moving to a safe spot
         }
 
         return score;
