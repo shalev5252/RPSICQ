@@ -1,0 +1,22 @@
+# Tasks: Implement Localization
+
+- [x] Install dependencies (`i18next`, `react-i18next`, `i18next-browser-languagedetector`, `i18next-http-backend` if needed) <!-- id: 0 -->
+    - [x] `npm install i18next react-i18next i18next-browser-languagedetector --workspace=@rps/client`
+- [x] Configure i18n <!-- id: 1 -->
+    - [x] Create `client/src/i18n.ts`
+    - [x] Initialize with EN and HE resources
+    - [x] Import in `client/src/main.tsx`
+- [x] Create Translation Files <!-- id: 2 -->
+    - [x] `client/src/locales/en/translation.json`
+    - [x] `client/src/locales/he/translation.json`
+- [x] Implement Language Switcher <!-- id: 3 -->
+    - [x] Create `LanguageSwitcher` component
+    - [x] Add to `App.tsx` header
+- [x] Apply Translations <!-- id: 4 -->
+    - [x] Update `App.tsx`
+    - [x] Update `MatchmakingScreen.tsx`
+    - [x] Update `SetupScreen.tsx`
+    - [x] Update `GameScreen.tsx`
+    - [x] Update `GameOverScreen.tsx`
+- [x] RTL Support <!-- id: 5 -->
+    - [x] Add logic to flip `dir` attribute on `html` tag based on current language

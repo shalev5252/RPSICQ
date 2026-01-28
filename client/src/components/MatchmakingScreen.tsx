@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useMatchmaking } from '../hooks/useMatchmaking';
 import { useGameStore } from '../store/gameStore';
 import { ModeSelect } from './ModeSelect';
@@ -16,6 +17,8 @@ export const MatchmakingScreen: React.FC = () => {
         opponentType: state.opponentType,
         setOpponentType: state.setOpponentType
     }));
+
+    const { t } = useTranslation();
 
     const handleJoin = () => {
         if (opponentType === 'ai') {
@@ -36,7 +39,7 @@ export const MatchmakingScreen: React.FC = () => {
             />
 
             <div className="opponent-select">
-                <h3 className="opponent-select__title">Select Opponent</h3>
+                <h3 className="opponent-select__title">{t('matchmaking.select_opponent')}</h3>
                 <div className="opponent-select__options">
                     <button
                         className={`opponent-select__option ${opponentType === 'human' ? 'opponent-select__option--selected' : ''}`}
@@ -44,7 +47,7 @@ export const MatchmakingScreen: React.FC = () => {
                         disabled={isSearching}
                     >
                         <div className="opponent-select__icon">&#x1F465;</div>
-                        <div className="opponent-select__label">vs Player</div>
+                        <div className="opponent-select__label">{t('matchmaking.vs_player')}</div>
                     </button>
                     <button
                         className={`opponent-select__option ${opponentType === 'ai' ? 'opponent-select__option--selected' : ''}`}
@@ -52,7 +55,7 @@ export const MatchmakingScreen: React.FC = () => {
                         disabled={isSearching}
                     >
                         <div className="opponent-select__icon">&#x1F916;</div>
-                        <div className="opponent-select__label">vs Computer</div>
+                        <div className="opponent-select__label">{t('matchmaking.vs_computer')}</div>
                     </button>
                 </div>
             </div>
@@ -60,14 +63,14 @@ export const MatchmakingScreen: React.FC = () => {
             <div className="actions">
                 {!isSearching ? (
                     <button className="btn-primary" onClick={handleJoin}>
-                        {opponentType === 'ai' ? 'Start Game' : 'Find Game'}
+                        {opponentType === 'ai' ? t('matchmaking.start_game') : t('matchmaking.find_game')}
                     </button>
                 ) : (
                     <div className="searching-state">
                         <div className="spinner"></div>
-                        <p>Searching for opponent...</p>
+                        <p>{t('matchmaking.searching')}</p>
                         <button className="btn-secondary" onClick={leaveQueue}>
-                            Cancel
+                            {t('matchmaking.cancel')}
                         </button>
                     </div>
                 )}

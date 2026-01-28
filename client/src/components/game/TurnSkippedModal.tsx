@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import './TurnSkippedModal.css';
 
 interface TurnSkippedModalProps {
@@ -7,6 +8,7 @@ interface TurnSkippedModalProps {
 
 export const TurnSkippedModal: React.FC<TurnSkippedModalProps> = ({ onComplete }) => {
     const [visible, setVisible] = useState(true);
+    const { t } = useTranslation();
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -25,10 +27,10 @@ export const TurnSkippedModal: React.FC<TurnSkippedModalProps> = ({ onComplete }
             <div className="turn-skipped-modal__card">
                 <div className="turn-skipped-modal__icon">⏭️</div>
                 <div className="turn-skipped-modal__title">
-                    Can't Move
+                    {t('game.turn_skipped.title')}
                 </div>
                 <div className="turn-skipped-modal__subtitle">
-                    Passes turn to opponent
+                    {t('game.turn_skipped.subtitle')}
                 </div>
             </div>
         </div>

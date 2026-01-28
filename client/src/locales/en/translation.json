@@ -1,0 +1,119 @@
+{
+    "app": {
+        "title": "RPS Battle",
+        "connected": "Connected",
+        "disconnected": "Disconnected",
+        "connecting": "Connecting to server..."
+    },
+    "colors": {
+        "red": "RED",
+        "blue": "BLUE"
+    },
+    "matchmaking": {
+        "title": "Ready to Battle?",
+        "find_match": "Find Match",
+        "searching": "Searching for opponent...",
+        "cancel": "Cancel",
+        "mode_classic": "Classic (RPS)",
+        "mode_classic_desc": "Standard RPS rules with King & Pit",
+        "mode_classic_meta": "6x7 Board • 14 Pieces",
+        "mode_rpsls": "RPSLS (Big Bang)",
+        "mode_rpsls_desc": "Extended rules with Lizard & Spock",
+        "mode_rpsls_meta": "6x6 Board • 12 Pieces",
+        "select_mode": "Select Game Mode",
+        "select_opponent": "Select Opponent",
+        "vs_player": "vs Player",
+        "vs_computer": "vs Computer",
+        "start_game": "Start Game",
+        "find_game": "Find Game"
+    },
+    "setup": {
+        "title": "Setup Phase",
+        "instructions": "Drag and drop your King and Pit to the highlighted rows. Click Randomize to place the rest.",
+        "confirm": "Confirm Setup",
+        "randomize": "Randomize",
+        "waiting": "Waiting for opponent...",
+        "clear": "Clear Board",
+        "loading": "Loading...",
+        "setup_your_army": "Setup Your Army",
+        "you_are": "You are {{color}}",
+        "opponent_ready": "Opponent Ready!",
+        "enemy_territory": "Enemy Territory",
+        "your_territory": "Your Territory",
+        "shuffle": "Shuffle Army",
+        "lets_start": "Let's Start!",
+        "piece_tray": {
+            "title": "Place Your Pieces",
+            "subtitle": "drag and drop your king and pit to your rows",
+            "army_ready": "Army Ready",
+            "auto_deployed": "Auto-deployed units:",
+            "king": "King",
+            "pit": "Pit"
+        }
+    },
+    "piece_tray": {
+        "title": "Place Your Pieces",
+        "subtitle": "Drag the King and Pit to your rows",
+        "army_ready": "Army Ready",
+        "auto_deployed": "Auto-deployed units:",
+        "king": "King",
+        "pit": "Pit"
+    },
+    "pieces": {
+        "rock": "Rock",
+        "paper": "Paper",
+        "scissors": "Scissors",
+        "lizard": "Lizard",
+        "spock": "Spock",
+        "king": "King",
+        "pit": "Pit"
+    },
+    "game": {
+        "your_turn": "Your Turn",
+        "opponent_turn": "Opponent's Turn",
+        "time_remaining": "Time: {{seconds}}s",
+        "combat": "Combat!",
+        "won": "You Won!",
+        "lost": "You Lost",
+        "tie": "It's a Tie!",
+        "waiting_rematch": "Waiting for rematch...",
+        "rules_title": "Game Rules",
+        "rules": {
+            "title": "Combat Rules",
+            "subtitle_classic": "Rock • Paper • Scissors",
+            "subtitle_rpsls": "RPSLS Extended Rules",
+            "instruction": "Tap an icon to see what it wins against (green) and what it loses to (red)",
+            "beats": "Wins Against",
+            "beaten_by": "Loses To"
+        },
+        "tie_breaker": {
+            "title": "🤝 It's a Tie!",
+            "subtitle": "Choose a new element for your piece",
+            "tie_again": "It's a tie again!",
+            "choose_again": "Choose again...",
+            "confirm": "Confirm Choice",
+            "waiting": "Waiting for opponent..."
+        },
+        "turn_skipped": {
+            "title": "Can't Move",
+            "subtitle": "Passes turn to opponent"
+        },
+        "game_over": {
+            "victory": "Victory!",
+            "defeat": "Defeat!",
+            "draw": "Draw!",
+            "reason_king_captured": "King Captured",
+            "reason_no_moves": "No Valid Moves",
+            "reason_timeout": "Time Out",
+            "reason_disconnect": "Opponent Disconnected",
+            "play_again": "Play Again",
+            "rematch_requested": "Rematch Requested...",
+            "return_home": "Return to Menu",
+            "msg_king_captured_win": "You have captured the opponent's King!",
+            "msg_king_captured_loss": "Your King has been captured!",
+            "opponent_rematch": "Opponent wants to play again!",
+            "starting": "Starting...",
+            "waiting_opponent": "Waiting for opponent..."
+        }
+    }
+}
