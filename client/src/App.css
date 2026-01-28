@@ -36,6 +36,17 @@ body {
     padding: 1rem 2rem;
     background: var(--color-surface);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+    /* For centering logo */
+}
+
+.header-logo {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    height: 48px;
+    /* Adjust based on desired size */
+    width: auto;
 }
 
 .app-header h1 {
@@ -122,6 +133,11 @@ body {
 
     .app-header h1 {
         font-size: 1.25rem;
+        /* Hide text on very small screens if needed, or adjust logo */
+    }
+
+    .header-logo {
+        height: 32px;
     }
 
     .app-main {

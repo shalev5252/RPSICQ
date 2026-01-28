@@ -1,4 +1,5 @@
 import React from 'react';
+import rpsLogo from './assets/images/rps_logo.png';
 import { useSocket } from './hooks/useSocket';
 import { useGameSession } from './hooks/useGameSession';
 import { useGameStore } from './store/gameStore';
@@ -31,6 +32,7 @@ function AppContent() {
         <div className="app">
             <header className="app-header">
                 <h1>RPS Battle</h1>
+                <img src={rpsLogo} alt="RPS Battle Logo" className="header-logo" />
                 <div className={`connection-status ${isConnected ? 'connected' : 'disconnected'}`}>
                     {isConnected ? 'Connected' : 'Disconnected'}
                 </div>
