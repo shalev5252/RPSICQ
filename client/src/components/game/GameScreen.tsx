@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSocket } from '../../hooks/useSocket';
 import { useGameStore } from '../../store/gameStore';
 import type { PieceType, Position, PlayerPieceView } from '@rps/shared';
@@ -174,8 +175,10 @@ export const GameScreen: React.FC = () => {
         ? ['rock', 'paper', 'scissors', 'lizard', 'spock']
         : [];
 
+    const { t } = useTranslation();
+
     if (!myColor) {
-        return <div className="game-screen">Loading...</div>;
+        return <div className="game-screen">{t('setup.loading')}</div>;
     }
 
     return (
@@ -184,15 +187,15 @@ export const GameScreen: React.FC = () => {
                 <button
                     className="game-screen__rules-btn"
                     onClick={() => setShowRules(true)}
-                    title="Game Rules"
+                    title={t('game.rules_title')}
                 >
                     ℹ️
                 </button>
                 <div className={`game-screen__turn-indicator ${isMyTurn ? 'game-screen__turn-indicator--my-turn' : 'game-screen__turn-indicator--opponent-turn'}`}>
-                    {isMyTurn ? "🎯 Your Turn!" : "⏳ Opponent's Turn"}
+                    {isMyTurn ? t('game.your_turn') : t('game.opponent_turn')}
                 </div>
                 <div className={`game-screen__color game-screen__color--${myColor}`}>
-                    You are {myColor.toUpperCase()}
+                    {t('setup.you_are', { color: t(`colors.${myColor}`) })}
                 </div>
             </div>
 

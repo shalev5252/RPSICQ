@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import type { PieceType, PlayerColor, GameMode } from '@rps/shared';
 import { BOARD_CONFIG } from '@rps/shared';
 import { Piece, PIECE_ICONS } from './Piece';
@@ -26,6 +27,8 @@ export const PieceTray: React.FC<PieceTrayProps> = ({
     onPieceClick,
     gameMode = 'classic',
 }) => {
+    const { t } = useTranslation();
+
     const handleDragStart = (pieceType: PieceType) => (e: React.DragEvent) => {
         e.dataTransfer.setData('pieceType', pieceType);
         e.dataTransfer.effectAllowed = 'move';
@@ -42,9 +45,6 @@ export const PieceTray: React.FC<PieceTrayProps> = ({
 
     const config = BOARD_CONFIG[gameMode];
 
-    // Helper to format piece name
-    const formatName = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
-
     // List of pawn types to show counts for
     const pawnTypes = Object.entries(config.pieces).filter(([type]) => type !== 'king' && type !== 'pit');
 
@@ -52,14 +52,14 @@ export const PieceTray: React.FC<PieceTrayProps> = ({
         // Show only composition summary when done placing
         return (
             <div className="piece-tray piece-tray--completed">
-                <h3 className="piece-tray__title">Army Ready</h3>
+                <h3 className="piece-tray__title">{t('setup.piece_tray.army_ready')}</h3>
                 <div className="piece-tray__composition">
-                    <p className="piece-tray__subtitle">Auto-deployed units:</p>
+                    <p className="piece-tray__subtitle">{t('setup.piece_tray.auto_deployed')}</p>
                     <div className="piece-tray__counts">
                         {pawnTypes.filter(([_, count]) => count > 0).map(([type, count]) => (
                             <div key={type} className="piece-tray__count-item">
                                 <span className="piece-tray__count-icon">{PIECE_ICONS[type as PieceType]}</span>
-                                <span className="piece-tray__count-text">x {count} {formatName(type)}</span>
+                                <span className="piece-tray__count-text">x {count} {t(`pieces.${type}`)}</span>
                             </div>
                         ))}
                     </div>
@@ -70,8 +70,8 @@ export const PieceTray: React.FC<PieceTrayProps> = ({
 
     return (
         <div className="piece-tray">
-            <h3 className="piece-tray__title">Place Your Pieces</h3>
-            <p className="piece-tray__subtitle">Drag the King and Pit to your rows</p>
+            <h3 className="piece-tray__title">{t('setup.piece_tray.title')}</h3>
+            <p className="piece-tray__subtitle">{t('setup.piece_tray.subtitle')}</p>
             <div className="piece-tray__pieces">
                 {!kingPlaced && (
                     <div
@@ -82,7 +82,7 @@ export const PieceTray: React.FC<PieceTrayProps> = ({
                         onClick={() => handleClick('king')}
                     >
                         <Piece type="king" owner={myColor} size="large" />
-                        <span className="piece-tray__label">King</span>
+                        <span className="piece-tray__label">{t('setup.piece_tray.king')}</span>
                     </div>
                 )}
                 {!pitPlaced && (
@@ -94,13 +94,13 @@ export const PieceTray: React.FC<PieceTrayProps> = ({
                         onClick={() => handleClick('pit')}
                     >
                         <Piece type="pit" owner={myColor} size="large" />
-                        <span className="piece-tray__label">Pit</span>
+                        <span className="piece-tray__label">{t('setup.piece_tray.pit')}</span>
                     </div>
                 )}
             </div>
 
             <div className="piece-tray__composition">
-                <p className="piece-tray__subtitle">Auto-deployed units:</p>
+                <p className="piece-tray__subtitle">{t('setup.piece_tray.auto_deployed')}</p>
                 <div className="piece-tray__counts">
                     {pawnTypes.filter(([_, count]) => count > 0).map(([type, count]) => (
                         <div key={type} className="piece-tray__count-item">

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { GameMode, PieceType, RPSLS_WINS } from '@rps/shared';
 import { PIECE_ICONS } from '../setup/Piece';
 import './RulesModal.css';
@@ -11,6 +12,7 @@ interface RulesModalProps {
 
 export const RulesModal: React.FC<RulesModalProps> = ({ isOpen, onClose, gameMode }) => {
     const [selectedType, setSelectedType] = useState<PieceType | null>(null);
+    const { t } = useTranslation();
 
     if (!isOpen) return null;
 
@@ -45,12 +47,12 @@ export const RulesModal: React.FC<RulesModalProps> = ({ isOpen, onClose, gameMod
             <div className="rules-modal__card">
                 <button className="rules-modal__close" onClick={onClose}>×</button>
                 <div className="rules-modal__header">
-                    <h2 className="rules-modal__title">Combat Rules</h2>
+                    <h2 className="rules-modal__title">{t('game.rules.title')}</h2>
                     <p className="rules-modal__subtitle">
-                        {gameMode === 'classic' ? 'Rock • Paper • Scissors' : 'RPSLS Extended Rules'}
+                        {gameMode === 'classic' ? t('game.rules.subtitle_classic') : t('game.rules.subtitle_rpsls')}
                     </p>
                     <p className="rules-modal__instruction">
-                        Tap an icon to see what it beats (green) and what beats it (red)
+                        {t('game.rules.instruction')}
                     </p>
                 </div>
 
@@ -63,7 +65,7 @@ export const RulesModal: React.FC<RulesModalProps> = ({ isOpen, onClose, gameMod
                             onClick={() => setSelectedType(type === selectedType ? null : type)}
                         >
                             <span className="rules-modal__icon">{PIECE_ICONS[type]}</span>
-                            <span className="rules-modal__label">{type}</span>
+                            <span className="rules-modal__label">{t(`pieces.${type}`)}</span>
                         </div>
                     ))}
 
@@ -72,7 +74,7 @@ export const RulesModal: React.FC<RulesModalProps> = ({ isOpen, onClose, gameMod
                         {selectedType ? (
                             <>
                                 <div className="rules-modal__center-icon">{PIECE_ICONS[selectedType]}</div>
-                                <div className="rules-modal__center-name">{selectedType.toUpperCase()}</div>
+                                <div className="rules-modal__center-name">{t(`pieces.${selectedType}`)}</div>
                             </>
                         ) : (
                             <div className="rules-modal__center-placeholder">?</div>
@@ -82,10 +84,10 @@ export const RulesModal: React.FC<RulesModalProps> = ({ isOpen, onClose, gameMod
 
                 <div className="rules-modal__legend">
                     <div className="rules-modal__legend-item">
-                        <span className="dot dot--green"></span> Beats
+                        <span className="dot dot--green"></span> {t('game.rules.beats')}
                     </div>
                     <div className="rules-modal__legend-item">
-                        <span className="dot dot--red"></span> Beaten By
+                        <span className="dot dot--red"></span> {t('game.rules.beaten_by')}
                     </div>
                 </div>
             </div>

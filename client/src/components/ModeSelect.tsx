@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import type { GameMode } from '@rps/shared';
 import './ModeSelect.css';
 
@@ -13,9 +14,11 @@ export const ModeSelect: React.FC<ModeSelectProps> = ({
     onSelectMode,
     disabled = false
 }) => {
+    const { t } = useTranslation();
+
     return (
         <div className="mode-select">
-            <h3 className="mode-select__title">Select Game Mode</h3>
+            <h3 className="mode-select__title">{t('matchmaking.select_mode')}</h3>
             <div className="mode-select__options">
                 <button
                     className={`mode-select__option ${selectedMode === 'classic' ? 'mode-select__option--selected' : ''}`}
@@ -24,9 +27,9 @@ export const ModeSelect: React.FC<ModeSelectProps> = ({
                 >
                     <div className="mode-select__icon">⚔️</div>
                     <div className="mode-select__info">
-                        <div className="mode-select__name">Classic</div>
-                        <div className="mode-select__desc">Standard RPS rules with King & Pit</div>
-                        <div className="mode-select__meta">6x7 Board • 14 Pieces</div>
+                        <div className="mode-select__name">{t('matchmaking.mode_classic')}</div>
+                        <div className="mode-select__desc">{t('matchmaking.mode_classic_desc')}</div>
+                        <div className="mode-select__meta">{t('matchmaking.mode_classic_meta')}</div>
                     </div>
                 </button>
 
@@ -37,9 +40,9 @@ export const ModeSelect: React.FC<ModeSelectProps> = ({
                 >
                     <div className="mode-select__icon">🖖</div>
                     <div className="mode-select__info">
-                        <div className="mode-select__name">RPSLS</div>
-                        <div className="mode-select__desc">Extended rules with Lizard & Spock</div>
-                        <div className="mode-select__meta">6x6 Board • 12 Pieces</div>
+                        <div className="mode-select__name">{t('matchmaking.mode_rpsls')}</div>
+                        <div className="mode-select__desc">{t('matchmaking.mode_rpsls_desc')}</div>
+                        <div className="mode-select__meta">{t('matchmaking.mode_rpsls_meta')}</div>
                     </div>
                 </button>
             </div>

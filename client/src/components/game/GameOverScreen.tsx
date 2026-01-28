@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useGameStore } from '../../store/gameStore';
 import { socket } from '../../socket';
 import { SOCKET_EVENTS } from '@rps/shared';
@@ -33,33 +34,35 @@ export const GameOverScreen: React.FC = () => {
         setRematchState({ hasRequested: true });
     };
 
+    const { t } = useTranslation();
+
     const getRematchButtonText = () => {
         if (rematchState.hasRequested && rematchState.opponentRequested) {
-            return 'Starting...';
+            return t('game_over.starting');
         }
         if (rematchState.hasRequested) {
-            return isSingleplayer ? 'Starting...' : 'Waiting for opponent...';
+            return isSingleplayer ? t('game_over.starting') : t('game_over.waiting_opponent');
         }
-        return 'Play Again';
+        return t('game_over.play_again');
     };
 
     return (
         <div className="game-over-screen">
             <div className="game-over-screen__card">
                 <div className={`game-over-screen__result ${isWinner ? 'game-over-screen__result--victory' : 'game-over-screen__result--defeat'}`}>
-                    {isWinner ? 'Victory!' : 'Defeat'}
+                    {isWinner ? t('game_over.victory') : t('game_over.defeat')}
                 </div>
 
                 <div className="game-over-screen__message">
                     {isWinner
-                        ? `You have captured the opponent's King!`
-                        : `Your King has been captured!`
+                        ? t('game_over.msg_king_captured_win')
+                        : t('game_over.msg_king_captured_loss')
                     }
                 </div>
 
                 {!isSingleplayer && rematchState.opponentRequested && !rematchState.hasRequested && (
                     <div className="game-over-screen__notification">
-                        Opponent wants to play again!
+                        {t('game_over.opponent_rematch')}
                     </div>
                 )}
 
@@ -75,7 +78,7 @@ export const GameOverScreen: React.FC = () => {
                         className="game-over-screen__button game-over-screen__button--secondary"
                         onClick={handleReturnHome}
                     >
-                        Return to Menu
+                        {t('game_over.return_home')}
                     </button>
                 </div>
             </div>

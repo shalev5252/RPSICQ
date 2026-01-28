@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSocket } from '../../hooks/useSocket';
 import { useGameStore } from '../../store/gameStore';
 import type { PieceType, Position, PlayerCellView, PlayerPieceView } from '@rps/shared';
@@ -9,6 +10,7 @@ import { RulesModal } from '../game/RulesModal';
 import './SetupScreen.css';
 
 export const SetupScreen: React.FC = () => {
+    const { t } = useTranslation();
     const { socket } = useSocket();
     const myColor = useGameStore((state) => state.myColor);
     const setupState = useGameStore((state) => state.setupState);
@@ -249,7 +251,7 @@ export const SetupScreen: React.FC = () => {
     }, [socket]);
 
     if (!myColor) {
-        return <div className="setup-screen">Loading...</div>;
+        return <div className="setup-screen">{t('setup.loading')}</div>;
     }
 
     const canShuffle = kingPlaced && pitPlaced;
@@ -259,7 +261,7 @@ export const SetupScreen: React.FC = () => {
         <div className="setup-screen">
             <div className="setup-screen__header">
                 <div className="setup-screen__title-row">
-                    <h2 className="setup-screen__title">Setup Your Army</h2>
+                    <h2 className="setup-screen__title">{t('setup.setup_your_army')}</h2>
                     <button
                         className="setup-screen__rules-btn"
                         onClick={() => setShowRules(true)}
@@ -270,11 +272,11 @@ export const SetupScreen: React.FC = () => {
                 </div>
                 <div className="setup-screen__status-row">
                     <div className={`setup-screen__color setup-screen__color--${myColor}`}>
-                        You are {myColor.toUpperCase()}
+                        {t('setup.you_are', { color: t(`colors.${myColor}`) })}
                     </div>
                     {setupState.opponentReady && (
                         <div className="setup-screen__opponent-ready setup-screen__opponent-ready--mobile">
-                            Opponent Ready!
+                            {t('setup.opponent_ready')}
                         </div>
                     )}
                 </div>
@@ -296,7 +298,7 @@ export const SetupScreen: React.FC = () => {
 
                 <div className="setup-screen__board-container">
                     <div className="setup-screen__board-label setup-screen__board-label--opponent">
-                        Enemy Territory
+                        {t('setup.enemy_territory')}
                     </div>
                     <Board
                         board={displayBoard}
@@ -310,7 +312,7 @@ export const SetupScreen: React.FC = () => {
                         selectedPiecePosition={selectedPiecePosition}
                     />
                     <div className="setup-screen__board-label setup-screen__board-label--mine">
-                        Your Territory
+                        {t('setup.your_territory')}
                     </div>
                 </div>
 
@@ -320,19 +322,19 @@ export const SetupScreen: React.FC = () => {
                         onClick={handleShuffle}
                         disabled={!canShuffle}
                     >
-                        Shuffle Army
+                        {t('setup.shuffle')}
                     </button>
                     <button
                         className={`setup-screen__btn ${setupState.isReady ? 'setup-screen__btn--waiting' : 'setup-screen__btn--confirm'}`}
                         onClick={handleConfirm}
                         disabled={!canConfirm}
                     >
-                        {setupState.isReady ? 'Waiting...' : "Let's Start!"}
+                        {setupState.isReady ? t('setup.waiting') : t('setup.lets_start')}
                     </button>
 
                     {setupState.opponentReady && (
                         <div className="setup-screen__opponent-ready">
-                            Opponent is ready!
+                            {t('setup.opponent_ready')}
                         </div>
                     )}
                 </div>

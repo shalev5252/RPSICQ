@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSocket } from '../../hooks/useSocket';
 import { useGameStore } from '../../store/gameStore';
 import { SOCKET_EVENTS, CombatElement } from '@rps/shared';
@@ -6,6 +7,7 @@ import './TieBreakerModal.css';
 
 export const TieBreakerModal: React.FC = () => {
     const { socket } = useSocket();
+    const { t } = useTranslation();
     const [selectedChoice, setSelectedChoice] = useState<CombatElement | null>(null);
     const [hasSubmitted, setHasSubmitted] = useState(false);
     const [showingTieAgain, setShowingTieAgain] = useState(false);
@@ -42,21 +44,21 @@ export const TieBreakerModal: React.FC = () => {
             <div className="tie-breaker-modal__overlay" />
             <div className="tie-breaker-modal__card">
                 <div className="tie-breaker-modal__title">
-                    🤝 It's a Tie!
+                    {t('game.tie_breaker.title')}
                 </div>
 
                 <div className="tie-breaker-modal__subtitle">
-                    Choose a new element for your piece
+                    {t('game.tie_breaker.subtitle')}
                 </div>
 
                 {showingTieAgain ? (
                     <div className="tie-breaker-modal__tie-again">
                         <div className="tie-breaker-modal__tie-again-icon">🔄</div>
                         <div className="tie-breaker-modal__tie-again-text">
-                            It's a tie again!
+                            {t('game.tie_breaker.tie_again')}
                         </div>
                         <div className="tie-breaker-modal__tie-again-subtext">
-                            Choose again...
+                            {t('game.tie_breaker.choose_again')}
                         </div>
                     </div>
                 ) : !hasSubmitted ? (
@@ -67,7 +69,7 @@ export const TieBreakerModal: React.FC = () => {
                                 onClick={() => handleSelect('rock')}
                             >
                                 <span className="tie-breaker-modal__icon">🪨</span>
-                                <span className="tie-breaker-modal__label">Rock</span>
+                                <span className="tie-breaker-modal__label">{t('pieces.rock')}</span>
                             </button>
 
                             <button
@@ -75,7 +77,7 @@ export const TieBreakerModal: React.FC = () => {
                                 onClick={() => handleSelect('paper')}
                             >
                                 <span className="tie-breaker-modal__icon">📄</span>
-                                <span className="tie-breaker-modal__label">Paper</span>
+                                <span className="tie-breaker-modal__label">{t('pieces.paper')}</span>
                             </button>
 
                             <button
@@ -83,7 +85,7 @@ export const TieBreakerModal: React.FC = () => {
                                 onClick={() => handleSelect('scissors')}
                             >
                                 <span className="tie-breaker-modal__icon">✂️</span>
-                                <span className="tie-breaker-modal__label">Scissors</span>
+                                <span className="tie-breaker-modal__label">{t('pieces.scissors')}</span>
                             </button>
 
                             {gameMode === 'rpsls' && (
@@ -93,7 +95,7 @@ export const TieBreakerModal: React.FC = () => {
                                         onClick={() => handleSelect('lizard')}
                                     >
                                         <span className="tie-breaker-modal__icon">🦎</span>
-                                        <span className="tie-breaker-modal__label">Lizard</span>
+                                        <span className="tie-breaker-modal__label">{t('pieces.lizard')}</span>
                                     </button>
 
                                     <button
@@ -101,7 +103,7 @@ export const TieBreakerModal: React.FC = () => {
                                         onClick={() => handleSelect('spock')}
                                     >
                                         <span className="tie-breaker-modal__icon">🖖</span>
-                                        <span className="tie-breaker-modal__label">Spock</span>
+                                        <span className="tie-breaker-modal__label">{t('pieces.spock')}</span>
                                     </button>
                                 </>
                             )}
@@ -112,14 +114,14 @@ export const TieBreakerModal: React.FC = () => {
                             onClick={handleConfirm}
                             disabled={!selectedChoice}
                         >
-                            Confirm Choice
+                            {t('game.tie_breaker.confirm')}
                         </button>
                     </>
                 ) : (
                     <div className="tie-breaker-modal__waiting">
                         <div className="tie-breaker-modal__spinner"></div>
                         <div className="tie-breaker-modal__waiting-text">
-                            Waiting for opponent...
+                            {t('game.tie_breaker.waiting')}
                         </div>
                     </div>
                 )}
