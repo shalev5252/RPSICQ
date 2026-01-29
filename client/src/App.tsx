@@ -1,4 +1,5 @@
 import React from 'react';
+import { AnimatePresence } from 'framer-motion';
 import { useSocket } from './hooks/useSocket';
 import { useGameSession } from './hooks/useGameSession';
 import { useGameStore } from './store/gameStore';
@@ -54,7 +55,9 @@ function AppContent() {
                 </div>
             </header>
 
-            {isSettingsOpen && <SettingsWindow onClose={() => setIsSettingsOpen(false)} />}
+            <AnimatePresence>
+                {isSettingsOpen && <SettingsWindow onClose={() => setIsSettingsOpen(false)} />}
+            </AnimatePresence>
 
             <main className="app-main">
                 {!isConnected ? (
