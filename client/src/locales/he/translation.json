@@ -9,6 +9,12 @@
         "red": "אדום",
         "blue": "כחול"
     },
+    "settings": {
+        "title": "הגדרות",
+        "language": "שפה",
+        "music_volume": "עוצמת מוזיקה",
+        "sfx_volume": "עוצמת אפקטים"
+    },
     "matchmaking": {
         "title": "מוכנים לקרב?",
         "find_match": "מצא משחק",

@@ -16,6 +16,10 @@ interface SoundContextType {
     playSound: (effect: SoundEffect) => void;
     isMuted: boolean;
     toggleMute: () => void;
+    bgmVolume: number;
+    setBgmVolume: (vol: number) => void;
+    sfxVolume: number;
+    setSfxVolume: (vol: number) => void;
 }
 
 const SoundContext = createContext<SoundContextType | undefined>(undefined);
@@ -34,11 +38,31 @@ export const SoundProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const [isMuted, setIsMuted] = useState(false);
     const [bgmInitialized, setBgmInitialized] = useState(false);
 
+    // Volume state (persisted in localStorage)
+    const [bgmVolume, setBgmVolumeState] = useState(() => {
+        const saved = localStorage.getItem('bgmVolume');
+        return saved ? parseFloat(saved) : 0.5;
+    });
+    const [sfxVolume, setSfxVolumeState] = useState(() => {
+        const saved = localStorage.getItem('sfxVolume');
+        return saved ? parseFloat(saved) : 1.0;
+    });
+
+    const setBgmVolume = (vol: number) => {
+        setBgmVolumeState(vol);
+        localStorage.setItem('bgmVolume', vol.toString());
+    };
+
+    const setSfxVolume = (vol: number) => {
+        setSfxVolumeState(vol);
+        localStorage.setItem('sfxVolume', vol.toString());
+    };
+
     // Initialize Audio objects
     useEffect(() => {
         bgmRef.current = new Audio(bgmUrl);
         bgmRef.current.loop = true;
-        bgmRef.current.volume = 0.1; // Significantly lower volume for background to let SFX shine
+        bgmRef.current.volume = isMuted ? 0 : bgmVolume;
 
         soundsRef.current.move1 = new Audio(move1Url);
         soundsRef.current.move2 = new Audio(move2Url);
@@ -46,11 +70,10 @@ export const SoundProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         soundsRef.current.winner = new Audio(winnerUrl);
         soundsRef.current.looser = new Audio(looserUrl);
 
-        // Preload sounds and set high volume
+        // Preload sounds
         Object.values(soundsRef.current).forEach(audio => {
             if (audio) {
                 audio.load();
-                audio.volume = 1.0; // Max volume for effects
             }
         });
 
@@ -62,7 +85,14 @@ export const SoundProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         };
     }, []);
 
-    // Handle Mute Toggle
+    // Handle BGM Volume & Mute changes
+    useEffect(() => {
+        if (bgmRef.current) {
+            bgmRef.current.volume = isMuted ? 0 : bgmVolume;
+        }
+    }, [bgmVolume, isMuted]);
+
+    // Handle Mute Toggle (for SFX mostly, BGM is handled above)
     useEffect(() => {
         if (bgmRef.current) {
             bgmRef.current.muted = isMuted;
@@ -74,12 +104,13 @@ export const SoundProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const playBGM = useCallback(() => {
         if (bgmRef.current && !bgmInitialized) {
+            bgmRef.current.volume = isMuted ? 0 : bgmVolume;
             bgmRef.current.play().catch(e => {
                 console.log("Audio autoplay blocked, waiting for interaction", e);
             });
             setBgmInitialized(true);
         }
-    }, [bgmInitialized]);
+    }, [bgmInitialized, bgmVolume, isMuted]);
 
     const stopBGM = useCallback(() => {
         if (bgmRef.current) {
@@ -93,16 +124,27 @@ export const SoundProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const audio = soundsRef.current[effect];
         if (audio) {
             audio.currentTime = 0;
+            audio.volume = isMuted ? 0 : sfxVolume;
             audio.play().catch(e => console.error("Error playing sound:", e));
         }
-    }, []);
+    }, [sfxVolume, isMuted]);
 
     const toggleMute = useCallback(() => {
         setIsMuted(prev => !prev);
     }, []);
 
     return (
-        <SoundContext.Provider value={{ playBGM, stopBGM, playSound, isMuted, toggleMute }}>
+        <SoundContext.Provider value={{
+            playBGM,
+            stopBGM,
+            playSound,
+            isMuted,
+            toggleMute,
+            bgmVolume,
+            setBgmVolume,
+            sfxVolume,
+            setSfxVolume
+        }}>
             {children}
         </SoundContext.Provider>
     );

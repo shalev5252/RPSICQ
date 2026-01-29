@@ -29,6 +29,7 @@ body {
     flex-direction: column;
 }
 
+/* Header Layout */
 .app-header {
     display: flex;
     justify-content: space-between;
@@ -37,7 +38,37 @@ body {
     background: var(--color-surface);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     position: relative;
-    /* For centering logo */
+    height: 80px;
+}
+
+.header-title-section {
+    display: flex;
+    align-items: center;
+}
+
+.app-header h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.settings-button {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 8px;
+    line-height: 1;
+    color: var(--color-text);
+    transition: transform 0.2s;
+    /* Desktop: positioned in flow or separate? 
+       Current App.tsx puts it as sibling. 
+       Let's use absolute centering for Logo on desktop, and flex for others.
+    */
+    margin-left: 1rem;
+}
+
+.settings-button:hover {
+    transform: rotate(45deg);
 }
 
 .header-logo {
@@ -45,13 +76,7 @@ body {
     left: 50%;
     transform: translateX(-50%);
     height: 48px;
-    /* Adjust based on desired size */
     width: auto;
-}
-
-.app-header h1 {
-    font-size: 1.5rem;
-    font-weight: 600;
 }
 
 .connection-status {
@@ -79,70 +104,97 @@ body {
     padding: 2rem;
 }
 
+/* ... existing styles ... */
+
 .loading {
     text-align: center;
     color: var(--color-text-muted);
-}
-
-.lobby {
-    text-align: center;
-    max-width: 400px;
-}
-
-.lobby h2 {
-    font-size: 2rem;
-    margin-bottom: 1rem;
-}
-
-.lobby p {
-    color: var(--color-text-muted);
-    margin-bottom: 1.5rem;
-}
-
-.start-button {
-    background: var(--color-primary);
-    color: white;
-    border: none;
-    padding: 1rem 2rem;
-    font-size: 1.125rem;
-    font-weight: 600;
-    border-radius: 0.5rem;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.start-button:hover:not(:disabled) {
-    background: var(--color-primary-dark);
-}
-
-.start-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.coming-soon {
-    margin-top: 1rem;
-    font-size: 0.875rem;
 }
 
 /* Mobile layout overrides */
 @media (max-width: 767px) {
     .app-header {
         padding: 0.75rem 1rem;
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        /* Status, Settings(Center), Logo+Title */
+        grid-template-areas: "status settings title";
+        height: 60px;
+        gap: 10px;
     }
 
-    .app-header h1 {
-        font-size: 1.25rem;
-        /* Hide text on very small screens if needed, or adjust logo */
+    /* 1. Status on LEFT */
+    .connection-status {
+        grid-area: status;
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        white-space: nowrap;
+    }
+
+    /* 2. Settings attached to center but physically between others */
+    .settings-button {
+        grid-area: settings;
+        justify-self: center;
+        /* Center in the middle column */
+        margin: 0;
+    }
+
+    /* 3. Logo + Title on RIGHT */
+    /* We need to group them visually. 
+       In App.tsx they are separate: .header-title-section(h1) and .header-logo(img)
+       On Mobile, User wants: Logo + Text(RTS/RPS) on right.
+       We can move .header-title-section to right area, and put logo inside it?
+       Or put .header-logo to grid-area title as well.
+    */
+
+    .header-logo {
+        position: static;
+        /* Remove absolute centering */
+        transform: none;
+        height: 32px;
+        grid-area: title;
+        justify-self: end;
+        order: 2;
+        /* Ensure it is to the right of text if in same cell? No, they are separate elements */
+    }
+
+    .header-title-section {
+        grid-area: title;
+        justify-self: end;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        order: 1;
+        /* Text left of logo? User said "Logo on right side... with text" */
+    }
+
+    /* Trick: To put both in 'title' area, they will overlap unless we flex them.
+       Since they are siblings in Grid container, we can't easily group them into one grid cell without wrapper.
+       BUT, we can set grid columns differently.
+    */
+
+    .app-header {
+        grid-template-columns: auto 1fr auto auto;
+        /* Status, Settings, Title, Logo */
+        grid-template-areas: "status settings title logo";
+    }
+
+    .header-title-section {
+        grid-area: title;
+        margin-right: 5px;
+    }
+
+    .header-title-section h1 {
+        font-size: 1rem;
     }
 
     .header-logo {
-        height: 32px;
+        grid-area: logo;
+        height: 28px;
     }
 
     .app-main {
         padding: 10px;
         align-items: flex-start;
-        /* Move content to top */
     }
 }
