@@ -106,6 +106,26 @@ export function setupSocketHandlers(io: Server): void {
             const submitResult = gameService.submitTieBreakerChoice(aiSocketId, tbResult.choice);
             if (!submitResult.success) return;
 
+            // Send reveal to human player using choices from the result
+            if ((submitResult.bothChosen || submitResult.isTieAgain) && submitResult.attackerChoice && submitResult.defenderChoice) {
+                const afterSession = gameService.getSession(sessionId);
+                const humanPlayer = afterSession?.players.red?.socketId === humanSocket.id
+                    ? afterSession?.players.red
+                    : afterSession?.players.blue;
+
+                if (humanPlayer) {
+                    // Use owner info from result if available
+                    const isAttacker = submitResult.attackerOwner
+                        ? humanPlayer.color === submitResult.attackerOwner
+                        : humanPlayer.pieces.some(p => p.id === submitResult.attackerId);
+
+                    humanSocket.emit(SOCKET_EVENTS.TIE_BREAKER_REVEAL, {
+                        playerChoice: isAttacker ? submitResult.attackerChoice : submitResult.defenderChoice,
+                        opponentChoice: isAttacker ? submitResult.defenderChoice : submitResult.attackerChoice,
+                    });
+                }
+            }
+
             if (submitResult.bothChosen) {
                 const afterSession = gameService.getSession(sessionId);
                 if (!afterSession) return;
@@ -406,9 +426,6 @@ export function setupSocketHandlers(io: Server): void {
             const session = gameService.getSessionBySocketId(socket.id);
             const isSingleplayer = session?.opponentType === 'ai';
 
-            // In singleplayer, schedule AI tie-breaker choice AFTER human submits successfully
-            // (Moved down to avoid race condition)
-
             const result = gameService.submitTieBreakerChoice(socket.id, payload.element);
 
             if (!result.success) {
@@ -418,6 +435,32 @@ export function setupSocketHandlers(io: Server): void {
 
             if (isSingleplayer && session) {
                 scheduleAITieBreaker(session.sessionId, socket);
+            }
+
+            if ((result.bothChosen || result.isTieAgain) && result.attackerChoice && result.defenderChoice) {
+                // Both players have chosen - send reveal to each human player
+                const updatedSession = gameService.getSessionBySocketId(socket.id);
+                if (updatedSession) {
+                    const redPlayer = updatedSession.players.red;
+                    const bluePlayer = updatedSession.players.blue;
+
+                    for (const player of [redPlayer, bluePlayer]) {
+                        if (!player?.socketId || gameService.isAIPlayer(player.socketId)) continue;
+
+                        // Use owner info from result if available (robust against piece removal), otherwise fallback to piece check
+                        const isAttacker = result.attackerOwner
+                            ? player.color === result.attackerOwner
+                            : player.pieces.some(p => p.id === result.attackerId);
+
+                        const playerChoice = isAttacker ? result.attackerChoice : result.defenderChoice;
+                        const opponentChoice = isAttacker ? result.defenderChoice : result.attackerChoice;
+
+                        io.to(player.socketId).emit(SOCKET_EVENTS.TIE_BREAKER_REVEAL, {
+                            playerChoice,
+                            opponentChoice,
+                        });
+                    }
+                }
             }
 
             if (result.bothChosen) {

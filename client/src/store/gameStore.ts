@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { PlayerColor, GamePhase, PlayerGameView, PlayerCellView, Position, GameMode, OpponentType } from '@rps/shared';
+import type { PlayerColor, GamePhase, PlayerGameView, PlayerCellView, Position, GameMode, OpponentType, PieceType, CombatElement } from '@rps/shared';
 
 interface SetupState {
     board: PlayerCellView[][];
@@ -16,8 +16,17 @@ interface RematchState {
     opponentRequested: boolean;
 }
 
+interface TieBreakerReveal {
+    playerChoice: CombatElement;
+    opponentChoice: CombatElement;
+}
+
 interface TieBreakerState {
     retryCount: number;
+    reveal: TieBreakerReveal | null;
+    lastReveal: TieBreakerReveal | null;
+    showingResult: boolean;
+    uniqueId: number;
 }
 
 interface GameStore {
@@ -50,8 +59,10 @@ interface GameStore {
         phase: string;
         isMyTurn: boolean;
         winner?: PlayerColor | null;
+        combatPosition?: Position;
+        combatPieceType?: PieceType;
     } | null;
-    setGameState: (state: { board: PlayerCellView[][]; currentTurn: PlayerColor | null; phase: string; isMyTurn: boolean; winner?: PlayerColor | null } | null) => void;
+    setGameState: (state: { board: PlayerCellView[][]; currentTurn: PlayerColor | null; phase: string; isMyTurn: boolean; winner?: PlayerColor | null; combatPosition?: Position; combatPieceType?: PieceType } | null) => void;
     // Rematch state
     rematchState: RematchState;
     setRematchState: (state: Partial<RematchState>) => void;
@@ -60,6 +71,9 @@ interface GameStore {
     tieBreakerState: TieBreakerState;
     incrementTieBreakerRetry: () => void;
     resetTieBreakerState: () => void;
+    setTieBreakerReveal: (reveal: TieBreakerReveal | null) => void;
+    setTieBreakerLastReveal: (lastReveal: TieBreakerReveal | null) => void;
+    setTieBreakerShowingResult: (showing: boolean) => void;
     // Turn skipped state
     showTurnSkipped: boolean;
     setShowTurnSkipped: (show: boolean) => void;
@@ -83,6 +97,10 @@ const initialRematchState: RematchState = {
 
 const initialTieBreakerState: TieBreakerState = {
     retryCount: 0,
+    reveal: null,
+    lastReveal: null,
+    showingResult: false,
+    uniqueId: 0,
 };
 
 const initialState = {
@@ -134,9 +152,23 @@ export const useGameStore = create<GameStore>((set) => ({
         // Keep sessionId, playerId, and myColor
     }),
     incrementTieBreakerRetry: () => set((prev) => ({
-        tieBreakerState: { retryCount: prev.tieBreakerState.retryCount + 1 }
+        tieBreakerState: { ...prev.tieBreakerState, retryCount: prev.tieBreakerState.retryCount + 1 }
     })),
-    resetTieBreakerState: () => set({ tieBreakerState: initialTieBreakerState }),
+    resetTieBreakerState: () => set({
+        tieBreakerState: {
+            ...initialTieBreakerState,
+            uniqueId: Date.now()
+        }
+    }),
+    setTieBreakerReveal: (reveal) => set((prev) => ({
+        tieBreakerState: { ...prev.tieBreakerState, reveal }
+    })),
+    setTieBreakerLastReveal: (lastReveal) => set((prev) => ({
+        tieBreakerState: { ...prev.tieBreakerState, lastReveal }
+    })),
+    setTieBreakerShowingResult: (showingResult) => set((prev) => ({
+        tieBreakerState: { ...prev.tieBreakerState, showingResult }
+    })),
     setShowTurnSkipped: (show) => set({ showTurnSkipped: show }),
     reset: () => set(initialState),
 }));

@@ -125,7 +125,9 @@ export const SoundProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (audio) {
             audio.currentTime = 0;
             audio.volume = isMuted ? 0 : sfxVolume;
-            audio.play().catch(e => console.error("Error playing sound:", e));
+            audio.play().catch(e => console.error(`Error playing sound ${effect}:`, e));
+        } else {
+            console.warn(`⚠️ Sound effect not found: ${effect}`);
         }
     }, [sfxVolume, isMuted]);
 

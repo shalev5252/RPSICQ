@@ -25,6 +25,8 @@ export const GameScreen: React.FC = () => {
     const isMyTurn = gameState?.currentTurn === myColor;
     const board = gameState?.board ?? [];
     const isTieBreaker = gameState?.phase === 'tie_breaker';
+    const combatPosition = gameState?.combatPosition ?? null;
+    const combatPieceType = gameState?.combatPieceType ?? null;
     const showTurnSkipped = useGameStore((state) => state.showTurnSkipped);
     const setShowTurnSkipped = useGameStore((state) => state.setShowTurnSkipped);
 
@@ -210,6 +212,8 @@ export const GameScreen: React.FC = () => {
                     draggablePieceTypes={draggablePieceTypes}
                     onCellClick={isMyTurn ? handleCellClick : undefined}
                     selectedPiecePosition={selectedPiece?.position ?? null}
+                    combatPosition={combatPosition}
+                    combatPieceType={combatPieceType}
                 />
             </div>
 

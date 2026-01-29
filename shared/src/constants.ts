@@ -110,6 +110,7 @@ export const SOCKET_EVENTS = {
     COMBAT_START: 'combat_start',
     COMBAT_TIE: 'combat_tie',
     TIE_BREAKER_RETRY: 'tie_breaker_retry',
+    TIE_BREAKER_REVEAL: 'tie_breaker_reveal',
     COMBAT_RESULT: 'combat_result',
     TURN_TIMER: 'turn_timer',
     TURN_SKIPPED: 'turn_skipped',

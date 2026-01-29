@@ -35,6 +35,8 @@ function AppContent() {
     return (
         <div className="app">
             <header className="app-header">
+                <img src="/rps_logo.png" alt="RPS Battle Logo" className="header-logo" />
+
                 <div className="header-title-section">
                     <h1>{t('app.title')}</h1>
                 </div>
@@ -46,8 +48,6 @@ function AppContent() {
                 >
                     ⚙️
                 </button>
-
-                <img src="/rps_logo.png" alt="RPS Battle Logo" className="header-logo" />
 
                 <div className={`connection-status ${isConnected ? 'connected' : 'disconnected'}`}>
                     {isConnected ? t('app.connected') : t('app.disconnected')}

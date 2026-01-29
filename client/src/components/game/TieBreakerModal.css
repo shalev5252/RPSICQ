@@ -16,19 +16,82 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.85);
+    background: rgba(0, 0, 0, 0.5);
     animation: fadeIn 0.3s ease-out;
+    cursor: pointer;
 }
 
 .tie-breaker-modal__card {
     position: relative;
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
     border-radius: 20px;
-    padding: 50px 60px;
+    padding: 20px 60px 50px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
     text-align: center;
-    animation: slideUp 0.5s ease-out;
     min-width: 500px;
+    cursor: default;
+    z-index: 1;
+}
+
+/* Header with drag hint and minimize button */
+.tie-breaker-modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    cursor: grab;
+    padding: 4px 0;
+}
+
+.tie-breaker-modal__header:active {
+    cursor: grabbing;
+}
+
+.tie-breaker-modal__drag-hint {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.35);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    user-select: none;
+}
+
+.tie-breaker-modal__minimize-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1;
+    transition: background 0.2s;
+}
+
+.tie-breaker-modal__minimize-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Minimized floating button */
+.tie-breaker-modal__minimized-btn {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 999;
+    background: linear-gradient(135deg, #4c6ef5, #364fc7);
+    color: #fff;
+    border: none;
+    border-radius: 14px;
+    padding: 14px 24px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 6px 24px rgba(76, 110, 245, 0.5);
+    letter-spacing: 1px;
 }
 
 .tie-breaker-modal__title {
@@ -155,31 +218,195 @@
     }
 }
 
-@keyframes slideUp {
-    from {
-        transform: translateY(50px);
-        opacity: 0;
-    }
-
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
+/* Selected choice recap (shown while waiting) */
+.tie-breaker-modal__selected-recap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(76, 110, 245, 0.15);
+    border: 1px solid rgba(76, 110, 245, 0.3);
+    border-radius: 12px;
+    padding: 12px 24px;
 }
 
-/* Tie Again Indicator */
+.tie-breaker-modal__selected-recap-label {
+    font-size: 14px;
+    color: #adb5bd;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.tie-breaker-modal__selected-recap-icon {
+    font-size: 36px;
+}
+
+.tie-breaker-modal__selected-recap-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+}
+
+/* Reveal Animation: battle between player and opponent */
+.tie-breaker-modal__reveal {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0 30px;
+    position: relative;
+}
+
+.tie-breaker-modal__reveal-title {
+    font-size: 36px;
+    font-weight: 900;
+    color: #ff6b6b;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin-bottom: 10px;
+}
+
+.tie-breaker-modal__clash {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 20px;
+    min-height: 130px;
+    position: relative;
+}
+
+.tie-breaker-modal__clash-side {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.tie-breaker-modal__clash-piece {
+    font-size: 70px;
+    line-height: 1;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5));
+}
+
+.tie-breaker-modal__clash-label {
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.tie-breaker-modal__clash-label--you {
+    color: #51cf66;
+}
+
+.tie-breaker-modal__clash-label--opponent {
+    color: #ff6b6b;
+}
+
+.tie-breaker-modal__clash-vs {
+    font-size: 28px;
+    font-weight: 900;
+    color: #ffd43b;
+    margin-top: 20px;
+    text-shadow: 0 2px 8px rgba(255, 212, 59, 0.5);
+}
+
+.tie-breaker-modal__clash-spark-center {
+    font-size: 50px;
+    line-height: 1;
+    margin-top: -10px;
+}
+
+.tie-breaker-modal__reveal-names {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.tie-breaker-modal__reveal-vs-text {
+    color: #adb5bd;
+    font-size: 14px;
+    font-weight: 400;
+}
+
+/* Result screen: shown after resolution before returning to game */
+.tie-breaker-modal__result {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding: 20px 0 30px;
+}
+
+.tie-breaker-modal__result-title {
+    font-size: 32px;
+    font-weight: 900;
+    color: #51cf66;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+}
+
+.tie-breaker-modal__result-matchup {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 30px;
+}
+
+.tie-breaker-modal__result-side {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.tie-breaker-modal__result-icon {
+    font-size: 64px;
+    line-height: 1;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+}
+
+.tie-breaker-modal__result-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.tie-breaker-modal__result-label {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.tie-breaker-modal__result-side--player .tie-breaker-modal__result-label {
+    color: #51cf66;
+}
+
+.tie-breaker-modal__result-side--opponent .tie-breaker-modal__result-label {
+    color: #ff6b6b;
+}
+
+.tie-breaker-modal__result-vs {
+    font-size: 22px;
+    font-weight: 700;
+    color: #adb5bd;
+    margin-top: 24px;
+}
+
+/* Tie Again */
 .tie-breaker-modal__tie-again {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 15px;
-    padding: 40px 0;
-    animation: fadeIn 0.3s ease-out;
-}
-
-.tie-breaker-modal__tie-again-icon {
-    font-size: 80px;
-    animation: pulse 1s ease-in-out infinite;
+    padding: 30px 0;
 }
 
 .tie-breaker-modal__tie-again-text {
@@ -190,40 +417,43 @@
     letter-spacing: 2px;
 }
 
+.tie-breaker-modal__tie-again-matchup {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    padding: 10px 0;
+}
+
+.tie-breaker-modal__tie-again-side {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.tie-breaker-modal__tie-again-icon {
+    font-size: 48px;
+    line-height: 1;
+}
+
+.tie-breaker-modal__tie-again-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.tie-breaker-modal__tie-again-vs {
+    font-size: 18px;
+    font-weight: 700;
+    color: #adb5bd;
+}
+
 .tie-breaker-modal__tie-again-subtext {
     font-size: 18px;
     color: #adb5bd;
-    animation: fadeInOut 2s ease-in-out;
-}
-
-@keyframes pulse {
-
-    0%,
-    100% {
-        transform: scale(1);
-    }
-
-    50% {
-        transform: scale(1.15);
-    }
-}
-
-@keyframes fadeInOut {
-    0% {
-        opacity: 0;
-    }
-
-    30% {
-        opacity: 1;
-    }
-
-    70% {
-        opacity: 1;
-    }
-
-    100% {
-        opacity: 0.5;
-    }
 }
 
 /* Mobile layout: < 768px */
@@ -231,7 +461,7 @@
     .tie-breaker-modal__card {
         min-width: auto;
         width: calc(100vw - 32px);
-        padding: 30px 20px;
+        padding: 16px 20px 30px;
         margin: 16px;
         border-radius: 16px;
     }
@@ -257,7 +487,6 @@
         padding: 12px 8px;
         min-width: 70px;
         width: 85px;
-        /* Fixed width for consistency */
         border-radius: 12px;
         gap: 8px;
     }
@@ -276,15 +505,71 @@
         width: 100%;
     }
 
-    .tie-breaker-modal__tie-again-icon {
-        font-size: 50px;
+    .tie-breaker-modal__clash-piece {
+        font-size: 45px;
+    }
+
+    .tie-breaker-modal__clash-spark-center {
+        font-size: 35px;
+    }
+
+    .tie-breaker-modal__reveal-title {
+        font-size: 24px;
+    }
+
+    .tie-breaker-modal__clash-vs {
+        font-size: 20px;
+    }
+
+    .tie-breaker-modal__reveal-names {
+        font-size: 14px;
     }
 
     .tie-breaker-modal__tie-again-text {
         font-size: 20px;
     }
 
+    .tie-breaker-modal__tie-again-icon {
+        font-size: 36px;
+    }
+
+    .tie-breaker-modal__tie-again-name {
+        font-size: 12px;
+    }
+
     .tie-breaker-modal__tie-again-subtext {
+        font-size: 14px;
+    }
+
+    .tie-breaker-modal__result-title {
+        font-size: 24px;
+    }
+
+    .tie-breaker-modal__result-icon {
+        font-size: 44px;
+    }
+
+    .tie-breaker-modal__result-matchup {
+        gap: 20px;
+    }
+
+    .tie-breaker-modal__minimized-btn {
+        bottom: 16px;
+        right: 16px;
+        padding: 12px 18px;
+        font-size: 14px;
+    }
+
+    .tie-breaker-modal__selected-recap {
+        padding: 8px 16px;
+        gap: 8px;
+    }
+
+    .tie-breaker-modal__selected-recap-icon {
+        font-size: 28px;
+    }
+
+    .tie-breaker-modal__selected-recap-name {
         font-size: 14px;
     }
 }

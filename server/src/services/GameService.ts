@@ -957,6 +957,8 @@ export class GameService {
         phase: string;
         isMyTurn: boolean;
         gameMode: GameMode;
+        combatPosition?: Position;
+        combatPieceType?: PieceType;
     } | null {
         const session = this.getSessionBySocketId(socketId);
         if (!session) return null;
@@ -989,12 +991,26 @@ export class GameService {
             })
         );
 
+        // Include combat position during tie-breaker phase
+        let combatPosition: Position | undefined;
+        let combatPieceType: PieceType | undefined;
+        if (session.phase === 'tie_breaker' && session.combatState) {
+            const defender = session.players.red?.pieces.find(p => p.id === session.combatState!.defenderId) ||
+                session.players.blue?.pieces.find(p => p.id === session.combatState!.defenderId);
+            if (defender) {
+                combatPosition = defender.position;
+                combatPieceType = defender.type;
+            }
+        }
+
         return {
             board: boardView,
             currentTurn: session.currentTurn,
             phase: session.phase,
             isMyTurn: session.currentTurn === color,
-            gameMode: session.gameMode
+            gameMode: session.gameMode,
+            combatPosition,
+            combatPieceType
         };
     }
 
@@ -1005,7 +1021,18 @@ export class GameService {
     public submitTieBreakerChoice(
         socketId: string,
         choice: CombatElement
-    ): { success: boolean; error?: string; bothChosen?: boolean; isTieAgain?: boolean } {
+    ): {
+        success: boolean;
+        error?: string;
+        bothChosen?: boolean;
+        isTieAgain?: boolean;
+        attackerChoice?: CombatElement;
+        defenderChoice?: CombatElement;
+        attackerId?: string;
+        defenderId?: string;
+        attackerOwner?: PlayerColor;
+        defenderOwner?: PlayerColor;
+    } {
         const session = this.getSessionBySocketId(socketId);
         if (!session) return { success: false, error: 'Session not found' };
 
@@ -1040,6 +1067,12 @@ export class GameService {
             session.combatState.defenderChoice !== undefined;
 
         if (bothChosen) {
+            // Capture choices before resolution clears them
+            const resolvedAttackerChoice = session.combatState.attackerChoice!;
+            const resolvedDefenderChoice = session.combatState.defenderChoice!;
+            const resolvedAttackerId = session.combatState.attackerId;
+            const resolvedDefenderId = session.combatState.defenderId;
+
             // Update piece types permanently
             const attacker = session.players.red?.pieces.find(p => p.id === session.combatState!.attackerId) ||
                 session.players.blue?.pieces.find(p => p.id === session.combatState!.attackerId);
@@ -1053,17 +1086,36 @@ export class GameService {
             attacker.type = session.combatState.attackerChoice!;
             defender.type = session.combatState.defenderChoice!;
 
+            // Capture owners
+            const attackerOwner = attacker.owner;
+            const defenderOwner = defender.owner;
+
             console.log(`🔄 Tie breaker resolved: ${attacker.type} vs ${defender.type}`);
 
             // Re-resolve combat with new types
             const result = this.resolveCombat(attacker, defender, session.gameMode);
 
             if (result === 'tie') {
+                // Capture choices before resetting
+                const atkChoice = session.combatState.attackerChoice!;
+                const defChoice = session.combatState.defenderChoice!;
+                const atkId = session.combatState.attackerId;
+                const defId = session.combatState.defenderId;
                 // Another tie! Reset choices for another round
                 session.combatState.attackerChoice = undefined;
                 session.combatState.defenderChoice = undefined;
                 console.log(`🤝 Another tie! Continue tie breaker.`);
-                return { success: true, bothChosen: false, isTieAgain: true };
+                return {
+                    success: true,
+                    bothChosen: false,
+                    isTieAgain: true,
+                    attackerChoice: atkChoice,
+                    defenderChoice: defChoice,
+                    attackerId: atkId,
+                    defenderId: defId,
+                    attackerOwner,
+                    defenderOwner
+                };
             }
 
             // Combat resolved
@@ -1110,7 +1162,16 @@ export class GameService {
                 session.winReason = 'king_captured';
                 session.combatState = null;
                 console.log(`👑 ${winnerOwner} wins by capturing the King!`);
-                return { success: true, bothChosen: true };
+                return {
+                    success: true,
+                    bothChosen: true,
+                    attackerChoice: resolvedAttackerChoice,
+                    defenderChoice: resolvedDefenderChoice,
+                    attackerId: resolvedAttackerId,
+                    defenderId: resolvedDefenderId,
+                    attackerOwner,
+                    defenderOwner
+                };
             }
 
             // Remove loser
@@ -1154,9 +1215,20 @@ export class GameService {
             // Switch turn
             session.currentTurn = session.currentTurn === 'red' ? 'blue' : 'red';
             session.turnStartTime = Date.now();
+
+            return {
+                success: true,
+                bothChosen: true,
+                attackerChoice: resolvedAttackerChoice,
+                defenderChoice: resolvedDefenderChoice,
+                attackerId: resolvedAttackerId,
+                defenderId: resolvedDefenderId,
+                attackerOwner,
+                defenderOwner
+            };
         }
 
-        return { success: true, bothChosen };
+        return { success: true, bothChosen: false };
     }
 
     public removeSession(sessionId: string): void {

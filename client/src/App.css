@@ -42,8 +42,7 @@ body {
 }
 
 .header-title-section {
-    display: flex;
-    align-items: center;
+    display: none;
 }
 
 .app-header h1 {
@@ -60,11 +59,11 @@ body {
     line-height: 1;
     color: var(--color-text);
     transition: transform 0.2s;
-    /* Desktop: positioned in flow or separate? 
-       Current App.tsx puts it as sibling. 
-       Let's use absolute centering for Logo on desktop, and flex for others.
-    */
-    margin-left: 1rem;
+
+    /* Center settings button on Desktop */
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
 }
 
 .settings-button:hover {
@@ -72,9 +71,7 @@ body {
 }
 
 .header-logo {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
+    /* Natural flow: Left side */
     height: 48px;
     width: auto;
 }
@@ -132,11 +129,16 @@ body {
     }
 
     /* 2. Settings attached to center but physically between others */
+    /* 2. Settings attached to center but physically between others */
     .settings-button {
         grid-area: settings;
         justify-self: center;
         /* Center in the middle column */
         margin: 0;
+
+        /* Reset absolute positioning from Desktop */
+        position: static;
+        transform: none;
     }
 
     /* 3. Logo + Title on RIGHT */
@@ -162,10 +164,10 @@ body {
         grid-area: title;
         justify-self: end;
         display: flex;
+        /* Show title on mobile */
         align-items: center;
         gap: 8px;
         order: 1;
-        /* Text left of logo? User said "Logo on right side... with text" */
     }
 
     /* Trick: To put both in 'title' area, they will overlap unless we flex them.

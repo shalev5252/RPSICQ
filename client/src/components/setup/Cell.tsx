@@ -1,6 +1,6 @@
 import React from 'react';
 import type { PlayerPieceView, PlayerColor, PieceType } from '@rps/shared';
-import { Piece } from './Piece';
+import { Piece, PIECE_ICONS } from './Piece';
 import './Cell.css';
 
 interface CellProps {
@@ -18,6 +18,9 @@ interface CellProps {
     // Click-to-move props
     onClick?: (row: number, col: number) => void;
     isSelected?: boolean;
+    // Combat visualization
+    isCombatCell?: boolean;
+    combatPieceType?: PieceType | null;
 }
 
 export const Cell: React.FC<CellProps> = ({
@@ -32,6 +35,8 @@ export const Cell: React.FC<CellProps> = ({
     onPieceDragEnd,
     draggablePieceTypes = [],
     onClick,
+    isCombatCell,
+    combatPieceType,
 }) => {
     // Track mouseDown time for short-click vs long-press detection
     const mouseDownTimeRef = React.useRef<number>(0);
@@ -96,6 +101,7 @@ export const Cell: React.FC<CellProps> = ({
     const cellClassName = [
         'cell',
         isValidDropTarget ? 'cell--valid-target cell--valid-move' : '',
+        isCombatCell ? 'cell--combat' : '',
     ].filter(Boolean).join(' ');
 
     return (
@@ -106,7 +112,13 @@ export const Cell: React.FC<CellProps> = ({
             onMouseDown={handleMouseDown}
             onMouseUp={handleMouseUp}
         >
-            {piece && (
+            {isCombatCell && combatPieceType ? (
+                <div className="cell__split-piece">
+                    <span className="cell__split-piece-icon">
+                        {PIECE_ICONS[combatPieceType]}
+                    </span>
+                </div>
+            ) : piece && (
                 <div
                     draggable={isPieceDraggable}
                     onDragStart={handlePieceDragStart}
