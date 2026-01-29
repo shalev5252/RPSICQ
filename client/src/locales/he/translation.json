@@ -9,6 +9,12 @@
         "red": "אדום",
         "blue": "כחול"
     },
+    "settings": {
+        "title": "הגדרות",
+        "language": "שפה",
+        "music_volume": "עוצמת מוזיקה",
+        "sfx_volume": "עוצמת אפקטים"
+    },
     "matchmaking": {
         "title": "מוכנים לקרב?",
         "find_match": "מצא משחק",
@@ -84,7 +90,16 @@
             "tie_again": "שוויון שוב!",
             "choose_again": "בחר שנית...",
             "confirm": "אשר בחירה",
-            "waiting": "ממתין ליריב..."
+            "waiting": "ממתין ליריב...",
+            "your_choice": "הבחירה שלך:",
+            "round": "סיבוב {{count}}",
+            "drag_hint": "גרור להזיז",
+            "minimize": "מזער",
+            "open_tie_breaker": "פתח שובר שוויון",
+            "battle": "קרב!",
+            "resolved": "הקרב הוכרע!",
+            "you": "אתה",
+            "opponent": "יריב"
         },
         "turn_skipped": {
             "title": "אין מהלכים",

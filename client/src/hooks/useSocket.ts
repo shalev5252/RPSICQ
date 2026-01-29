@@ -12,6 +12,9 @@ import {
     PlayerColor,
     GamePhase,
     GameMode,
+    Position,
+    PieceType,
+    CombatElement,
 } from '@rps/shared';
 import { useSound } from '../context/SoundContext';
 
@@ -20,6 +23,12 @@ export function useSocket() {
     const [isConnected, setIsConnected] = useState(socketInstance.connected);
     const setConnectionStatus = useGameStore((state) => state.setConnectionStatus);
     const { playSound } = useSound();
+
+    // Buffers for events that arrive during tie-breaker reveal/result animation
+    const pendingGameStateRef = useRef<{ board: PlayerCellView[][]; currentTurn: PlayerColor | null; phase: string; isMyTurn: boolean; combatPosition?: Position; combatPieceType?: PieceType } | null>(null);
+    const pendingRetryRef = useRef(false);
+    const revealTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const resultTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
         const socket = socketRef.current;
@@ -88,16 +97,12 @@ export function useSocket() {
             return true;
         };
 
-        const onGameState = (payload: { board: PlayerCellView[][]; currentTurn: PlayerColor | null; phase: string; isMyTurn: boolean }) => {
-            console.log('📊 Game state update:', payload);
-
+        // Applies a game state payload to the store (sounds + state update)
+        const applyGameState = (payload: { board: PlayerCellView[][]; currentTurn: PlayerColor | null; phase: string; isMyTurn: boolean; combatPosition?: Position; combatPieceType?: PieceType }) => {
             // Sound Effect Logic
             const prevState = useGameStore.getState().gameState;
             const currentPhase = useGameStore.getState().gamePhase;
 
-            // Only play sounds if we are in playing/tie_breaker phase
-            // and the turn actually changed
-            // and the board actually changed (prevents sounds on TURN_SKIPPED which changes turn but not board)
             if (prevState && (currentPhase === 'playing' || currentPhase === 'tie_breaker')) {
                 const turnChanged = prevState.currentTurn !== payload.currentTurn;
                 const boardChanged = !areBoardsEqual(prevState.board, payload.board);
@@ -105,35 +110,78 @@ export function useSocket() {
                 if (turnChanged && boardChanged) {
                     const prevCount = countPieces(prevState.board);
                     const newCount = countPieces(payload.board);
-
-                    // Identify who just moved (the player who LOST the turn, i.e., the previous turn holder)
                     const validPrevTurn = prevState.currentTurn;
 
                     if (newCount < prevCount) {
-                        // Capture happened -> Battle
                         playSound('battle');
                     } else if (payload.phase === 'tie_breaker' || prevState.phase === 'tie_breaker') {
-                        // Tie breaker transition usually implies battle/tie
                         playSound('battle');
                     } else if (validPrevTurn) {
-                        // Regular move
-                        // Assign sound based on color: Red=move1, Blue=move2
                         const sound = validPrevTurn === 'red' ? 'move1' : 'move2';
                         playSound(sound);
                     }
                 }
             }
 
-            // Update game state in store
             useGameStore.getState().setGameState(payload);
 
-            // Reset tie-breaker state when entering tie_breaker phase (for first-time correct title)
             if (payload.phase === 'tie_breaker' && currentPhase !== 'tie_breaker') {
                 useGameStore.getState().resetTieBreakerState();
             }
 
-            // Always update game phase to stay in sync with server
             useGameStore.getState().setGamePhase(payload.phase as GamePhase);
+        };
+
+        const onGameState = (payload: { board: PlayerCellView[][]; currentTurn: PlayerColor | null; phase: string; isMyTurn: boolean; combatPosition?: Position; combatPieceType?: PieceType }) => {
+            console.log('📊 Game state update:', payload);
+
+            // If a reveal or result animation is active, buffer this update
+            const tbState = useGameStore.getState().tieBreakerState;
+            if (tbState.reveal || tbState.showingResult) {
+                pendingGameStateRef.current = payload;
+                return;
+            }
+
+            applyGameState(payload);
+        };
+
+        const REVEAL_DURATION = 2500; // ms to show battle animation
+        const RESULT_DURATION = 2500; // ms to show outcome before returning to game
+
+        const onTieBreakerReveal = (payload: { playerChoice: CombatElement; opponentChoice: CombatElement }) => {
+            console.log('⚔️ Tie-breaker reveal:', payload);
+            useGameStore.getState().setTieBreakerReveal(payload);
+
+            // Clear any existing timers
+            if (revealTimerRef.current) clearTimeout(revealTimerRef.current);
+            if (resultTimerRef.current) clearTimeout(resultTimerRef.current);
+
+            // After battle animation, transition to result/tie-again screen
+            revealTimerRef.current = setTimeout(() => {
+                const store = useGameStore.getState();
+                // Save choices so the next screen can display them
+                store.setTieBreakerLastReveal(payload);
+                store.setTieBreakerReveal(null);
+
+                if (pendingRetryRef.current) {
+                    // Tie again: go straight back to choices
+                    pendingRetryRef.current = false;
+                    store.incrementTieBreakerRetry();
+                    store.setTieBreakerLastReveal(null);
+                    pendingGameStateRef.current = null;
+                } else {
+                    // Resolution: show result screen, then flush game state
+                    store.setTieBreakerShowingResult(true);
+                    resultTimerRef.current = setTimeout(() => {
+                        useGameStore.getState().setTieBreakerShowingResult(false);
+                        useGameStore.getState().setTieBreakerLastReveal(null);
+                        if (pendingGameStateRef.current) {
+                            applyGameState(pendingGameStateRef.current);
+                            pendingGameStateRef.current = null;
+                        }
+                    }, RESULT_DURATION);
+                }
+            }, REVEAL_DURATION);
         };
 
         const onError = (payload: ErrorPayload) => {
@@ -184,6 +232,12 @@ export function useSocket() {
 
         const onTieBreakerRetry = () => {
             console.log('🔄 Tie-breaker tied again, retrying');
+            // If reveal is active, buffer the retry so it fires after the animation
+            const reveal = useGameStore.getState().tieBreakerState.reveal;
+            if (reveal) {
+                pendingRetryRef.current = true;
+                return;
+            }
             useGameStore.getState().incrementTieBreakerRetry();
         };
 
@@ -234,6 +288,7 @@ export function useSocket() {
         socket.on(SOCKET_EVENTS.REMATCH_REQUESTED, onRematchRequested);
         socket.on(SOCKET_EVENTS.REMATCH_ACCEPTED, onRematchAccepted);
         socket.on(SOCKET_EVENTS.TIE_BREAKER_RETRY, onTieBreakerRetry);
+        socket.on(SOCKET_EVENTS.TIE_BREAKER_REVEAL, onTieBreakerReveal);
         socket.on(SOCKET_EVENTS.TURN_SKIPPED, onTurnSkipped);
         socket.on(SOCKET_EVENTS.SESSION_RESTORED, onSessionRestored);
         socket.on(SOCKET_EVENTS.OPPONENT_RECONNECTING, onOpponentReconnecting);
@@ -257,14 +312,17 @@ export function useSocket() {
             socket.off(SOCKET_EVENTS.REMATCH_REQUESTED, onRematchRequested);
             socket.off(SOCKET_EVENTS.REMATCH_ACCEPTED, onRematchAccepted);
             socket.off(SOCKET_EVENTS.TIE_BREAKER_RETRY, onTieBreakerRetry);
+            socket.off(SOCKET_EVENTS.TIE_BREAKER_REVEAL, onTieBreakerReveal);
             socket.off(SOCKET_EVENTS.TURN_SKIPPED, onTurnSkipped);
             socket.off(SOCKET_EVENTS.SESSION_RESTORED, onSessionRestored);
             socket.off(SOCKET_EVENTS.OPPONENT_RECONNECTING, onOpponentReconnecting);
             socket.off(SOCKET_EVENTS.OPPONENT_RECONNECTED, onOpponentReconnected);
             socket.off(SOCKET_EVENTS.ERROR, onError);
+            if (revealTimerRef.current) clearTimeout(revealTimerRef.current);
+            if (resultTimerRef.current) clearTimeout(resultTimerRef.current);
             // Do NOT disconnect base socket on unmount of hook, usually
         };
-    }, [setConnectionStatus]);
+    }, [setConnectionStatus, playSound]);
 
     const joinQueue = () => {
         socketRef.current?.emit(SOCKET_EVENTS.JOIN_QUEUE, {

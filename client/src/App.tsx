@@ -1,9 +1,10 @@
 import React from 'react';
+import { AnimatePresence } from 'framer-motion';
 import { useSocket } from './hooks/useSocket';
 import { useGameSession } from './hooks/useGameSession';
 import { useGameStore } from './store/gameStore';
 import { useTranslation } from 'react-i18next';
-import { LanguageSwitcher } from './components/LanguageSwitcher';
+import { SettingsWindow } from './components/SettingsWindow';
 import { MatchmakingScreen } from './components/MatchmakingScreen';
 import { SetupScreen } from './components/setup';
 import { GameScreen } from './components/game/GameScreen';
@@ -19,6 +20,7 @@ function AppContent() {
     const gamePhase = useGameStore(state => state.gamePhase);
     const { playBGM } = useSound();
     const { t } = useTranslation();
+    const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
 
     // Try to start BGM on first interaction or mount (if allowed)
     // We'll add a click listener to the window to ensure it starts if autoplay is blocked
@@ -34,15 +36,28 @@ function AppContent() {
     return (
         <div className="app">
             <header className="app-header">
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <h1>{t('app.title')}</h1>
-                    <LanguageSwitcher />
-                </div>
                 <img src="/rps_logo.png" alt="RPS Battle Logo" className="header-logo" />
+
+                <div className="header-title-section">
+                    <h1>{t('app.title')}</h1>
+                </div>
+
+                <button
+                    className="settings-button"
+                    onClick={() => setIsSettingsOpen(true)}
+                    aria-label={t('settings.title')}
+                >
+                    ⚙️
+                </button>
+
                 <div className={`connection-status ${isConnected ? 'connected' : 'disconnected'}`}>
                     {isConnected ? t('app.connected') : t('app.disconnected')}
                 </div>
             </header>
+
+            <AnimatePresence>
+                {isSettingsOpen && <SettingsWindow onClose={() => setIsSettingsOpen(false)} />}
+            </AnimatePresence>
 
             <main className="app-main">
                 {!isConnected ? (

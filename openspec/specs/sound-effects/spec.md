@@ -4,10 +4,13 @@
 TBD - created by archiving change add-sound-effects. Update Purpose after archive.
 ## Requirements
 ### Requirement: Background Music
-The application MUST play background music continuously while the user is engaged with the game.
-#### Scenario: Continuous Playback
-- **WHEN** the user has interacted with the page (unlocking Audio context)
-- **THEN** the `bgm.mp3` should play in a loop at a moderate volume.
+The application MUST play background music continuously, with user-adjustable volume.
+
+#### Scenario: Adjusting BGM Volume
+- **GIVEN** the user has the settings window open
+- **WHEN** the user moves the BGM volume slider
+- **THEN** the background music volume changes in real-time
+- **AND** the new volume preference is saved
 
 ### Requirement: Movement Sounds
 The application MUST play a distinct sound effect when a piece moves.

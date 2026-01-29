@@ -9,6 +9,12 @@
         "red": "RED",
         "blue": "BLUE"
     },
+    "settings": {
+        "title": "Settings",
+        "language": "Language",
+        "music_volume": "Music Volume",
+        "sfx_volume": "Effects Volume"
+    },
     "matchmaking": {
         "title": "Ready to Battle?",
         "find_match": "Find Match",
@@ -92,7 +98,16 @@
             "tie_again": "It's a tie again!",
             "choose_again": "Choose again...",
             "confirm": "Confirm Choice",
-            "waiting": "Waiting for opponent..."
+            "waiting": "Waiting for opponent...",
+            "your_choice": "Your pick:",
+            "round": "Round {{count}}",
+            "drag_hint": "Drag to move",
+            "minimize": "Minimize",
+            "open_tie_breaker": "Open Tie Breaker",
+            "battle": "Battle!",
+            "resolved": "Combat Resolved!",
+            "you": "You",
+            "opponent": "Enemy"
         },
         "turn_skipped": {
             "title": "Can't Move",
