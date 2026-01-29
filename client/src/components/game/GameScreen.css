@@ -47,24 +47,28 @@
 @media (max-width: 767px) {
     .game-screen__header {
         margin-bottom: 16px;
-        flex-direction: row;
+        flex-direction: column;
         justify-content: center;
-        flex-wrap: wrap;
-        gap: 10px;
+        align-items: center;
+        flex-wrap: nowrap;
+        gap: 8px;
+        min-height: 80px;
+        /* Reserve height stability */
     }
 
     .game-screen__rules-btn {
-        position: static;
-        width: 36px;
-        height: 36px;
+        position: absolute;
+        width: 44px;
+        height: 44px;
         font-size: 18px;
-        transform: none;
-        order: -1;
-        /* Put before turn indicator on mobile if desired, or let it flow */
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        /* Remove static positioning from previous mobile style */
     }
 
     .game-screen__rules-btn:hover {
-        transform: scale(1.1);
+        transform: translateY(-50%) scale(1.1);
     }
 }
 

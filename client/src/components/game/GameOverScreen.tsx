@@ -38,31 +38,31 @@ export const GameOverScreen: React.FC = () => {
 
     const getRematchButtonText = () => {
         if (rematchState.hasRequested && rematchState.opponentRequested) {
-            return t('game_over.starting');
+            return t('game.game_over.starting');
         }
         if (rematchState.hasRequested) {
-            return isSingleplayer ? t('game_over.starting') : t('game_over.waiting_opponent');
+            return isSingleplayer ? t('game.game_over.starting') : t('game.game_over.waiting_opponent');
         }
-        return t('game_over.play_again');
+        return t('game.game_over.play_again');
     };
 
     return (
         <div className="game-over-screen">
             <div className="game-over-screen__card">
                 <div className={`game-over-screen__result ${isWinner ? 'game-over-screen__result--victory' : 'game-over-screen__result--defeat'}`}>
-                    {isWinner ? t('game_over.victory') : t('game_over.defeat')}
+                    {isWinner ? t('game.game_over.victory') : t('game.game_over.defeat')}
                 </div>
 
                 <div className="game-over-screen__message">
                     {isWinner
-                        ? t('game_over.msg_king_captured_win')
-                        : t('game_over.msg_king_captured_loss')
+                        ? t('game.game_over.msg_king_captured_win')
+                        : t('game.game_over.msg_king_captured_loss')
                     }
                 </div>
 
                 {!isSingleplayer && rematchState.opponentRequested && !rematchState.hasRequested && (
                     <div className="game-over-screen__notification">
-                        {t('game_over.opponent_rematch')}
+                        {t('game.game_over.opponent_rematch')}
                     </div>
                 )}
 
@@ -78,7 +78,7 @@ export const GameOverScreen: React.FC = () => {
                         className="game-over-screen__button game-over-screen__button--secondary"
                         onClick={handleReturnHome}
                     >
-                        {t('game_over.return_home')}
+                        {t('game.game_over.return_home')}
                     </button>
                 </div>
             </div>
