@@ -40,22 +40,44 @@ export const SoundProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     // Volume state (persisted in localStorage)
     const [bgmVolume, setBgmVolumeState] = useState(() => {
-        const saved = localStorage.getItem('bgmVolume');
-        return saved ? parseFloat(saved) : 0.5;
+        try {
+            const saved = localStorage.getItem('bgmVolume');
+            const parsed = saved ? parseFloat(saved) : 0.5;
+            return Math.max(0, Math.min(1, isNaN(parsed) ? 0.5 : parsed));
+        } catch (e) {
+            console.error('Error reading bgmVolume:', e);
+            return 0.5;
+        }
     });
     const [sfxVolume, setSfxVolumeState] = useState(() => {
-        const saved = localStorage.getItem('sfxVolume');
-        return saved ? parseFloat(saved) : 1.0;
+        try {
+            const saved = localStorage.getItem('sfxVolume');
+            const parsed = saved ? parseFloat(saved) : 1.0;
+            return Math.max(0, Math.min(1, isNaN(parsed) ? 1.0 : parsed));
+        } catch (e) {
+            console.error('Error reading sfxVolume:', e);
+            return 1.0;
+        }
     });
 
     const setBgmVolume = (vol: number) => {
-        setBgmVolumeState(vol);
-        localStorage.setItem('bgmVolume', vol.toString());
+        const clamped = Math.max(0, Math.min(1, vol));
+        setBgmVolumeState(clamped);
+        try {
+            localStorage.setItem('bgmVolume', clamped.toString());
+        } catch (e) {
+            console.error('Error saving bgmVolume:', e);
+        }
     };
 
     const setSfxVolume = (vol: number) => {
-        setSfxVolumeState(vol);
-        localStorage.setItem('sfxVolume', vol.toString());
+        const clamped = Math.max(0, Math.min(1, vol));
+        setSfxVolumeState(clamped);
+        try {
+            localStorage.setItem('sfxVolume', clamped.toString());
+        } catch (e) {
+            console.error('Error saving sfxVolume:', e);
+        }
     };
 
     // Initialize Audio objects

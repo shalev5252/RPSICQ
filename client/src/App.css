@@ -67,7 +67,7 @@ body {
 }
 
 .settings-button:hover {
-    transform: rotate(45deg);
+    transform: translateX(-50%) rotate(45deg);
 }
 
 .header-logo {
