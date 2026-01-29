@@ -22,9 +22,10 @@ export const SettingsWindow: React.FC<SettingsWindowProps> = ({ onClose }) => {
     };
 
     return (
-        <div className="settings-overlay" ref={constraintsRef}>
+        <div className="settings-overlay" ref={constraintsRef} onClick={onClose}>
             <motion.div
                 className="settings-window"
+                onClick={(e) => e.stopPropagation()}
                 drag
                 dragMomentum={false}
                 dragElastic={0.1}
