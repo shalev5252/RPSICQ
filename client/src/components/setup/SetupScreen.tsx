@@ -19,6 +19,8 @@ export const SetupScreen: React.FC = () => {
     const setKingPosition = useGameStore((state) => state.setKingPosition);
     const setPitPosition = useGameStore((state) => state.setPitPosition);
 
+    const opponentReconnecting = useGameStore((state) => state.opponentReconnecting);
+
     const [draggingPiece, setDraggingPiece] = useState<PieceType | null>(null);
     const [selectedTrayPiece, setSelectedTrayPiece] = useState<PieceType | null>(null);
     const [showRules, setShowRules] = useState(false);
@@ -281,6 +283,13 @@ export const SetupScreen: React.FC = () => {
                     )}
                 </div>
             </div>
+
+            {opponentReconnecting && (
+                <div className="setup-screen__reconnecting-banner">
+                    <div className="setup-screen__reconnecting-spinner"></div>
+                    {t('game.opponent_reconnecting')}
+                </div>
+            )}
 
             <div className="setup-screen__content">
                 <div className="setup-screen__tray">

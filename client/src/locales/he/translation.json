@@ -75,6 +75,7 @@
         "lost": "הפסדת",
         "tie": "תיקו!",
         "waiting_rematch": "ממתין למשחק חוזר...",
+        "opponent_reconnecting": "היריב התנתק, ממתין לחזרתו...",
         "rules_title": "חוקי המשחק",
         "rules": {
             "title": "חוקי הקרב",

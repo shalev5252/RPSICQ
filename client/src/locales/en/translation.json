@@ -83,6 +83,7 @@
         "lost": "You Lost",
         "tie": "It's a Tie!",
         "waiting_rematch": "Waiting for rematch...",
+        "opponent_reconnecting": "Opponent disconnected, waiting for them to return...",
         "rules_title": "Game Rules",
         "rules": {
             "title": "Combat Rules",

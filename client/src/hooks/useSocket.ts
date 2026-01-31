@@ -270,12 +270,22 @@ export function useSocket() {
 
         const onOpponentReconnecting = () => {
             console.log('⏳ Opponent is reconnecting...');
-            // Could show a toast/notification here
+            useGameStore.getState().setOpponentReconnecting(true);
         };
 
         const onOpponentReconnected = () => {
             console.log('✅ Opponent reconnected!');
-            // Could show a toast/notification here
+            useGameStore.getState().setOpponentReconnecting(false);
+        };
+
+        const onOpponentDisconnected = () => {
+            console.log('🚪 Opponent disconnected permanently');
+            useGameStore.getState().setOpponentReconnecting(false);
+            // Reset to matchmaking screen from any active game phase
+            const phase = useGameStore.getState().gamePhase;
+            if (phase === 'setup' || phase === 'playing' || phase === 'tie_breaker' || phase === 'finished') {
+                useGameStore.getState().reset();
+            }
         };
 
         socket.on('connect', onConnect);
@@ -293,6 +303,7 @@ export function useSocket() {
         socket.on(SOCKET_EVENTS.SESSION_RESTORED, onSessionRestored);
         socket.on(SOCKET_EVENTS.OPPONENT_RECONNECTING, onOpponentReconnecting);
         socket.on(SOCKET_EVENTS.OPPONENT_RECONNECTED, onOpponentReconnected);
+        socket.on(SOCKET_EVENTS.OPPONENT_DISCONNECTED, onOpponentDisconnected);
         socket.on(SOCKET_EVENTS.ERROR, onError);
 
         // Sync state immediately if socket is already connected (handles race condition on mount)
@@ -317,6 +328,7 @@ export function useSocket() {
             socket.off(SOCKET_EVENTS.SESSION_RESTORED, onSessionRestored);
             socket.off(SOCKET_EVENTS.OPPONENT_RECONNECTING, onOpponentReconnecting);
             socket.off(SOCKET_EVENTS.OPPONENT_RECONNECTED, onOpponentReconnected);
+            socket.off(SOCKET_EVENTS.OPPONENT_DISCONNECTED, onOpponentDisconnected);
             socket.off(SOCKET_EVENTS.ERROR, onError);
             if (revealTimerRef.current) clearTimeout(revealTimerRef.current);
             if (resultTimerRef.current) clearTimeout(resultTimerRef.current);

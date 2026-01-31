@@ -77,6 +77,9 @@ interface GameStore {
     // Turn skipped state
     showTurnSkipped: boolean;
     setShowTurnSkipped: (show: boolean) => void;
+    // Opponent reconnecting state
+    opponentReconnecting: boolean;
+    setOpponentReconnecting: (reconnecting: boolean) => void;
     reset: () => void;
 }
 
@@ -118,6 +121,7 @@ const initialState = {
     rematchState: initialRematchState,
     tieBreakerState: initialTieBreakerState,
     showTurnSkipped: false,
+    opponentReconnecting: false,
 };
 
 export const useGameStore = create<GameStore>((set) => ({
@@ -170,5 +174,6 @@ export const useGameStore = create<GameStore>((set) => ({
         tieBreakerState: { ...prev.tieBreakerState, showingResult }
     })),
     setShowTurnSkipped: (show) => set({ showTurnSkipped: show }),
+    setOpponentReconnecting: (reconnecting) => set({ opponentReconnecting: reconnecting }),
     reset: () => set(initialState),
 }));

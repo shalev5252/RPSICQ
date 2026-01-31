@@ -29,6 +29,7 @@ export const GameScreen: React.FC = () => {
     const combatPieceType = gameState?.combatPieceType ?? null;
     const showTurnSkipped = useGameStore((state) => state.showTurnSkipped);
     const setShowTurnSkipped = useGameStore((state) => state.setShowTurnSkipped);
+    const opponentReconnecting = useGameStore((state) => state.opponentReconnecting);
 
     // Calculate valid moves for a piece
     const calculateValidMoves = useCallback((piece: PlayerPieceView): Position[] => {
@@ -200,6 +201,13 @@ export const GameScreen: React.FC = () => {
                     {t('setup.you_are', { color: t(`colors.${myColor}`) })}
                 </div>
             </div>
+
+            {opponentReconnecting && (
+                <div className="game-screen__reconnecting-banner">
+                    <div className="game-screen__reconnecting-spinner"></div>
+                    {t('game.opponent_reconnecting')}
+                </div>
+            )}
 
             <div className="game-screen__board-container">
                 <Board
