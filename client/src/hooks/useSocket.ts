@@ -290,7 +290,7 @@ export function useSocket() {
             useGameStore.getState().setOpponentReconnecting(false);
             // Reset to matchmaking screen from any active game phase
             const phase = useGameStore.getState().gamePhase;
-            if (phase === 'setup' || phase === 'playing' || phase === 'tie_breaker' || phase === 'finished') {
+            if (phase === 'setup' || phase === 'playing' || phase === 'combat' || phase === 'tie_breaker' || phase === 'finished') {
                 useGameStore.getState().resetForMatchmaking();
             }
         };
