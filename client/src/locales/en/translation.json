@@ -31,7 +31,18 @@
         "vs_player": "vs Player",
         "vs_computer": "vs Computer",
         "start_game": "Start Game",
-        "find_game": "Find Game"
+        "find_game": "Find Game",
+        "random_opponent": "Random Opponent",
+        "play_with_friend": "Play with Friend",
+        "create_room": "Create Room",
+        "join_room": "Join",
+        "or": "or",
+        "room_code_placeholder": "Enter code",
+        "room_code_label": "Your Room Code",
+        "room_share_hint": "Share this code with your friend",
+        "room_waiting": "Waiting for friend to join...",
+        "room_creating": "Creating room...",
+        "room_joining": "Joining room..."
     },
     "setup": {
         "title": "Setup Phase",

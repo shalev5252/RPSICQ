@@ -23,8 +23,8 @@ const io = new Server(httpServer, {
         methods: ['GET', 'POST'],
         credentials: true,
     },
-    pingTimeout: 60000,      // 60s to wait for pong (more lenient for slow networks)
-    pingInterval: 25000,     // Ping every 25s (less aggressive, reduces overhead)
+    pingTimeout: 15000,      // 15s to wait for pong — detect disconnects within ~25s
+    pingInterval: 10000,     // Ping every 10s for faster liveness detection
     transports: ['websocket', 'polling'],
     allowUpgrades: true,
     perMessageDeflate: false, // Disable compression (can cause issues with some proxies)

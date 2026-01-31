@@ -1,11 +1,14 @@
 import { Server, Socket } from 'socket.io';
-import { SOCKET_EVENTS, JoinQueuePayload, StartSingleplayerPayload, PlaceKingPitPayload, MakeMovePayload, CombatChoicePayload } from '@rps/shared';
+import { v4 as uuidv4 } from 'uuid';
+import { SOCKET_EVENTS, JoinQueuePayload, StartSingleplayerPayload, PlaceKingPitPayload, MakeMovePayload, CombatChoicePayload, CreateRoomPayload, JoinRoomPayload, PlayerRole } from '@rps/shared';
 import { MatchmakingService } from '../services/MatchmakingService.js';
 import { GameService } from '../services/GameService.js';
+import { RoomService } from '../services/RoomService.js';
 
 export function setupSocketHandlers(io: Server): void {
     const gameService = new GameService();
     const matchmakingService = new MatchmakingService(io, gameService);
+    const roomService = new RoomService(io, gameService);
 
     // Helper: schedule an AI move with a natural delay, then emit results
     function scheduleAIMove(sessionId: string, humanSocket: Socket) {
@@ -559,6 +562,61 @@ export function setupSocketHandlers(io: Server): void {
             }
         });
 
+        socket.on(SOCKET_EVENTS.CREATE_ROOM, (payload: CreateRoomPayload) => {
+            const mode = payload.gameMode || 'classic';
+            console.log(`🏠 Player ${socket.id} creating room (mode: ${mode})`);
+
+            const result = roomService.createRoom(socket.id, mode);
+            if (!result.success || !result.roomCode) {
+                socket.emit(SOCKET_EVENTS.ROOM_ERROR, { code: 'ROOM_CREATE_FAILED', message: result.error || 'Failed to create room' });
+                return;
+            }
+
+            socket.emit(SOCKET_EVENTS.ROOM_CREATED, { roomCode: result.roomCode, gameMode: mode });
+        });
+
+        socket.on(SOCKET_EVENTS.JOIN_ROOM, (payload: JoinRoomPayload) => {
+            const code = payload.roomCode;
+            console.log(`🚪 Player ${socket.id} joining room ${code}`);
+
+            const result = roomService.joinRoom(socket.id, code);
+            if (!result.success || !result.hostSocketId || !result.gameMode) {
+                socket.emit(SOCKET_EVENTS.ROOM_ERROR, {
+                    code: result.errorCode || 'ROOM_NOT_FOUND',
+                    message: result.error || 'Room not found'
+                });
+                return;
+            }
+
+            // Verify host is still connected
+            const hostSocket = io.sockets.sockets.get(result.hostSocketId);
+            if (!hostSocket || !hostSocket.connected) {
+                socket.emit(SOCKET_EVENTS.ROOM_ERROR, { code: 'ROOM_NOT_FOUND', message: 'Room host is no longer connected' });
+                return;
+            }
+
+            // Create game session (same flow as matchmaking)
+            const sessionId = uuidv4();
+            const isRedFirst = Math.random() < 0.5;
+            const hostRole: PlayerRole = isRedFirst ? 'red' : 'blue';
+            const joinerRole: PlayerRole = isRedFirst ? 'blue' : 'red';
+
+            gameService.createSession(sessionId, result.hostSocketId, hostRole, socket.id, joinerRole, result.gameMode);
+
+            hostSocket.join(sessionId);
+            socket.join(sessionId);
+
+            hostSocket.emit(SOCKET_EVENTS.GAME_FOUND, { sessionId, color: hostRole });
+            socket.emit(SOCKET_EVENTS.GAME_FOUND, { sessionId, color: joinerRole });
+
+            console.log(`⚔️ Room match! Session: ${sessionId} | ${result.hostSocketId} (${hostRole}) vs ${socket.id} (${joinerRole}) [Mode: ${result.gameMode}]`);
+        });
+
+        socket.on(SOCKET_EVENTS.CANCEL_ROOM, () => {
+            console.log(`❌ Player ${socket.id} cancelling room`);
+            roomService.cancelRoom(socket.id);
+        });
+
         socket.on(SOCKET_EVENTS.LEAVE_SESSION, () => {
             console.log(`🚪 Player ${socket.id} leaving session`);
             const result = gameService.leaveSession(socket.id);
@@ -570,8 +628,9 @@ export function setupSocketHandlers(io: Server): void {
         socket.on('disconnect', (reason: string) => {
             console.log(`❌ Client disconnected: ${socket.id} (${reason})`);
 
-            // 1. Remove from queue if they are waiting
+            // 1. Remove from queue and clean up rooms
             matchmakingService.removeFromQueue(socket.id);
+            roomService.removePlayerRooms(socket.id);
 
             // 2. Check if they are in an active game - use grace period instead of immediate end
             const opponentId = gameService.handleTemporaryDisconnect(socket.id, () => {

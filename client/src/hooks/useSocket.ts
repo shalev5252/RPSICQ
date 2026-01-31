@@ -8,6 +8,8 @@ import {
     GameStartPayload,
     ErrorPayload,
     SetupStatePayload,
+    RoomCreatedPayload,
+    RoomErrorPayload,
     PlayerCellView,
     PlayerColor,
     GamePhase,
@@ -57,6 +59,11 @@ export function useSocket() {
 
         const onGameFound = (payload: GameFoundPayload) => {
             console.log('🎮 Game found:', payload);
+            // Clear room state when matched (room or random queue)
+            useGameStore.getState().setRoomCode(null);
+            useGameStore.getState().setRoomError(null);
+            useGameStore.getState().setIsCreatingRoom(false);
+            useGameStore.getState().setIsJoiningRoom(false);
         };
 
         const onGameStart = (payload: GameStartPayload) => {
@@ -288,6 +295,27 @@ export function useSocket() {
             }
         };
 
+        const onRoomCreated = (payload: RoomCreatedPayload) => {
+            console.log('🏠 Room created:', payload.roomCode);
+            useGameStore.getState().setRoomCode(payload.roomCode);
+            useGameStore.getState().setIsCreatingRoom(false);
+            useGameStore.getState().setRoomError(null);
+        };
+
+        const onRoomError = (payload: RoomErrorPayload) => {
+            console.error('🏠 Room error:', payload);
+            useGameStore.getState().setRoomError(payload.message);
+            useGameStore.getState().setIsCreatingRoom(false);
+            useGameStore.getState().setIsJoiningRoom(false);
+        };
+
+        const onRoomExpired = () => {
+            console.log('⏰ Room expired');
+            useGameStore.getState().setRoomCode(null);
+            useGameStore.getState().setRoomError(null);
+            useGameStore.getState().setIsCreatingRoom(false);
+        };
+
         socket.on('connect', onConnect);
         socket.on('disconnect', onDisconnect);
         socket.on('connect_error', onConnectError);
@@ -304,6 +332,9 @@ export function useSocket() {
         socket.on(SOCKET_EVENTS.OPPONENT_RECONNECTING, onOpponentReconnecting);
         socket.on(SOCKET_EVENTS.OPPONENT_RECONNECTED, onOpponentReconnected);
         socket.on(SOCKET_EVENTS.OPPONENT_DISCONNECTED, onOpponentDisconnected);
+        socket.on(SOCKET_EVENTS.ROOM_CREATED, onRoomCreated);
+        socket.on(SOCKET_EVENTS.ROOM_ERROR, onRoomError);
+        socket.on(SOCKET_EVENTS.ROOM_EXPIRED, onRoomExpired);
         socket.on(SOCKET_EVENTS.ERROR, onError);
 
         // Sync state immediately if socket is already connected (handles race condition on mount)
@@ -329,6 +360,9 @@ export function useSocket() {
             socket.off(SOCKET_EVENTS.OPPONENT_RECONNECTING, onOpponentReconnecting);
             socket.off(SOCKET_EVENTS.OPPONENT_RECONNECTED, onOpponentReconnected);
             socket.off(SOCKET_EVENTS.OPPONENT_DISCONNECTED, onOpponentDisconnected);
+            socket.off(SOCKET_EVENTS.ROOM_CREATED, onRoomCreated);
+            socket.off(SOCKET_EVENTS.ROOM_ERROR, onRoomError);
+            socket.off(SOCKET_EVENTS.ROOM_EXPIRED, onRoomExpired);
             socket.off(SOCKET_EVENTS.ERROR, onError);
             if (revealTimerRef.current) clearTimeout(revealTimerRef.current);
             if (resultTimerRef.current) clearTimeout(resultTimerRef.current);
