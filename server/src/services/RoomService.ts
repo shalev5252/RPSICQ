@@ -18,6 +18,9 @@ export class RoomService {
     private io: Server;
     private gameService: GameService;
 
+    private recentlyExpired: Map<string, number> = new Map(); // code → expiration timestamp
+    private readonly EXPIRY_RETENTION_MS = 30 * 1000; // Keep expired codes for 30s to prevent immediate reuse
+
     constructor(io: Server, gameService: GameService) {
         this.io = io;
         this.gameService = gameService;
@@ -28,10 +31,15 @@ export class RoomService {
      */
     private generateCode(): string {
         const MAX_ATTEMPTS = 100;
+        const now = Date.now();
         for (let i = 0; i < MAX_ATTEMPTS; i++) {
             const code = String(Math.floor(Math.random() * 10_000_000)).padStart(7, '0');
+            // Check active rooms AND recently expired rooms
             if (!this.rooms.has(code)) {
-                return code;
+                const expiredTimestamp = this.recentlyExpired.get(code);
+                if (!expiredTimestamp || now > expiredTimestamp + this.EXPIRY_RETENTION_MS) {
+                    return code;
+                }
             }
         }
         throw new Error('Failed to generate unique room code');
@@ -83,6 +91,11 @@ export class RoomService {
         const room = this.rooms.get(code);
 
         if (!room) {
+            // Check if it's a recently expired room
+            const expiredTimestamp = this.recentlyExpired.get(code);
+            if (expiredTimestamp && Date.now() < expiredTimestamp + this.EXPIRY_RETENTION_MS) {
+                return { success: false, error: 'Room expired', errorCode: 'ROOM_EXPIRED' };
+            }
             return { success: false, error: 'Room not found', errorCode: 'ROOM_NOT_FOUND' };
         }
 
@@ -132,6 +145,14 @@ export class RoomService {
             hostSocket.emit(SOCKET_EVENTS.ROOM_EXPIRED);
         }
 
+        // Add to recently expired list
+        this.recentlyExpired.set(code, Date.now());
+
+        // Clean up from recently expired after retention period
+        setTimeout(() => {
+            this.recentlyExpired.delete(code);
+        }, this.EXPIRY_RETENTION_MS);
+
         this.removeRoom(code);
     }
 
@@ -144,3 +165,4 @@ export class RoomService {
         this.rooms.delete(code);
     }
 }
+

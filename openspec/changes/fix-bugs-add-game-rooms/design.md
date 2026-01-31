@@ -15,19 +15,23 @@ The RPS Battle game uses Socket.IO for real-time communication between a React c
 ## Decisions
 
 ### 1. Game-Over Navigation
-- **Decision:** Remove `window.location.reload()` and instead call `reset()` plus emit a `LEAVE_SESSION` event to the server so the server cleans up the session. The store reset sets `gamePhase` to `'waiting'`, which unmounts `GameOverScreen` and mounts `MatchmakingScreen`.
+- **Decision:** Remove `window.location.reload()` and instead call `useGameStore.getState().reset()` plus emit a `LEAVE_SESSION` event to the server so the server cleans up the session. The store reset sets `gamePhase` to `'waiting'`, which unmounts `GameOverScreen` and mounts `MatchmakingScreen`.
 - **Alternatives considered:**
   - Keep `window.location.reload()` but fix potential timing issues → rejected because reload is wasteful and causes flicker.
   - Use React Router navigation → rejected because the app is single-page with phase-based rendering, not route-based.
 
 ### 2. Player Liveness Detection
 - **Decision:** Tighten Socket.IO transport-level ping settings (`pingInterval: 10000`, `pingTimeout: 15000`) so disconnects are detected within ~25 seconds. On top of this, show an "opponent reconnecting" banner to the remaining player as soon as `OPPONENT_RECONNECTING` fires (already exists but has no UI). Keep the reconnect grace period at 30s — the bottleneck was detection time, not grace time, and 30s gives legitimate reconnections (network blips, Wi-Fi switching) enough room.
-- **Alternatives considered:**
-  - Custom application-level heartbeat with separate ping/pong events → rejected as unnecessarily complex; Socket.IO already has built-in ping/pong. Tuning the existing settings achieves the goal.
-  - `beforeunload` event on client to notify server → unreliable on mobile, not a substitute.
+- **Implementation Targets:**
+  - **Server**: `server/src/index.ts` (SocketIO config), `GameService.handleDisconnect`, `GameService.handleTemporaryDisconnect`.
+  - **Client**: `useSocket` (event listeners), `gameStore` (state `opponentReconnecting`), `GameScreen` (UI banner).
 
 ### 3. Private Game Rooms
-- **Decision:** Create a `RoomService` on the server that manages room creation, code generation, joining, and expiration. Room codes are 7-digit random numbers stored in a `Map<string, RoomEntry>`. The service ensures uniqueness of active codes and auto-expires rooms after 10 minutes via `setTimeout`. New socket events: `CREATE_ROOM`, `JOIN_ROOM`, `ROOM_CREATED`, `ROOM_JOINED`, `ROOM_ERROR`, `ROOM_EXPIRED`. The room creator selects game mode before creating the room. The joiner enters the code on the main screen (no mode selection needed - inherits from creator). On successful join, the server creates a game session (same as matchmaking) and emits `GAME_FOUND` to both players.
+- **Decision:** Create a `RoomService` on the server that manages room creation, code generation, joining, and expiration. Room codes are 7-digit random numbers stored in a `Map<string, RoomEntry>`. The service ensures uniqueness of active codes and auto-expires rooms after 10 minutes via `setTimeout`.
+- **New Events:** `CREATE_ROOM`, `JOIN_ROOM`, `ROOM_CREATED`, `ROOM_JOINED`, `ROOM_ERROR`, `ROOM_EXPIRED`.
+- **Implementation Targets:**
+  - **Server**: `RoomService` class, `handlers.ts` (handlers for `CREATE_ROOM`, `JOIN_ROOM`), `GameService.createSession` (reused).
+  - **Client**: `MatchmakingScreen` (UI for "Play with Friend"), `useSocket` (emitters/listeners), `gameStore` (room state).
 - **Alternatives considered:**
   - Reuse matchmaking queue with room filter → rejected, conceptually different flow.
   - Use short alphanumeric codes → rejected, user requested 7-digit numeric codes.

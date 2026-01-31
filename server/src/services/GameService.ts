@@ -1268,8 +1268,17 @@ export class GameService {
         this.playerSessionMap.delete(socketId);
         this.setupStates.delete(socketId);
 
-        // If the game is finished, remove the whole session (no reason to keep it)
-        if (session.phase === 'finished') {
+        // Check if any other human players are still in this session
+        const redSocket = session.players.red?.socketId;
+        const blueSocket = session.players.blue?.socketId;
+
+        const redActive = redSocket && this.playerSessionMap.has(redSocket);
+        const blueActive = blueSocket && this.playerSessionMap.has(blueSocket);
+
+        // Remove session only if:
+        // 1. It's an AI session (leaving means game over)
+        // 2. OR no human players remain
+        if (session.opponentType === 'ai' || (!redActive && !blueActive)) {
             this.removeSession(sessionId);
         }
 

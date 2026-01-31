@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Return to Main Menu After Game Over
-The client SHALL allow a player to return to the main menu (matchmaking screen) after a game ends, without requiring a full page reload.
+The client SHALL allow a player to return to the main menu (matchmaking screen) after a game ends, without requiring a full-page reload.
 
 #### Scenario: Player clicks Return Home after winning
 - **GIVEN** the game has ended and the player sees the game-over screen

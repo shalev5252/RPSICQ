@@ -67,6 +67,7 @@ interface GameStore {
     rematchState: RematchState;
     setRematchState: (state: Partial<RematchState>) => void;
     resetForRematch: () => void;
+    resetForMatchmaking: () => void;
     // Tie-breaker state
     tieBreakerState: TieBreakerState;
     incrementTieBreakerRetry: () => void;
@@ -170,6 +171,16 @@ export const useGameStore = create<GameStore>((set) => ({
         rematchState: initialRematchState,
         tieBreakerState: initialTieBreakerState,
         // Keep sessionId, playerId, and myColor
+    }),
+    resetForMatchmaking: () => set({
+        gamePhase: 'waiting' as GamePhase,
+        setupState: initialSetupState,
+        gameState: null,
+        rematchState: initialRematchState,
+        tieBreakerState: initialTieBreakerState,
+        showTurnSkipped: false,
+        opponentReconnecting: false,
+        // Keep sessionId, playerId, myColor, gameMode, opponentType
     }),
     incrementTieBreakerRetry: () => set((prev) => ({
         tieBreakerState: { ...prev.tieBreakerState, retryCount: prev.tieBreakerState.retryCount + 1 }
