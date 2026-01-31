@@ -67,6 +67,7 @@ interface GameStore {
     rematchState: RematchState;
     setRematchState: (state: Partial<RematchState>) => void;
     resetForRematch: () => void;
+    resetForMatchmaking: () => void;
     // Tie-breaker state
     tieBreakerState: TieBreakerState;
     incrementTieBreakerRetry: () => void;
@@ -77,6 +78,20 @@ interface GameStore {
     // Turn skipped state
     showTurnSkipped: boolean;
     setShowTurnSkipped: (show: boolean) => void;
+    // Opponent reconnecting state
+    opponentReconnecting: boolean;
+    setOpponentReconnecting: (reconnecting: boolean) => void;
+    // Room state
+    roomCode: string | null;
+    setRoomCode: (code: string | null) => void;
+    roomError: string | null;
+    setRoomError: (error: string | null) => void;
+    isCreatingRoom: boolean;
+    setIsCreatingRoom: (creating: boolean) => void;
+    isJoiningRoom: boolean;
+    setIsJoiningRoom: (joining: boolean) => void;
+    pvpMode: 'random' | 'friend';
+    setPvpMode: (mode: 'random' | 'friend') => void;
     reset: () => void;
 }
 
@@ -118,6 +133,12 @@ const initialState = {
     rematchState: initialRematchState,
     tieBreakerState: initialTieBreakerState,
     showTurnSkipped: false,
+    opponentReconnecting: false,
+    roomCode: null,
+    roomError: null,
+    isCreatingRoom: false,
+    isJoiningRoom: false,
+    pvpMode: 'random' as 'random' | 'friend',
 };
 
 export const useGameStore = create<GameStore>((set) => ({
@@ -151,6 +172,16 @@ export const useGameStore = create<GameStore>((set) => ({
         tieBreakerState: initialTieBreakerState,
         // Keep sessionId, playerId, and myColor
     }),
+    resetForMatchmaking: () => set({
+        gamePhase: 'waiting' as GamePhase,
+        setupState: initialSetupState,
+        gameState: null,
+        rematchState: initialRematchState,
+        tieBreakerState: initialTieBreakerState,
+        showTurnSkipped: false,
+        opponentReconnecting: false,
+        // Keep sessionId, playerId, myColor, gameMode, opponentType
+    }),
     incrementTieBreakerRetry: () => set((prev) => ({
         tieBreakerState: { ...prev.tieBreakerState, retryCount: prev.tieBreakerState.retryCount + 1 }
     })),
@@ -170,5 +201,11 @@ export const useGameStore = create<GameStore>((set) => ({
         tieBreakerState: { ...prev.tieBreakerState, showingResult }
     })),
     setShowTurnSkipped: (show) => set({ showTurnSkipped: show }),
+    setOpponentReconnecting: (reconnecting) => set({ opponentReconnecting: reconnecting }),
+    setRoomCode: (code) => set({ roomCode: code }),
+    setRoomError: (error) => set({ roomError: error }),
+    setIsCreatingRoom: (creating) => set({ isCreatingRoom: creating }),
+    setIsJoiningRoom: (joining) => set({ isJoiningRoom: joining }),
+    setPvpMode: (mode) => set({ pvpMode: mode }),
     reset: () => set(initialState),
 }));

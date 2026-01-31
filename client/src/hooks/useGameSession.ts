@@ -12,8 +12,6 @@ export const useGameSession = (socket: Socket) => {
     const setGamePhase = useGameStore((state) => state.setGamePhase);
     const setIsSearching = useGameStore((state) => state.setIsSearching);
     const setSetupState = useGameStore((state) => state.setSetupState);
-    const reset = useGameStore((state) => state.reset);
-
     const setGameMode = useGameStore((state) => state.setGameMode);
 
     useEffect(() => {
@@ -49,32 +47,16 @@ export const useGameSession = (socket: Socket) => {
             // TODO: Set full game state when playing phase is implemented
         };
 
-        const onOpponentDisconnected = () => {
-            console.log('Opponent disconnected, re-queuing...');
-            // Reset setup state
-            reset();
-            // Go back to waiting, start searching automatically
-            setGamePhase('waiting');
-            setIsSearching(true);
-
-            // Re-join queue automatically
-            socket.emit(SOCKET_EVENTS.JOIN_QUEUE, {
-                playerId: crypto.randomUUID(),
-            });
-        };
-
         socket.on(SOCKET_EVENTS.GAME_FOUND, onGameFound);
         socket.on(SOCKET_EVENTS.SETUP_STATE, onSetupState);
         socket.on(SOCKET_EVENTS.OPPONENT_READY, onOpponentReady);
         socket.on(SOCKET_EVENTS.GAME_START, onGameStart);
-        socket.on(SOCKET_EVENTS.OPPONENT_DISCONNECTED, onOpponentDisconnected);
 
         return () => {
             socket.off(SOCKET_EVENTS.GAME_FOUND, onGameFound);
             socket.off(SOCKET_EVENTS.SETUP_STATE, onSetupState);
             socket.off(SOCKET_EVENTS.OPPONENT_READY, onOpponentReady);
             socket.off(SOCKET_EVENTS.GAME_START, onGameStart);
-            socket.off(SOCKET_EVENTS.OPPONENT_DISCONNECTED, onOpponentDisconnected);
         };
-    }, [socket, setSessionId, setPlayerInfo, setGamePhase, setIsSearching, setSetupState, reset]);
+    }, [socket, setSessionId, setPlayerInfo, setGamePhase, setIsSearching, setSetupState]);
 };

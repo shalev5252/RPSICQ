@@ -31,7 +31,18 @@
         "vs_player": "נגד שחקן",
         "vs_computer": "נגד מחשב",
         "start_game": "התחל משחק",
-        "find_game": "מצא משחק"
+        "find_game": "מצא משחק",
+        "random_opponent": "יריב אקראי",
+        "play_with_friend": "שחק עם חבר",
+        "create_room": "צור חדר",
+        "join_room": "הצטרף",
+        "or": "או",
+        "room_code_placeholder": "הכנס קוד",
+        "room_code_label": "קוד החדר שלך",
+        "room_share_hint": "שתף את הקוד הזה עם חבר",
+        "room_waiting": "ממתין לחבר להצטרף...",
+        "room_creating": "יוצר חדר...",
+        "room_joining": "מצטרף לחדר..."
     },
     "setup": {
         "title": "שלב ההכנה",
@@ -75,6 +86,7 @@
         "lost": "הפסדת",
         "tie": "תיקו!",
         "waiting_rematch": "ממתין למשחק חוזר...",
+        "opponent_reconnecting": "היריב התנתק, ממתין לחזרתו...",
         "rules_title": "חוקי המשחק",
         "rules": {
             "title": "חוקי הקרב",

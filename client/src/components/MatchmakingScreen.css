@@ -126,3 +126,195 @@
     font-weight: 600;
     font-size: 0.95rem;
 }
+
+/* PvP Mode Select (Random / Friend) */
+.pvp-mode-select {
+    width: 100%;
+    max-width: 400px;
+    margin-bottom: 0.5rem;
+}
+
+.pvp-mode-select__options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+}
+
+.pvp-mode-select__option {
+    padding: 0.6rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid transparent;
+    border-radius: 10px;
+    color: white;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    text-align: center;
+}
+
+.pvp-mode-select__option:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.pvp-mode-select__option--selected {
+    background: rgba(var(--primary-rgb, 100, 108, 255), 0.2);
+    border-color: var(--primary, #646cff);
+    box-shadow: 0 0 10px rgba(var(--primary-rgb, 100, 108, 255), 0.25);
+}
+
+.pvp-mode-select__option:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Room Section */
+.room-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+    max-width: 400px;
+    box-sizing: border-box;
+}
+
+.room-section__actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+}
+
+.room-section__divider {
+    color: var(--text-secondary, #aaa);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.room-section__join {
+    display: flex;
+    gap: 0.5rem;
+    width: 100%;
+    align-items: center;
+}
+
+.room-section__input {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    font-size: 1.2rem;
+    font-family: monospace;
+    letter-spacing: 0.3em;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.08);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: white;
+    outline: none;
+    transition: border-color 0.2s;
+    min-width: 0;
+}
+
+.room-section__input::placeholder {
+    letter-spacing: 0.1em;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.room-section__input:focus {
+    border-color: var(--primary, #646cff);
+}
+
+.room-section__join-btn {
+    padding: 0.75rem 1.2rem;
+    font-size: 1rem;
+    white-space: nowrap;
+}
+
+.room-section__join-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.room-section__created {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.room-section__label {
+    color: var(--text-secondary, #aaa);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0;
+}
+
+.room-section__code {
+    font-size: 2.5rem;
+    font-weight: 700;
+    font-family: monospace;
+    letter-spacing: 0.4em;
+    color: #646cff;
+    text-shadow: 0 0 20px rgba(100, 108, 255, 0.4);
+    user-select: all;
+}
+
+.room-section__hint {
+    color: var(--text-secondary, #aaa);
+    font-size: 0.8rem;
+    margin: 0;
+    text-align: center;
+}
+
+.room-section__waiting {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: white;
+}
+
+.room-section__waiting .spinner {
+    width: 24px;
+    height: 24px;
+}
+
+.room-section__error {
+    color: #ff6b6b;
+    font-size: 0.9rem;
+    text-align: center;
+    padding: 0.5rem 1rem;
+    background: rgba(255, 107, 107, 0.1);
+    border-radius: 8px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Mobile adjustments */
+@media (max-width: 767px) {
+    .room-section__code {
+        font-size: 1.8rem;
+        letter-spacing: 0.3em;
+    }
+
+    .room-section__join {
+        flex-direction: column;
+    }
+
+    .room-section__join-btn {
+        width: 100%;
+    }
+
+    .room-section__input {
+        width: 100%;
+    }
+}

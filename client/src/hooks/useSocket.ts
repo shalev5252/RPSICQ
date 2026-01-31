@@ -8,6 +8,8 @@ import {
     GameStartPayload,
     ErrorPayload,
     SetupStatePayload,
+    RoomCreatedPayload,
+    RoomErrorPayload,
     PlayerCellView,
     PlayerColor,
     GamePhase,
@@ -57,6 +59,11 @@ export function useSocket() {
 
         const onGameFound = (payload: GameFoundPayload) => {
             console.log('🎮 Game found:', payload);
+            // Clear room state when matched (room or random queue)
+            useGameStore.getState().setRoomCode(null);
+            useGameStore.getState().setRoomError(null);
+            useGameStore.getState().setIsCreatingRoom(false);
+            useGameStore.getState().setIsJoiningRoom(false);
         };
 
         const onGameStart = (payload: GameStartPayload) => {
@@ -270,12 +277,43 @@ export function useSocket() {
 
         const onOpponentReconnecting = () => {
             console.log('⏳ Opponent is reconnecting...');
-            // Could show a toast/notification here
+            useGameStore.getState().setOpponentReconnecting(true);
         };
 
         const onOpponentReconnected = () => {
             console.log('✅ Opponent reconnected!');
-            // Could show a toast/notification here
+            useGameStore.getState().setOpponentReconnecting(false);
+        };
+
+        const onOpponentDisconnected = () => {
+            console.log('🚪 Opponent disconnected permanently');
+            useGameStore.getState().setOpponentReconnecting(false);
+            // Reset to matchmaking screen from any active game phase
+            const phase = useGameStore.getState().gamePhase;
+            if (phase === 'setup' || phase === 'playing' || phase === 'combat' || phase === 'tie_breaker' || phase === 'finished') {
+                useGameStore.getState().resetForMatchmaking();
+            }
+        };
+
+        const onRoomCreated = (payload: RoomCreatedPayload) => {
+            console.log('🏠 Room created:', payload.roomCode);
+            useGameStore.getState().setRoomCode(payload.roomCode);
+            useGameStore.getState().setIsCreatingRoom(false);
+            useGameStore.getState().setRoomError(null);
+        };
+
+        const onRoomError = (payload: RoomErrorPayload) => {
+            console.error('🏠 Room error:', payload);
+            useGameStore.getState().setRoomError(payload.message);
+            useGameStore.getState().setIsCreatingRoom(false);
+            useGameStore.getState().setIsJoiningRoom(false);
+        };
+
+        const onRoomExpired = () => {
+            console.log('⏰ Room expired');
+            useGameStore.getState().setRoomCode(null);
+            useGameStore.getState().setRoomError(null);
+            useGameStore.getState().setIsCreatingRoom(false);
         };
 
         socket.on('connect', onConnect);
@@ -293,6 +331,10 @@ export function useSocket() {
         socket.on(SOCKET_EVENTS.SESSION_RESTORED, onSessionRestored);
         socket.on(SOCKET_EVENTS.OPPONENT_RECONNECTING, onOpponentReconnecting);
         socket.on(SOCKET_EVENTS.OPPONENT_RECONNECTED, onOpponentReconnected);
+        socket.on(SOCKET_EVENTS.OPPONENT_DISCONNECTED, onOpponentDisconnected);
+        socket.on(SOCKET_EVENTS.ROOM_CREATED, onRoomCreated);
+        socket.on(SOCKET_EVENTS.ROOM_ERROR, onRoomError);
+        socket.on(SOCKET_EVENTS.ROOM_EXPIRED, onRoomExpired);
         socket.on(SOCKET_EVENTS.ERROR, onError);
 
         // Sync state immediately if socket is already connected (handles race condition on mount)
@@ -317,6 +359,10 @@ export function useSocket() {
             socket.off(SOCKET_EVENTS.SESSION_RESTORED, onSessionRestored);
             socket.off(SOCKET_EVENTS.OPPONENT_RECONNECTING, onOpponentReconnecting);
             socket.off(SOCKET_EVENTS.OPPONENT_RECONNECTED, onOpponentReconnected);
+            socket.off(SOCKET_EVENTS.OPPONENT_DISCONNECTED, onOpponentDisconnected);
+            socket.off(SOCKET_EVENTS.ROOM_CREATED, onRoomCreated);
+            socket.off(SOCKET_EVENTS.ROOM_ERROR, onRoomError);
+            socket.off(SOCKET_EVENTS.ROOM_EXPIRED, onRoomExpired);
             socket.off(SOCKET_EVENTS.ERROR, onError);
             if (revealTimerRef.current) clearTimeout(revealTimerRef.current);
             if (resultTimerRef.current) clearTimeout(resultTimerRef.current);

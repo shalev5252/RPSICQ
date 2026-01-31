@@ -1253,6 +1253,38 @@ export class GameService {
         }
     }
 
+    /**
+     * Handle a player explicitly leaving a session (e.g. clicking "Return Home" after game over).
+     * Cleans up the leaving player's mappings. Removes the session entirely since the game is over.
+     */
+    public leaveSession(socketId: string): { sessionId: string } | null {
+        const sessionId = this.playerSessionMap.get(socketId);
+        if (!sessionId) return null;
+
+        const session = this.sessions.get(sessionId);
+        if (!session) return null;
+
+        // Clean up leaving player's mappings
+        this.playerSessionMap.delete(socketId);
+        this.setupStates.delete(socketId);
+
+        // Check if any other human players are still in this session
+        const redSocket = session.players.red?.socketId;
+        const blueSocket = session.players.blue?.socketId;
+
+        const redActive = redSocket && this.playerSessionMap.has(redSocket);
+        const blueActive = blueSocket && this.playerSessionMap.has(blueSocket);
+
+        // Remove session only if:
+        // 1. It's an AI session (leaving means game over)
+        // 2. OR no human players remain
+        if (session.opponentType === 'ai' || (!redActive && !blueActive)) {
+            this.removeSession(sessionId);
+        }
+
+        return { sessionId };
+    }
+
     public handleDisconnect(socketId: string): { sessionId: string, opponentId: string | undefined } | null {
         const sessionId = this.playerSessionMap.get(socketId);
         if (!sessionId) return null;

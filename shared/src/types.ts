@@ -132,6 +132,25 @@ export interface SetupStatePayload {
     opponentReady: boolean;
 }
 
+// Room payloads
+export interface CreateRoomPayload {
+    gameMode: GameMode;
+}
+
+export interface JoinRoomPayload {
+    roomCode: string;
+}
+
+export interface RoomCreatedPayload {
+    roomCode: string;
+    gameMode: GameMode;
+}
+
+export interface RoomErrorPayload {
+    code: 'ROOM_NOT_FOUND' | 'ROOM_EXPIRED' | 'CANNOT_JOIN_OWN_ROOM' | 'ROOM_CREATE_FAILED';
+    message: string;
+}
+
 // Player view types
 export interface PlayerGameView extends Omit<GameState, 'board'> {
     board: PlayerCellView[][];

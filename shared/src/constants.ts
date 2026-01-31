@@ -119,5 +119,12 @@ export const SOCKET_EVENTS = {
     OPPONENT_RECONNECTING: 'opponent_reconnecting',
     OPPONENT_RECONNECTED: 'opponent_reconnected',
     SESSION_RESTORED: 'session_restored',
+    LEAVE_SESSION: 'leave_session',
+    CREATE_ROOM: 'create_room',
+    JOIN_ROOM: 'join_room',
+    CANCEL_ROOM: 'cancel_room',
+    ROOM_CREATED: 'room_created',
+    ROOM_ERROR: 'room_error',
+    ROOM_EXPIRED: 'room_expired',
     ERROR: 'error',
 } as const;
