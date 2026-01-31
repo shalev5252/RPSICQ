@@ -19,9 +19,10 @@ export const GameOverScreen: React.FC = () => {
     const isWinner = winner === myColor;
 
     const handleReturnHome = () => {
-        // Reset game state and return to matchmaking
+        // Notify server so it can clean up the session
+        socket.emit(SOCKET_EVENTS.LEAVE_SESSION);
+        // Reset game state — sets gamePhase to 'waiting', which unmounts this screen
         useGameStore.getState().reset();
-        window.location.reload();
     };
 
     const handlePlayAgain = () => {

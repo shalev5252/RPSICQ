@@ -559,6 +559,14 @@ export function setupSocketHandlers(io: Server): void {
             }
         });
 
+        socket.on(SOCKET_EVENTS.LEAVE_SESSION, () => {
+            console.log(`🚪 Player ${socket.id} leaving session`);
+            const result = gameService.leaveSession(socket.id);
+            if (result) {
+                socket.leave(result.sessionId);
+            }
+        });
+
         socket.on('disconnect', (reason: string) => {
             console.log(`❌ Client disconnected: ${socket.id} (${reason})`);
 
