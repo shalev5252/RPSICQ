@@ -1,4 +1,4 @@
-import { Server, Socket } from 'socket.io';
+import { Server } from 'socket.io';
 import { GameMode, SOCKET_EVENTS } from '@rps/shared';
 import { GameService } from './GameService.js';
 
