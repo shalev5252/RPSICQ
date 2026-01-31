@@ -16,30 +16,30 @@
 - [x] 3.4 Add `sendEmote(emoteId)` emitter function in `useSocket.ts`
 
 ## 4. Client: Emote UI components
-- [ ] 4.1 Create `client/src/components/game/EmoteBar.tsx` for desktop
+- [x] 4.1 Create `client/src/components/game/EmoteBar.tsx` for desktop
   - Render 6 emote buttons horizontally
   - Handle click to call `sendEmote()`
   - Show cooldown indicator (disabled state + timer)
-- [ ] 4.2 Create `client/src/components/game/EmotePicker.tsx` for mobile
+- [x] 4.2 Create `client/src/components/game/EmotePicker.tsx` for mobile
   - FAB button to toggle overlay
   - Overlay with 6 emote buttons
   - Close on selection or tap outside
-- [ ] 4.3 Create `client/src/components/game/EmoteDisplay.tsx`
+- [x] 4.3 Create `client/src/components/game/EmoteDisplay.tsx`
   - Render received emote as a floating bubble near opponent's side
   - Pop-in animation, fade-out after 2.5s
 
 ## 5. Client: Integration into GameScreen
-- [ ] 5.1 In `client/src/components/game/GameScreen.tsx`:
+- [x] 5.1 In `client/src/components/game/GameScreen.tsx`:
   - Import and render `EmoteBar` (desktop) or `EmotePicker` (mobile) conditionally based on viewport width
   - Render `EmoteDisplay` when `receivedEmote` is set
   - Hide emote UI when `opponentType === 'ai'`
-- [ ] 5.2 Add CSS styles in `client/src/components/game/GameScreen.css` / new `Emote.css`
+- [x] 5.2 Add CSS styles in `client/src/components/game/GameScreen.css` / new `Emote.css`
 
 ## 6. Client: Responsive viewport detection
-- [ ] 6.1 Add a simple viewport width hook or use CSS media queries to switch between `EmoteBar` and `EmotePicker`
+- [x] 6.1 Add a simple viewport width hook or use CSS media queries to switch between `EmoteBar` and `EmotePicker`
 
 ## 7. i18n
-- [ ] 7.1 Add emote labels/alt-text to `client/src/locales/en/translation.json` and `he/translation.json`
+- [x] 7.1 Add emote labels/alt-text to `client/src/locales/en/translation.json` and `he/translation.json`
 
 ## 8. Verification
 - [ ] 8.1 Manual test: Open two browser windows, start PvP game, send emote from one, verify it appears on opponent's screen

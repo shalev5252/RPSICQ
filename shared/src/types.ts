@@ -172,7 +172,7 @@ export interface PlayerPieceView {
 }
 
 // Emote types
-export type EmoteId = 'thumbs_up' | 'clap' | 'laugh' | 'think' | 'fire' | 'sad' | 'vomit' | 'poop' | 'explosion' | 'smile' | 'tired';
+export type EmoteId = 'thumbs_up' | 'clap' | 'laugh' | 'think' | 'fire' | 'sad' | 'vomit' | 'poop' | 'explosion' | 'smile' | 'tired' | 'devil' | 'pray' | 'angel';
 
 export interface SendEmotePayload {
     emoteId: EmoteId;

@@ -8,7 +8,11 @@ import { Board } from '../setup/Board';
 import { TieBreakerModal } from './TieBreakerModal';
 import { TurnSkippedModal } from './TurnSkippedModal';
 import { RulesModal } from './RulesModal';
+import { EmoteBar } from './EmoteBar';
+import { EmotePicker } from './EmotePicker';
+import { EmoteDisplay } from './EmoteDisplay';
 import './GameScreen.css';
+import './Emote.css';
 
 export const GameScreen: React.FC = () => {
     const { socket } = useSocket();
@@ -30,6 +34,10 @@ export const GameScreen: React.FC = () => {
     const showTurnSkipped = useGameStore((state) => state.showTurnSkipped);
     const setShowTurnSkipped = useGameStore((state) => state.setShowTurnSkipped);
     const opponentReconnecting = useGameStore((state) => state.opponentReconnecting);
+    const opponentType = useGameStore((state) => state.opponentType);
+    const receivedEmote = useGameStore((state) => state.receivedEmote);
+
+    const isPvP = opponentType === 'human';
 
     // Calculate valid moves for a piece
     const calculateValidMoves = useCallback((piece: PlayerPieceView): Position[] => {
@@ -235,6 +243,22 @@ export const GameScreen: React.FC = () => {
                 onClose={() => setShowRules(false)}
                 gameMode={gameMode}
             />
+
+            {/* Emote UI - only for PvP games */}
+            {isPvP && (
+                <>
+                    <EmoteBar className="game-screen__emote-bar" />
+                    <EmotePicker className="game-screen__emote-picker" />
+                </>
+            )}
+
+            {/* Received emote display */}
+            {receivedEmote && (
+                <EmoteDisplay
+                    emoteId={receivedEmote.emoteId}
+                    from={receivedEmote.from}
+                />
+            )}
         </div>
     );
 };

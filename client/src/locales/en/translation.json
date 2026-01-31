@@ -142,5 +142,23 @@
             "starting": "Starting...",
             "waiting_opponent": "Waiting for opponent..."
         }
+    },
+    "emotes": {
+        "title": "Emotes",
+        "toggle": "Toggle Emotes",
+        "thumbs_up": "Thumbs Up",
+        "clap": "Applause",
+        "laugh": "Laugh",
+        "think": "Thinking",
+        "fire": "Fire",
+        "sad": "Sad",
+        "vomit": "Vomit",
+        "poop": "Poop",
+        "explosion": "Explosion",
+        "smile": "Smile",
+        "tired": "Tired",
+        "devil": "Devil",
+        "pray": "Pray/Hope",
+        "angel": "Angel"
     }
 }
