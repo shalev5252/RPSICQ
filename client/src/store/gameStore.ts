@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { PlayerColor, GamePhase, PlayerGameView, PlayerCellView, Position, GameMode, OpponentType, PieceType, CombatElement } from '@rps/shared';
+import type { PlayerColor, GamePhase, PlayerGameView, PlayerCellView, Position, GameMode, OpponentType, PieceType, CombatElement, EmoteId } from '@rps/shared';
 
 interface SetupState {
     board: PlayerCellView[][];
@@ -92,6 +92,11 @@ interface GameStore {
     setIsJoiningRoom: (joining: boolean) => void;
     pvpMode: 'random' | 'friend';
     setPvpMode: (mode: 'random' | 'friend') => void;
+    // Emote state
+    receivedEmote: { emoteId: EmoteId; from: PlayerColor } | null;
+    setReceivedEmote: (emote: { emoteId: EmoteId; from: PlayerColor } | null) => void;
+    emoteCooldown: boolean;
+    setEmoteCooldown: (cooldown: boolean) => void;
     reset: () => void;
 }
 
@@ -139,6 +144,8 @@ const initialState = {
     isCreatingRoom: false,
     isJoiningRoom: false,
     pvpMode: 'random' as 'random' | 'friend',
+    receivedEmote: null,
+    emoteCooldown: false,
 };
 
 export const useGameStore = create<GameStore>((set) => ({
@@ -207,5 +214,7 @@ export const useGameStore = create<GameStore>((set) => ({
     setIsCreatingRoom: (creating) => set({ isCreatingRoom: creating }),
     setIsJoiningRoom: (joining) => set({ isJoiningRoom: joining }),
     setPvpMode: (mode) => set({ pvpMode: mode }),
+    setReceivedEmote: (emote) => set({ receivedEmote: emote }),
+    setEmoteCooldown: (cooldown) => set({ emoteCooldown: cooldown }),
     reset: () => set(initialState),
 }));

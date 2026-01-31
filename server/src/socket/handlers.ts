@@ -642,6 +642,35 @@ export function setupSocketHandlers(io: Server): void {
             }
         });
 
+        // Emote relay - only for PvP games
+        socket.on(SOCKET_EVENTS.SEND_EMOTE, (payload: { emoteId: string }) => {
+            const session = gameService.getSessionBySocketId(socket.id);
+            if (!session) return;
+
+            // Only allow emotes in PvP games (not AI)
+            if (session.opponentType === 'ai') return;
+
+            // Only allow during active game phases
+            if (session.phase !== 'setup' && session.phase !== 'playing' && session.phase !== 'combat' && session.phase !== 'tie_breaker') return;
+
+            const playerColor = gameService.getPlayerColor(socket.id);
+            if (!playerColor) return;
+
+            // Find opponent socket
+            const opponent = session.players[playerColor === 'red' ? 'blue' : 'red'];
+            if (!opponent?.socketId) return;
+
+            const opponentSocket = io.sockets.sockets.get(opponent.socketId);
+            if (opponentSocket?.connected) {
+                opponentSocket.emit(SOCKET_EVENTS.EMOTE_RECEIVED, {
+                    emoteId: payload.emoteId,
+                    from: playerColor
+                });
+            }
+
+            console.log(`😀 Emote ${payload.emoteId} sent from ${playerColor} to opponent`);
+        });
+
         socket.on('disconnect', (reason: string) => {
             console.log(`❌ Client disconnected: ${socket.id} (${reason})`);
 

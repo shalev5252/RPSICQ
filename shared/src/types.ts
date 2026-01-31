@@ -170,3 +170,15 @@ export interface PlayerPieceView {
     isRevealed: boolean;
     hasHalo: boolean;
 }
+
+// Emote types
+export type EmoteId = 'thumbs_up' | 'clap' | 'laugh' | 'think' | 'fire' | 'sad' | 'vomit' | 'poop' | 'explosion' | 'smile' | 'tired';
+
+export interface SendEmotePayload {
+    emoteId: EmoteId;
+}
+
+export interface EmoteReceivedPayload {
+    emoteId: EmoteId;
+    from: PlayerColor;
+}

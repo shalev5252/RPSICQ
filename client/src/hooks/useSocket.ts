@@ -17,6 +17,8 @@ import {
     Position,
     PieceType,
     CombatElement,
+    EmoteId,
+    EmoteReceivedPayload,
 } from '@rps/shared';
 import { useSound } from '../context/SoundContext';
 
@@ -316,6 +318,15 @@ export function useSocket() {
             useGameStore.getState().setIsCreatingRoom(false);
         };
 
+        const onEmoteReceived = (payload: EmoteReceivedPayload) => {
+            console.log(`😀 Emote received: ${payload.emoteId} from ${payload.from}`);
+            useGameStore.getState().setReceivedEmote(payload);
+            // Auto-clear after 2.5 seconds
+            setTimeout(() => {
+                useGameStore.getState().setReceivedEmote(null);
+            }, 2500);
+        };
+
         socket.on('connect', onConnect);
         socket.on('disconnect', onDisconnect);
         socket.on('connect_error', onConnectError);
@@ -335,6 +346,7 @@ export function useSocket() {
         socket.on(SOCKET_EVENTS.ROOM_CREATED, onRoomCreated);
         socket.on(SOCKET_EVENTS.ROOM_ERROR, onRoomError);
         socket.on(SOCKET_EVENTS.ROOM_EXPIRED, onRoomExpired);
+        socket.on(SOCKET_EVENTS.EMOTE_RECEIVED, onEmoteReceived);
         socket.on(SOCKET_EVENTS.ERROR, onError);
 
         // Sync state immediately if socket is already connected (handles race condition on mount)
@@ -363,6 +375,7 @@ export function useSocket() {
             socket.off(SOCKET_EVENTS.ROOM_CREATED, onRoomCreated);
             socket.off(SOCKET_EVENTS.ROOM_ERROR, onRoomError);
             socket.off(SOCKET_EVENTS.ROOM_EXPIRED, onRoomExpired);
+            socket.off(SOCKET_EVENTS.EMOTE_RECEIVED, onEmoteReceived);
             socket.off(SOCKET_EVENTS.ERROR, onError);
             if (revealTimerRef.current) clearTimeout(revealTimerRef.current);
             if (resultTimerRef.current) clearTimeout(resultTimerRef.current);
@@ -380,10 +393,24 @@ export function useSocket() {
         socketRef.current?.emit(SOCKET_EVENTS.LEAVE_QUEUE);
     };
 
+    const sendEmote = (emoteId: EmoteId) => {
+        const emoteCooldown = useGameStore.getState().emoteCooldown;
+        if (emoteCooldown) return;
+
+        socketRef.current?.emit(SOCKET_EVENTS.SEND_EMOTE, { emoteId });
+
+        // Start cooldown
+        useGameStore.getState().setEmoteCooldown(true);
+        setTimeout(() => {
+            useGameStore.getState().setEmoteCooldown(false);
+        }, 3000);
+    };
+
     return {
         socket: socketRef.current,
         isConnected,
         joinQueue,
         leaveQueue,
+        sendEmote,
     };
 }
