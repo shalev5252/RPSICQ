@@ -244,8 +244,78 @@ export class ExpectimaxSearch {
             );
         }
 
-        // Attacker loses: simulate board after removing attacker
+        // Attacker loses against a KNOWN defender type
+        // Check if this is a "known" loss (defender type is confirmed, not just probabilistic)
+        const tracked = bayesianState?.trackedPieces.get(defender.id);
+        const isDefenderTypeConfirmed = tracked?.knownType === defenderType || defender.isRevealed;
+
+        if (isDefenderTypeConfirmed) {
+            // This is a guaranteed loss against a known piece - heavily penalize
+            // UNLESS this sacrifice provides strategic value (e.g., removing a threat to our King)
+            const strategicValue = this.assessSacrificeStrategicValue(
+                gameState, aiColor, defender, to, bayesianState
+            );
+
+            if (strategicValue <= 0) {
+                // No strategic benefit - this is a foolish sacrifice, strongly discourage
+                return -this.MAX_SCORE * 0.5;
+            }
+
+            // There's some strategic value, but still penalize the loss
+            // Strategic value can reduce the penalty but not eliminate it entirely
+            return this.simulateLoss(gameState, aiColor, attacker, weights, bayesianState) + strategicValue;
+        }
+
+        // Unknown/uncertain defender type (probabilistic) - use normal evaluation
         return this.simulateLoss(gameState, aiColor, attacker, weights, bayesianState);
+    }
+
+    /**
+     * Assess whether sacrificing a piece against a defender provides strategic value.
+     * Returns a positive score if the sacrifice is strategically justified.
+     */
+    private assessSacrificeStrategicValue(
+        gameState: GameState,
+        aiColor: PlayerColor,
+        defender: Piece,
+        _to: Position,
+        _bayesianState: BayesianState | undefined
+    ): number {
+        let strategicValue = 0;
+        const aiPlayer = gameState.players[aiColor];
+        if (!aiPlayer) return 0;
+
+        const ownKing = aiPlayer.pieces.find(p => p.type === 'king');
+        if (!ownKing) return 0;
+
+        // Check if the defender is adjacent to our King (threatening it)
+        const distToOurKing = Math.abs(defender.position.row - ownKing.position.row) +
+            Math.abs(defender.position.col - ownKing.position.col);
+
+        if (distToOurKing === 1) {
+            // Defender is directly threatening our King - sacrifice might be worth it
+            // to remove the threat (even if we lose the combat, it buys time)
+            strategicValue += 100;
+        } else if (distToOurKing === 2) {
+            // Defender is one move away from our King - some defensive value
+            strategicValue += 20;
+        }
+
+        // Check if defender is close to our King's position (blocking an attack path)
+        // This is already covered above but we can add more nuanced checks
+
+        // If defender is the opponent's last movable piece (besides king/pit), sacrifice has value
+        const opponentColor: PlayerColor = aiColor === 'red' ? 'blue' : 'red';
+        const opponentPawns = gameState.players[opponentColor]?.pieces.filter(
+            p => p.type !== 'king' && p.type !== 'pit'
+        ) || [];
+
+        if (opponentPawns.length === 1 && opponentPawns[0].id === defender.id) {
+            // This is their last pawn - even losing combat removes their mobility
+            strategicValue += 50;
+        }
+
+        return strategicValue;
     }
 
     /**
