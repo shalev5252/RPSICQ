@@ -1,6 +1,6 @@
 import { Server, Socket } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
-import { SOCKET_EVENTS, JoinQueuePayload, StartSingleplayerPayload, PlaceKingPitPayload, MakeMovePayload, CombatChoicePayload, CreateRoomPayload, JoinRoomPayload, PlayerRole } from '@rps/shared';
+import { SOCKET_EVENTS, JoinQueuePayload, StartSingleplayerPayload, PlaceKingPitPayload, MakeMovePayload, CombatChoicePayload, CreateRoomPayload, JoinRoomPayload, PlayerRole, SendEmotePayload, EmoteId } from '@rps/shared';
 import { MatchmakingService } from '../services/MatchmakingService.js';
 import { GameService } from '../services/GameService.js';
 import { RoomService } from '../services/RoomService.js';
@@ -9,6 +9,14 @@ export function setupSocketHandlers(io: Server): void {
     const gameService = new GameService();
     const matchmakingService = new MatchmakingService(io, gameService);
     const roomService = new RoomService(io, gameService);
+
+    const VALID_EMOTE_IDS: Set<string> = new Set([
+        'thumbs_up', 'clap', 'laugh', 'think', 'fire', 'sad', 'vomit', 'poop', 'explosion', 'smile', 'tired', 'devil', 'pray', 'angel'
+    ]);
+
+    function isEmoteId(id: string): id is EmoteId {
+        return VALID_EMOTE_IDS.has(id);
+    }
 
     // Helper: schedule an AI move with a natural delay, then emit results
     function scheduleAIMove(sessionId: string, humanSocket: Socket) {
@@ -640,6 +648,39 @@ export function setupSocketHandlers(io: Server): void {
             if (result) {
                 socket.leave(result.sessionId);
             }
+        });
+
+        // Emote relay - only for PvP games
+        socket.on(SOCKET_EVENTS.SEND_EMOTE, (payload: SendEmotePayload) => {
+            if (!payload || !payload.emoteId || !isEmoteId(payload.emoteId)) {
+                console.warn(`⚠️ Invalid emote payload from ${socket.id}:`, payload);
+                return;
+            }
+            const session = gameService.getSessionBySocketId(socket.id);
+            if (!session) return;
+
+            // Only allow emotes in PvP games (not AI)
+            if (session.opponentType === 'ai') return;
+
+            // Only allow during active game phases
+            if (session.phase !== 'setup' && session.phase !== 'playing' && session.phase !== 'combat' && session.phase !== 'tie_breaker') return;
+
+            const playerColor = gameService.getPlayerColor(socket.id);
+            if (!playerColor) return;
+
+            // Find opponent socket
+            const opponent = session.players[playerColor === 'red' ? 'blue' : 'red'];
+            if (!opponent?.socketId) return;
+
+            const opponentSocket = io.sockets.sockets.get(opponent.socketId);
+            if (opponentSocket?.connected) {
+                opponentSocket.emit(SOCKET_EVENTS.EMOTE_RECEIVED, {
+                    emoteId: payload.emoteId,
+                    from: playerColor
+                });
+            }
+
+            console.log(`😀 Emote ${payload.emoteId} sent from ${playerColor} to opponent`);
         });
 
         socket.on('disconnect', (reason: string) => {

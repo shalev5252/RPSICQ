@@ -75,12 +75,12 @@ export class PhaseDetector {
                     forwardProgress: 8,    // push forward aggressively from the start
                     centerControl: 2,
                     kingProximity: 1,      // don't know where king is yet
-                    kingProtection: 3,
+                    kingProtection: 5,     // increased: protect king early
                     pieceAdvantage: 10,
                     infiltration: 20,      // strong incentive to cross midline
                     informationGain: 3,    // small bonus, don't sacrifice pieces for info
                     combatReward: 1,       // combat scores are already large (40/-30)
-                    threatPenalty: 8
+                    threatPenalty: 15      // increased: avoid threats more
                 };
 
             case 'midgame':
@@ -88,12 +88,12 @@ export class PhaseDetector {
                     forwardProgress: 8,
                     centerControl: 1,
                     kingProximity: 3,
-                    kingProtection: 4,
+                    kingProtection: 8,     // increased: defend king aggressively
                     pieceAdvantage: 15,
                     infiltration: 25,      // keep pushing
                     informationGain: 2,
                     combatReward: 1,
-                    threatPenalty: 10
+                    threatPenalty: 20      // increased: avoid risky positions
                 };
 
             case 'endgame':
@@ -101,12 +101,12 @@ export class PhaseDetector {
                     forwardProgress: 5,
                     centerControl: 0,
                     kingProximity: 5,      // approach known king
-                    kingProtection: 6,
+                    kingProtection: 12,    // increased: king safety is paramount
                     pieceAdvantage: 20,
                     infiltration: 15,
                     informationGain: 1,
                     combatReward: 1,
-                    threatPenalty: 12
+                    threatPenalty: 25      // increased: can't afford losses in endgame
                 };
         }
     }

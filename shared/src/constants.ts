@@ -126,5 +126,7 @@ export const SOCKET_EVENTS = {
     ROOM_CREATED: 'room_created',
     ROOM_ERROR: 'room_error',
     ROOM_EXPIRED: 'room_expired',
+    SEND_EMOTE: 'send_emote',
+    EMOTE_RECEIVED: 'emote_received',
     ERROR: 'error',
 } as const;

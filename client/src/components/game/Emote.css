@@ -1,0 +1,240 @@
+/* Emote Bar (Desktop) - Fixed on right side */
+.emote-bar {
+    position: fixed;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    background: rgba(30, 30, 50, 0.9);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(8px);
+    z-index: 50;
+}
+
+.emote-bar-label {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-align: center;
+}
+
+.emote-bar-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+}
+
+.emote-bar.cooldown .emote-button {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.emote-cooldown-indicator {
+    height: 3px;
+    background: linear-gradient(90deg, #4a90d9, #a855f7);
+    border-radius: 2px;
+    animation: cooldown-progress 3s linear forwards;
+}
+
+@keyframes cooldown-progress {
+    from {
+        width: 100%;
+    }
+
+    to {
+        width: 0%;
+    }
+}
+
+/* Emote Button */
+.emote-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    font-size: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.emote-button:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+}
+
+.emote-button:active:not(:disabled) {
+    transform: scale(0.95);
+}
+
+.emote-button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Emote Picker (Mobile FAB) */
+.emote-picker {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 100;
+}
+
+.emote-fab {
+    width: 56px;
+    height: 56px;
+    font-size: 28px;
+    background: linear-gradient(135deg, #4a90d9, #a855f7);
+    border: none;
+    border-radius: 50%;
+    box-shadow: 0 4px 15px rgba(74, 144, 217, 0.4);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.emote-fab:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(74, 144, 217, 0.5);
+}
+
+.emote-fab.open {
+    background: linear-gradient(135deg, #a855f7, #4a90d9);
+}
+
+.emote-fab.cooldown {
+    opacity: 0.6;
+}
+
+.emote-picker-overlay {
+    position: absolute;
+    bottom: 70px;
+    right: 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    padding: 12px;
+    background: rgba(30, 30, 50, 0.95);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(12px);
+    animation: picker-pop-in 0.2s ease;
+}
+
+@keyframes picker-pop-in {
+    from {
+        opacity: 0;
+        transform: scale(0.8) translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* Emote Display (Received emote bubble) - slides up from below board */
+.emote-display {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    animation: emote-slide-up 2.5s ease forwards;
+}
+
+.emote-display-emoji {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 72px;
+    height: 72px;
+    font-size: 44px;
+    background: rgba(30, 30, 50, 0.95);
+    border-radius: 50%;
+    border: 3px solid rgba(255, 255, 255, 0.25);
+    box-shadow: 0 6px 30px rgba(0, 0, 0, 0.4);
+}
+
+@keyframes emote-slide-up {
+    0% {
+        opacity: 0;
+        transform: translateX(-50%) translateY(40px) scale(0.7);
+    }
+
+    15% {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0) scale(1.15);
+    }
+
+    25% {
+        transform: translateX(-50%) translateY(-10px) scale(1);
+    }
+
+    70% {
+        opacity: 1;
+        transform: translateX(-50%) translateY(-20px);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-80px);
+    }
+}
+
+/* Mobile: Hide bar, show picker */
+@media (max-width: 768px) {
+    .emote-bar {
+        display: none;
+    }
+}
+
+/* Desktop: Hide picker */
+@media (min-width: 769px) {
+    .emote-picker {
+        display: none;
+    }
+
+    /* Desktop: Emote slides from right (near emote bar) to center */
+    .emote-display {
+        bottom: auto;
+        left: auto;
+        right: 100px;
+        top: 50%;
+        transform: translateY(-50%);
+        animation: emote-slide-left 2.5s ease forwards;
+    }
+}
+
+@keyframes emote-slide-left {
+    0% {
+        opacity: 0;
+        transform: translateY(-50%) translateX(60px) scale(0.7);
+    }
+
+    15% {
+        opacity: 1;
+        transform: translateY(-50%) translateX(0) scale(1.15);
+    }
+
+    25% {
+        transform: translateY(-50%) translateX(-30px) scale(1);
+    }
+
+    70% {
+        opacity: 1;
+        transform: translateY(-50%) translateX(-100px);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateY(-50%) translateX(-200px);
+    }
+}

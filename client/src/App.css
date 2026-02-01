@@ -98,7 +98,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 2rem;
+    padding: 0;
 }
 
 /* ... existing styles ... */
@@ -196,7 +196,7 @@ body {
     }
 
     .app-main {
-        padding: 10px;
+        padding: 0;
         align-items: flex-start;
     }
 }

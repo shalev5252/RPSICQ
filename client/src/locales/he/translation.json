@@ -134,5 +134,23 @@
         "opponent_rematch": "היריב רוצה לשחק שוב!",
         "starting": "מתחיל...",
         "waiting_opponent": "ממתין ליריב..."
+    },
+    "emotes": {
+        "title": "תגובות",
+        "toggle": "פתח/סגור תגובות",
+        "thumbs_up": "אגודל למעלה",
+        "clap": "מחיאות כפיים",
+        "laugh": "צחוק",
+        "think": "חושב",
+        "fire": "אש",
+        "sad": "עצוב",
+        "vomit": "הקאה",
+        "poop": "קקי",
+        "explosion": "פיצוץ",
+        "smile": "חיוך",
+        "tired": "עייף",
+        "devil": "שטן",
+        "pray": "תפילה",
+        "angel": "מלאך"
     }
 }

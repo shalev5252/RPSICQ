@@ -532,6 +532,7 @@ export class GameService {
             : session.combatState.attackerChoice;
 
         const choice = this.aiService.selectTieBreakerChoice(
+            sessionId,
             session.gameMode,
             opponentChoice
         );
@@ -842,6 +843,10 @@ export class GameService {
                     defenderChoice: undefined,
                     isTie: true
                 };
+                // Notify AI pattern tracker that a new tie-breaker is starting
+                if (session.opponentType === 'ai') {
+                    this.aiService.startTieBreaker(session.sessionId);
+                }
                 console.log(`🤝 Combat tie! Entering tie breaker phase.`);
                 return { success: true, combat: true };
             }
@@ -1060,6 +1065,13 @@ export class GameService {
             session.combatState.defenderChoice = choice;
         } else {
             return { success: false, error: 'Piece not found in your pieces' };
+        }
+
+        // Record human choice for AI pattern learning
+        // Record human choice for AI pattern learning
+        // Only record if we are in AI mode AND the current chooser is NOT the AI
+        if (session.opponentType === 'ai' && !socketId.startsWith(AI_SOCKET_PREFIX)) {
+            this.aiService.recordOpponentTieChoice(session.sessionId, choice);
         }
 
         // Check if both players have chosen
