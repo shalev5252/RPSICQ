@@ -16,11 +16,13 @@ import {
 } from '@rps/shared';
 import { BayesianTracker } from './ai/BayesianTracker.js';
 import { ExpectimaxSearch } from './ai/ExpectimaxSearch.js';
+import { TiePatternTracker } from './ai/TiePatternTracker.js';
 
 export class AIOpponentService {
     private trackers: Map<string, BayesianTracker> = new Map();
     private search: ExpectimaxSearch;
     private sessionColors: Map<string, PlayerColor> = new Map();
+    private tiePatternTracker: TiePatternTracker = new TiePatternTracker();
 
     constructor() {
         this.search = new ExpectimaxSearch();
@@ -32,12 +34,15 @@ export class AIOpponentService {
 
     public initSession(sessionId: string, aiColor: PlayerColor): void {
         this.sessionColors.set(sessionId, aiColor);
-        // Tracker is initialized later via initializeTracking when game starts
+        // Initialize tie pattern tracker for this session
+        this.tiePatternTracker.initSession(sessionId);
+        // Bayesian tracker is initialized later via initializeTracking when game starts
     }
 
     public clearSession(sessionId: string): void {
         this.trackers.delete(sessionId);
         this.sessionColors.delete(sessionId);
+        this.tiePatternTracker.clearSession(sessionId);
     }
 
     // ----------------------------------------------------------------
@@ -208,15 +213,23 @@ export class AIOpponentService {
     // ----------------------------------------------------------------
 
     public selectTieBreakerChoice(
+        sessionId: string,
         gameMode: GameMode,
         knownOpponentType?: CombatElement
     ): CombatElement {
-        const elements: CombatElement[] = gameMode === 'rpsls'
+        const isRpsls = gameMode === 'rpsls';
+        const elements: CombatElement[] = isRpsls
             ? ['rock', 'paper', 'scissors', 'lizard', 'spock']
             : ['rock', 'paper', 'scissors'];
 
+        // Use pattern-based prediction first
+        const patternChoice = this.tiePatternTracker.predictAndCounter(sessionId, isRpsls);
+        if (patternChoice) {
+            return patternChoice;
+        }
+
+        // Fallback: if we know opponent's piece type, counter it
         if (knownOpponentType) {
-            // Pick something that beats the opponent's last known choice
             const counters = elements.filter(e => {
                 const wins = RPSLS_WINS[e];
                 return wins && wins.includes(knownOpponentType);
@@ -228,6 +241,20 @@ export class AIOpponentService {
 
         // Random choice if no info
         return elements[Math.floor(Math.random() * elements.length)];
+    }
+
+    /**
+     * Notify tracker that a new tie-breaker is starting.
+     */
+    public startTieBreaker(sessionId: string): void {
+        this.tiePatternTracker.startNewTie(sessionId);
+    }
+
+    /**
+     * Record the opponent's choice in the current tie (for pattern learning).
+     */
+    public recordOpponentTieChoice(sessionId: string, choice: CombatElement): void {
+        this.tiePatternTracker.recordOpponentChoice(sessionId, choice);
     }
 
     // ----------------------------------------------------------------

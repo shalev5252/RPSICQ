@@ -47,10 +47,16 @@ export class ExpectimaxSearch {
 
         const opponentColor: PlayerColor = aiColor === 'red' ? 'blue' : 'red';
 
-        // Determine search depth
+        // Determine search depth dynamically based on piece count
+        // More pieces = shallower search for performance; fewer pieces = deeper for tactics
         const totalPieces = (gameState.players[aiColor]?.pieces.length ?? 0) +
             (gameState.players[opponentColor]?.pieces.length ?? 0);
-        const depth = totalPieces <= 8 ? 3 : 2;
+        let depth = 2;  // default for early/mid game
+        if (totalPieces <= 6) {
+            depth = 4;  // endgame: precise tactics, solve the board
+        } else if (totalPieces <= 10) {
+            depth = 3;  // late midgame: look deeper for combinations
+        }
 
         // --- Emergency check: King in danger ---
         const emergencyMove = this.checkKingEmergency(gameState, aiColor, bayesianState, weights);
