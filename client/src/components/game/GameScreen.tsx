@@ -253,7 +253,8 @@ export const GameScreen: React.FC = () => {
             )}
 
             {/* Received emote display */}
-            {receivedEmote && (
+            {/* Received emote display - only for PvP games */}
+            {isPvP && receivedEmote && (
                 <EmoteDisplay
                     emoteId={receivedEmote.emoteId}
                     from={receivedEmote.from}

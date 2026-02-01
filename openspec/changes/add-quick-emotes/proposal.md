@@ -16,6 +16,6 @@ Players want a lightweight way to communicate with their opponent during a game 
 ## Impact
 - New spec: `specs/quick-emotes/spec.md`
 - Affected code:
-  - **Shared**: `constants.ts` (new events), `types.ts` (emote payload)
-  - **Server**: `handlers.ts` (handle `SEND_EMOTE`, broadcast to opponent)
-  - **Client**: `GameScreen.tsx`, new `EmoteBar.tsx`/`EmotePicker.tsx`, `useSocket.ts`, `gameStore.ts` (emote state), i18n files
+  - **Shared**: [shared/src/constants.ts:93](file:///Users/shalevshasha/rps/shared/src/constants.ts#L93) (new events), [shared/src/types.ts:175](file:///Users/shalevshasha/rps/shared/src/types.ts#L175) (emote payload)
+  - **Server**: [server/src/socket/handlers.ts:646](file:///Users/shalevshasha/rps/server/src/socket/handlers.ts#L646) (handle `SEND_EMOTE`, broadcast to opponent)
+  - **Client**: [client/src/components/game/GameScreen.tsx:247](file:///Users/shalevshasha/rps/client/src/components/game/GameScreen.tsx#L247), new [client/src/components/game/EmoteBar.tsx:29](file:///Users/shalevshasha/rps/client/src/components/game/EmoteBar.tsx#L29)/[client/src/components/game/EmotePicker.tsx:29](file:///Users/shalevshasha/rps/client/src/components/game/EmotePicker.tsx#L29), [client/src/hooks/useSocket.ts:321](file:///Users/shalevshasha/rps/client/src/hooks/useSocket.ts#L321), [client/src/store/gameStore.ts:96](file:///Users/shalevshasha/rps/client/src/store/gameStore.ts#L96) (emote state), i18n files

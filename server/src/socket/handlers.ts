@@ -1,6 +1,6 @@
 import { Server, Socket } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
-import { SOCKET_EVENTS, JoinQueuePayload, StartSingleplayerPayload, PlaceKingPitPayload, MakeMovePayload, CombatChoicePayload, CreateRoomPayload, JoinRoomPayload, PlayerRole } from '@rps/shared';
+import { SOCKET_EVENTS, JoinQueuePayload, StartSingleplayerPayload, PlaceKingPitPayload, MakeMovePayload, CombatChoicePayload, CreateRoomPayload, JoinRoomPayload, PlayerRole, SendEmotePayload, EmoteId } from '@rps/shared';
 import { MatchmakingService } from '../services/MatchmakingService.js';
 import { GameService } from '../services/GameService.js';
 import { RoomService } from '../services/RoomService.js';
@@ -9,6 +9,14 @@ export function setupSocketHandlers(io: Server): void {
     const gameService = new GameService();
     const matchmakingService = new MatchmakingService(io, gameService);
     const roomService = new RoomService(io, gameService);
+
+    const VALID_EMOTE_IDS: Set<string> = new Set([
+        'thumbs_up', 'clap', 'laugh', 'think', 'fire', 'sad', 'vomit', 'poop', 'explosion', 'smile', 'tired', 'devil', 'pray', 'angel'
+    ]);
+
+    function isEmoteId(id: string): id is EmoteId {
+        return VALID_EMOTE_IDS.has(id);
+    }
 
     // Helper: schedule an AI move with a natural delay, then emit results
     function scheduleAIMove(sessionId: string, humanSocket: Socket) {
@@ -643,7 +651,11 @@ export function setupSocketHandlers(io: Server): void {
         });
 
         // Emote relay - only for PvP games
-        socket.on(SOCKET_EVENTS.SEND_EMOTE, (payload: { emoteId: string }) => {
+        socket.on(SOCKET_EVENTS.SEND_EMOTE, (payload: SendEmotePayload) => {
+            if (!payload || !payload.emoteId || !isEmoteId(payload.emoteId)) {
+                console.warn(`⚠️ Invalid emote payload from ${socket.id}:`, payload);
+                return;
+            }
             const session = gameService.getSessionBySocketId(socket.id);
             if (!session) return;
 

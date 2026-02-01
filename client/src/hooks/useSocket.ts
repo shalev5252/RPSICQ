@@ -33,6 +33,7 @@ export function useSocket() {
     const pendingRetryRef = useRef(false);
     const revealTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const resultTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const emoteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
         const socket = socketRef.current;
@@ -321,9 +322,14 @@ export function useSocket() {
         const onEmoteReceived = (payload: EmoteReceivedPayload) => {
             console.log(`😀 Emote received: ${payload.emoteId} from ${payload.from}`);
             useGameStore.getState().setReceivedEmote(payload);
+
+            // Clear any existing emote timer to prevent early clearing
+            if (emoteTimerRef.current) clearTimeout(emoteTimerRef.current);
+
             // Auto-clear after 2.5 seconds
-            setTimeout(() => {
+            emoteTimerRef.current = setTimeout(() => {
                 useGameStore.getState().setReceivedEmote(null);
+                emoteTimerRef.current = null;
             }, 2500);
         };
 
@@ -378,7 +384,9 @@ export function useSocket() {
             socket.off(SOCKET_EVENTS.EMOTE_RECEIVED, onEmoteReceived);
             socket.off(SOCKET_EVENTS.ERROR, onError);
             if (revealTimerRef.current) clearTimeout(revealTimerRef.current);
+            if (revealTimerRef.current) clearTimeout(revealTimerRef.current);
             if (resultTimerRef.current) clearTimeout(resultTimerRef.current);
+            if (emoteTimerRef.current) clearTimeout(emoteTimerRef.current);
             // Do NOT disconnect base socket on unmount of hook, usually
         };
     }, [setConnectionStatus, playSound]);

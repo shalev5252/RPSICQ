@@ -90,12 +90,12 @@ export class TiePatternTracker {
      * Get AI's counter-choice for the current tie round.
      * Uses intra-battle patterns for rounds > 1, cross-battle for round 1.
      */
-    public predictAndCounter(sessionId: string, isRpsls: boolean): CombatElement {
+    public predictAndCounter(sessionId: string, isRpsls: boolean): CombatElement | null {
         const state = this.sessions.get(sessionId);
         const elements = isRpsls ? RPSLS_ELEMENTS : COMBAT_ELEMENTS;
 
         if (!state) {
-            return this.randomChoice(elements);
+            return null;
         }
 
         const isFirstRound = state.intraBattle.roundNumber === 0;
@@ -114,13 +114,14 @@ export class TiePatternTracker {
         if (prediction.confidence >= CONFIDENCE_THRESHOLD && prediction.counter) {
             // 10% chance to still randomize (avoid being too predictable)
             if (Math.random() < 0.1) {
-                return this.randomChoice(elements);
+                // Return null to let caller use its own fallback (random or other logic)
+                return null;
             }
             return prediction.counter;
         }
 
-        // Fallback to random
-        return this.randomChoice(elements);
+        // No confident prediction, return null to let caller use fallback
+        return null;
     }
 
     /**

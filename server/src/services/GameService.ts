@@ -1068,7 +1068,9 @@ export class GameService {
         }
 
         // Record human choice for AI pattern learning
-        if (session.opponentType === 'ai') {
+        // Record human choice for AI pattern learning
+        // Only record if we are in AI mode AND the current chooser is NOT the AI
+        if (session.opponentType === 'ai' && !socketId.startsWith(AI_SOCKET_PREFIX)) {
             this.aiService.recordOpponentTieChoice(session.sessionId, choice);
         }
 

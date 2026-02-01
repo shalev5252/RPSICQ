@@ -177,6 +177,8 @@ export const useGameStore = create<GameStore>((set) => ({
         gameState: null,
         rematchState: initialRematchState,
         tieBreakerState: initialTieBreakerState,
+        receivedEmote: null,
+        emoteCooldown: false,
         // Keep sessionId, playerId, and myColor
     }),
     resetForMatchmaking: () => set({
@@ -187,6 +189,8 @@ export const useGameStore = create<GameStore>((set) => ({
         tieBreakerState: initialTieBreakerState,
         showTurnSkipped: false,
         opponentReconnecting: false,
+        receivedEmote: null,
+        emoteCooldown: false,
         // Keep sessionId, playerId, myColor, gameMode, opponentType
     }),
     incrementTieBreakerRetry: () => set((prev) => ({

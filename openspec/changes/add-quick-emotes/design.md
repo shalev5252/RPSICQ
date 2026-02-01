@@ -15,7 +15,7 @@ The game currently has no in-game communication between players. Players can onl
 ## Decisions
 
 ### 1. Emote Set
-- **Decision:** Provide 11 preset emotes: 👍 (thumbs up), 👏 (clap), 😂 (laughing), 🤔 (thinking), 🔥 (fire/explosion), 😢 (sad), 🤮 (vomit), 💩 (poop), 💥 (explosion), 😊 (smiling), 😴 (tired). These cover a wide range of expressive reactions.
+- **Decision:** Provide 14 preset emotes: 👍 (thumbs up), 👏 (clap), 😂 (laughing), 🤔 (thinking), 🔥 (fire), 😢 (sad), 🤮 (vomit), 💩 (poop), 💥 (explosion), 😊 (smiling), 😴 (tired), 😈 (devil), 🙏 (pray), 😇 (angel). These cover a wide range of expressive reactions.
 - **Alternatives considered:**
   - 6 emotes only → expanded per user request for more variety.
   - Custom text messages → rejected, requires moderation.
@@ -50,7 +50,7 @@ The game currently has no in-game communication between players. Players can onl
 - **Rationale:** No point in sending emotes to a bot.
 
 ## Risks / Trade-offs
-- **Emote abuse:** With only 6 preset, curated emotes, the risk of offensive content is minimal. If issues arise, individual emotes can be removed or we can add a "mute emotes" option in settings.
+- **Emote abuse:** With only 14 preset, curated emotes (14 in current implementation), the risk of offensive content is minimal. If issues arise, individual emotes can be removed or we can add a "mute emotes" option in settings.
 - **Distraction:** Emotes appear for 2.5s and do not block input, so gameplay impact is minimal.
 
 ## Open Questions
