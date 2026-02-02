@@ -147,6 +147,53 @@ export class ExpectimaxSearch {
     }
 
     /**
+     * Check if the defender's type is definitively known (revealed, tracked, or 100% inferred).
+     * Returns the known type if certain, null otherwise.
+     */
+    private getConfirmedDefenderType(
+        defender: Piece,
+        bayesianState: BayesianState | undefined
+    ): PieceType | null {
+        // Check if piece is revealed in game
+        if (defender.isRevealed) {
+            return defender.type;
+        }
+
+        // Check Bayesian tracking
+        const tracked = bayesianState?.trackedPieces.get(defender.id);
+        if (tracked?.knownType) {
+            return tracked.knownType;
+        }
+
+        // Check if beliefs show 100% certainty on any type
+        if (tracked?.beliefs) {
+            for (const [type, prob] of Object.entries(tracked.beliefs)) {
+                if (prob >= 0.99) { // 99%+ certainty counts as known
+                    return type as PieceType;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Check if attacker would definitely LOSE against a given defender type.
+     */
+    private wouldLoseCombat(attackerType: PieceType, defenderType: PieceType): boolean {
+        if (defenderType === 'pit') return true; // Pit kills everything
+        if (attackerType === defenderType) return false; // Tie, not a sure loss
+
+        const attackerWins = RPSLS_WINS[attackerType];
+        if (attackerWins && attackerWins.includes(defenderType)) {
+            return false; // Attacker wins
+        }
+
+        // Attacker doesn't win and it's not a tie = attacker loses
+        return true;
+    }
+
+    /**
      * Evaluate a combat move using Bayesian beliefs.
      * Returns expected value weighted by probability of each defender type.
      */
@@ -169,7 +216,26 @@ export class ExpectimaxSearch {
             return -this.MAX_SCORE;
         }
 
-        // Get defender beliefs
+        // ========================================================
+        // CRITICAL: Check if this would be a suicidal attack
+        // against a KNOWN piece. If so, FORBID IT completely.
+        // ========================================================
+        const confirmedDefType = this.getConfirmedDefenderType(defender, bayesianState);
+        if (confirmedDefType) {
+            // We KNOW what the defender is
+            if (confirmedDefType === 'king') {
+                return this.MAX_SCORE; // Capturing king wins - always good
+            }
+
+            if (this.wouldLoseCombat(attacker.type, confirmedDefType)) {
+                // We would DEFINITELY lose this combat - FORBID IT
+                // No exceptions, no strategic value calculation
+                return -this.MAX_SCORE;
+            }
+        }
+        // ========================================================
+
+        // Get defender beliefs for further evaluation
         const tracked = bayesianState?.trackedPieces.get(defender.id);
         const knownDefType = tracked?.knownType ?? (defender.isRevealed ? defender.type : null);
 
@@ -244,79 +310,12 @@ export class ExpectimaxSearch {
             );
         }
 
-        // Attacker loses against a KNOWN defender type
-        // Check if this is a "known" loss (defender type is confirmed, not just probabilistic)
-        const tracked = bayesianState?.trackedPieces.get(defender.id);
-        const isDefenderTypeConfirmed = tracked?.knownType === defenderType || defender.isRevealed;
-
-        if (isDefenderTypeConfirmed) {
-            // This is a guaranteed loss against a known piece - heavily penalize
-            // UNLESS this sacrifice provides strategic value (e.g., removing a threat to our King)
-            const strategicValue = this.assessSacrificeStrategicValue(
-                gameState, aiColor, defender, to, bayesianState
-            );
-
-            if (strategicValue <= 0) {
-                // No strategic benefit - this is a foolish sacrifice, strongly discourage
-                return -this.MAX_SCORE * 0.5;
-            }
-
-            // There's some strategic value, but still penalize the loss
-            // Strategic value can reduce the penalty but not eliminate it entirely
-            return this.simulateLoss(gameState, aiColor, attacker, weights, bayesianState) + strategicValue;
-        }
-
-        // Unknown/uncertain defender type (probabilistic) - use normal evaluation
+        // Attacker loses - use normal loss simulation for probabilistic cases
+        // (Definite losses against confirmed pieces are already blocked in evaluateCombatMove)
         return this.simulateLoss(gameState, aiColor, attacker, weights, bayesianState);
     }
 
-    /**
-     * Assess whether sacrificing a piece against a defender provides strategic value.
-     * Returns a positive score if the sacrifice is strategically justified.
-     */
-    private assessSacrificeStrategicValue(
-        gameState: GameState,
-        aiColor: PlayerColor,
-        defender: Piece,
-        _to: Position,
-        _bayesianState: BayesianState | undefined
-    ): number {
-        let strategicValue = 0;
-        const aiPlayer = gameState.players[aiColor];
-        if (!aiPlayer) return 0;
 
-        const ownKing = aiPlayer.pieces.find(p => p.type === 'king');
-        if (!ownKing) return 0;
-
-        // Check if the defender is adjacent to our King (threatening it)
-        const distToOurKing = Math.abs(defender.position.row - ownKing.position.row) +
-            Math.abs(defender.position.col - ownKing.position.col);
-
-        if (distToOurKing === 1) {
-            // Defender is directly threatening our King - sacrifice might be worth it
-            // to remove the threat (even if we lose the combat, it buys time)
-            strategicValue += 100;
-        } else if (distToOurKing === 2) {
-            // Defender is one move away from our King - some defensive value
-            strategicValue += 20;
-        }
-
-        // Check if defender is close to our King's position (blocking an attack path)
-        // This is already covered above but we can add more nuanced checks
-
-        // If defender is the opponent's last movable piece (besides king/pit), sacrifice has value
-        const opponentColor: PlayerColor = aiColor === 'red' ? 'blue' : 'red';
-        const opponentPawns = gameState.players[opponentColor]?.pieces.filter(
-            p => p.type !== 'king' && p.type !== 'pit'
-        ) || [];
-
-        if (opponentPawns.length === 1 && opponentPawns[0].id === defender.id) {
-            // This is their last pawn - even losing combat removes their mobility
-            strategicValue += 50;
-        }
-
-        return strategicValue;
-    }
 
     /**
      * Simulate a move (with optional captured piece removal) and evaluate.
