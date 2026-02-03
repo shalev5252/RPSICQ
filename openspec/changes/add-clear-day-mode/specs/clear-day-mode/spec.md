@@ -11,7 +11,7 @@ Players MUST be able to select the Clear Day variant when choosing a game mode.
 #### Scenario: Mode selection includes Clear Day option
 - **GIVEN** a player is on the mode selection screen
 - **WHEN** they view the available variants
-- **THEN** they should see "Clear Day" as an option alongside "Standard"
+- **THEN** they should see "Standard" and "Clear Day" as options
 - **AND** Clear Day can be combined with either Classic or RPSLS rule sets
 
 ### Requirement: Setup Phase Privacy

@@ -31,7 +31,8 @@ Add two new special game modes to RPS Battle:
 
 ### Matchmaking
 - Each mode combination has its own matchmaking queue
-- Queue keys: `classic`, `rpsls`, `classic-clearday`, `rpsls-clearday`, `classic-onslaught`, `rpsls-onslaught`
+- Currently implemented queue keys: `classic`, `rpsls`, `classic-clearday`, `rpsls-clearday`
+- Future queue keys (when Onslaught is implemented): `classic-onslaught`, `rpsls-onslaught`
 - AI opponent mode works with all special modes
 
 ## Out of Scope
