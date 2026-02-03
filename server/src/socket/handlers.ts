@@ -649,7 +649,7 @@ export function setupSocketHandlers(io: Server): void {
             // Emit GAME_OVER to everyone in the session
             io.to(result.session.sessionId).emit(SOCKET_EVENTS.GAME_OVER, {
                 winner: result.session.winner,
-                reason: result.session.winReason
+                reason: result.session.winReason ?? 'forfeit'
             });
         });
 
