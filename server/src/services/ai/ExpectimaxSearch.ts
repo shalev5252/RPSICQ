@@ -11,6 +11,15 @@ import { BoardEvaluator } from './BoardEvaluator.js';
 import { BayesianTracker } from './BayesianTracker.js';
 import { PhaseDetector } from './PhaseDetector.js';
 
+// Debug logging - only active in development
+const DEBUG_AI = process.env.NODE_ENV !== 'production' && process.env.DEBUG_AI === 'true';
+
+function aiLog(...args: unknown[]): void {
+    if (DEBUG_AI) {
+        console.log('[AI]', ...args);
+    }
+}
+
 /**
  * Expectimax search with:
  * - MAX nodes for AI turns
@@ -42,6 +51,9 @@ export class ExpectimaxSearch {
         const phase = this.phaseDetector.detectPhase(gameState, aiColor, bayesianState);
         const weights = this.phaseDetector.getWeights(phase);
 
+        aiLog(`=== AI Move Selection (${aiColor}) ===`);
+        aiLog(`Phase: ${phase}`);
+
         const aiPlayer = gameState.players[aiColor];
         if (!aiPlayer) return null;
 
@@ -58,9 +70,14 @@ export class ExpectimaxSearch {
             depth = 3;  // late midgame: look deeper for combinations
         }
 
+        aiLog(`Search depth: ${depth}, Total pieces: ${totalPieces}`);
+
         // --- Emergency check: King in danger ---
         const emergencyMove = this.checkKingEmergency(gameState, aiColor, bayesianState, weights);
-        if (emergencyMove) return emergencyMove;
+        if (emergencyMove) {
+            aiLog(`EMERGENCY: King in danger! Moving to defend.`);
+            return emergencyMove;
+        }
 
         // Generate all candidate moves
         const candidates: ScoredMove[] = [];
@@ -94,18 +111,65 @@ export class ExpectimaxSearch {
             }
         }
 
-        if (candidates.length === 0) return null;
+        if (candidates.length === 0) {
+            aiLog(`No candidate moves available!`);
+            return null;
+        }
 
         // Sort by score descending
         candidates.sort((a, b) => b.score - a.score);
 
+        // Log top candidates
+        if (DEBUG_AI) {
+            aiLog(`Top 5 candidate moves:`);
+            for (let i = 0; i < Math.min(5, candidates.length); i++) {
+                const c = candidates[i];
+                const fromPiece = aiPlayer.pieces.find(p =>
+                    p.position.row === c.from.row && p.position.col === c.from.col
+                );
+                const targetCell = gameState.board[c.to.row][c.to.col];
+                const targetInfo = targetCell.piece
+                    ? `attacks ${targetCell.piece.isRevealed ? targetCell.piece.type : 'unknown'}`
+                    : 'empty';
+                aiLog(`  ${i + 1}. ${fromPiece?.type} (${c.from.row},${c.from.col}) -> (${c.to.row},${c.to.col}) [${targetInfo}] score=${c.score.toFixed(1)}`);
+            }
+        }
+
+        // Filter out any moves with extremely negative scores (suicidal moves)
+        // These should have been blocked in evaluateCombatMove but add safeguard here
+        const viableCandidates = candidates.filter(c => c.score > -this.MAX_SCORE * 0.5);
+        const filteredCount = candidates.length - viableCandidates.length;
+        if (filteredCount > 0) {
+            aiLog(`Filtered out ${filteredCount} suicidal moves`);
+        }
+
+        if (viableCandidates.length === 0) {
+            // All moves are terrible - just pick the least bad one
+            aiLog(`All moves are bad! Picking least bad: score=${candidates[0].score}`);
+            return candidates[0];
+        }
+
         // Top tier: all moves within 5% of the best score (or within 5 points)
-        const topScore = candidates[0].score;
+        const topScore = viableCandidates[0].score;
         const threshold = Math.max(5, Math.abs(topScore) * 0.05);
-        const topTier = candidates.filter(c => c.score >= topScore - threshold);
+        const topTier = viableCandidates.filter(c => c.score >= topScore - threshold);
 
         // Pick randomly among top tier for slight unpredictability
-        return topTier[Math.floor(Math.random() * topTier.length)];
+        const selected = topTier[Math.floor(Math.random() * topTier.length)];
+
+        if (DEBUG_AI) {
+            const selectedPiece = aiPlayer.pieces.find(p =>
+                p.position.row === selected.from.row && p.position.col === selected.from.col
+            );
+            const targetCell = gameState.board[selected.to.row][selected.to.col];
+            const targetInfo = targetCell.piece
+                ? `attacks ${targetCell.piece.isRevealed ? targetCell.piece.type : 'unknown'}`
+                : 'empty';
+            aiLog(`SELECTED: ${selectedPiece?.type} (${selected.from.row},${selected.from.col}) -> (${selected.to.row},${selected.to.col}) [${targetInfo}] score=${selected.score.toFixed(1)}`);
+            aiLog(`Top tier size: ${topTier.length}, threshold: ${threshold.toFixed(1)}`);
+        }
+
+        return selected;
     }
 
     // ----------------------------------------------------------------
@@ -213,6 +277,7 @@ export class ExpectimaxSearch {
         if (bayesianState?.knownPitPosition &&
             to.row === bayesianState.knownPitPosition.row &&
             to.col === bayesianState.knownPitPosition.col) {
+            aiLog(`  Combat: ${attacker.type} vs KNOWN PIT -> FORBIDDEN`);
             return -this.MAX_SCORE;
         }
 
@@ -224,14 +289,17 @@ export class ExpectimaxSearch {
         if (confirmedDefType) {
             // We KNOW what the defender is
             if (confirmedDefType === 'king') {
+                aiLog(`  Combat: ${attacker.type} vs KNOWN KING -> MAX SCORE (capture king!)`);
                 return this.MAX_SCORE; // Capturing king wins - always good
             }
 
             if (this.wouldLoseCombat(attacker.type, confirmedDefType)) {
                 // We would DEFINITELY lose this combat - FORBID IT
                 // No exceptions, no strategic value calculation
+                aiLog(`  Combat: ${attacker.type} vs KNOWN ${confirmedDefType} -> FORBIDDEN (we lose)`);
                 return -this.MAX_SCORE;
             }
+            aiLog(`  Combat: ${attacker.type} vs KNOWN ${confirmedDefType} -> evaluating (we win or tie)`);
         }
         // ========================================================
 
@@ -580,7 +648,7 @@ export class ExpectimaxSearch {
 
     /**
      * Check if the AI's king is in immediate danger and return an emergency move.
-     * Priority: capture the threat > flee to safety.
+     * Priority: capture the threat (only if we can win or have good odds) > let normal search handle
      */
     private checkKingEmergency(
         gameState: GameState,
@@ -614,7 +682,7 @@ export class ExpectimaxSearch {
 
         if (threats.length === 0) return null;
 
-        // Priority 1: Capture threats with non-king pieces
+        // Priority 1: Capture threats with non-king pieces - but ONLY if we can actually win
         let bestCapture: { from: Position; to: Position; score: number } | null = null;
         for (const piece of aiPlayer.pieces) {
             if (piece.type === 'king' || piece.type === 'pit') continue;
@@ -623,8 +691,16 @@ export class ExpectimaxSearch {
             for (const to of validMoves) {
                 const threat = threats.find(t => t.position.row === to.row && t.position.col === to.col);
                 if (threat) {
+                    // Check if this would be a suicidal attack against a KNOWN piece
+                    const knownThreatType = this.getConfirmedDefenderType(threat, bayesianState);
+                    if (knownThreatType && this.wouldLoseCombat(piece.type, knownThreatType)) {
+                        // Skip this - it's a guaranteed loss
+                        continue;
+                    }
+
                     const combatScore = this.evaluator.evaluateCombat(piece, threat, bayesianState, weights);
-                    if (!bestCapture || combatScore > bestCapture.score) {
+                    // Only consider captures with positive expected value
+                    if (combatScore > 0 && (!bestCapture || combatScore > bestCapture.score)) {
                         bestCapture = { from: { ...piece.position }, to, score: combatScore };
                     }
                 }
@@ -633,8 +709,8 @@ export class ExpectimaxSearch {
 
         if (bestCapture) return bestCapture;
 
-        // No capture available - this is critical but king can't move itself
-        // Return null and let normal search handle it (which will heavily weight king safety)
+        // No good capture available - return null and let normal search handle it
+        // The search will factor in king safety and find the best overall move
         return null;
     }
 

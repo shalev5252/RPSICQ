@@ -11,6 +11,7 @@ import { RulesModal } from './RulesModal';
 import { EmoteBar } from './EmoteBar';
 import { EmotePicker } from './EmotePicker';
 import { EmoteDisplay } from './EmoteDisplay';
+import { ConfirmationModal } from '../common/ConfirmationModal';
 import './GameScreen.css';
 import './Emote.css';
 
@@ -22,6 +23,7 @@ export const GameScreen: React.FC = () => {
     const [selectedPiece, setSelectedPiece] = useState<{ id: string; position: Position } | null>(null);
     const [validMoves, setValidMoves] = useState<Position[]>([]);
     const [showRules, setShowRules] = useState(false);
+    const [showForfeitConfirm, setShowForfeitConfirm] = useState(false);
     // Click-to-move state for double-click detection
     const [lastClickTime, setLastClickTime] = useState<number>(0);
     const [lastClickedCell, setLastClickedCell] = useState<Position | null>(null);
@@ -38,6 +40,12 @@ export const GameScreen: React.FC = () => {
     const receivedEmote = useGameStore((state) => state.receivedEmote);
 
     const isPvP = opponentType === 'human';
+
+    const handleForfeit = useCallback(() => {
+        if (!socket) return;
+        socket.emit(SOCKET_EVENTS.FORFEIT_GAME);
+        setShowForfeitConfirm(false);
+    }, [socket]);
 
     // Calculate valid moves for a piece
     const calculateValidMoves = useCallback((piece: PlayerPieceView): Position[] => {
@@ -195,13 +203,22 @@ export const GameScreen: React.FC = () => {
     return (
         <div className="game-screen">
             <div className="game-screen__header">
-                <button
-                    className="game-screen__rules-btn"
-                    onClick={() => setShowRules(true)}
-                    title={t('game.rules_title')}
-                >
-                    ℹ️
-                </button>
+                <div className="game-screen__header-actions">
+                    <button
+                        className="game-screen__icon-btn"
+                        onClick={() => setShowForfeitConfirm(true)}
+                        title={t('game.forfeit')}
+                    >
+                        🏳️
+                    </button>
+                    <button
+                        className="game-screen__icon-btn"
+                        onClick={() => setShowRules(true)}
+                        title={t('game.rules_title')}
+                    >
+                        ℹ️
+                    </button>
+                </div>
                 <div className={`game-screen__turn-indicator ${isMyTurn ? 'game-screen__turn-indicator--my-turn' : 'game-screen__turn-indicator--opponent-turn'}`}>
                     {isMyTurn ? t('game.your_turn') : t('game.opponent_turn')}
                 </div>
@@ -242,6 +259,17 @@ export const GameScreen: React.FC = () => {
                 isOpen={showRules}
                 onClose={() => setShowRules(false)}
                 gameMode={gameMode}
+            />
+
+            <ConfirmationModal
+                isOpen={showForfeitConfirm}
+                title={t('game.forfeit_title', 'Forfeit Game?')}
+                message={t('game.forfeit_message', 'Are you sure you want to give up? You will lose the game.')}
+                onConfirm={handleForfeit}
+                onCancel={() => setShowForfeitConfirm(false)}
+                confirmText={t('game.forfeit_confirm', 'Give Up')}
+                cancelText={t('common.cancel', 'Cancel')}
+                isDangerous={true}
             />
 
             {/* Emote UI - only for PvP games */}

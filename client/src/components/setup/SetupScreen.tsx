@@ -7,6 +7,7 @@ import { SOCKET_EVENTS, RED_SETUP_ROWS, BLUE_SETUP_ROWS, BOARD_CONFIG } from '@r
 import { Board } from './Board';
 import { PieceTray } from './PieceTray';
 import { RulesModal } from '../game/RulesModal';
+import { ConfirmationModal } from '../common/ConfirmationModal';
 import './SetupScreen.css';
 
 export const SetupScreen: React.FC = () => {
@@ -24,6 +25,13 @@ export const SetupScreen: React.FC = () => {
     const [draggingPiece, setDraggingPiece] = useState<PieceType | null>(null);
     const [selectedTrayPiece, setSelectedTrayPiece] = useState<PieceType | null>(null);
     const [showRules, setShowRules] = useState(false);
+    const [showForfeitConfirm, setShowForfeitConfirm] = useState(false);
+
+    const handleForfeit = useCallback(() => {
+        if (!socket) return;
+        socket.emit(SOCKET_EVENTS.FORFEIT_GAME);
+        setShowForfeitConfirm(false);
+    }, [socket]);
 
     const validDropRows = myColor === 'red' ? RED_SETUP_ROWS : BLUE_SETUP_ROWS;
     const activeRows = BOARD_CONFIG[gameMode].rows;
@@ -264,13 +272,22 @@ export const SetupScreen: React.FC = () => {
             <div className="setup-screen__header">
                 <div className="setup-screen__title-row">
                     <h2 className="setup-screen__title">{t('setup.setup_your_army')}</h2>
-                    <button
-                        className="setup-screen__rules-btn"
-                        onClick={() => setShowRules(true)}
-                        title="Game Rules"
-                    >
-                        ℹ️
-                    </button>
+                    <div className="setup-screen__header-actions">
+                        <button
+                            className="setup-screen__icon-btn"
+                            onClick={() => setShowForfeitConfirm(true)}
+                            title={t('game.forfeit')}
+                        >
+                            🏳️
+                        </button>
+                        <button
+                            className="setup-screen__rules-btn"
+                            onClick={() => setShowRules(true)}
+                            title="Game Rules"
+                        >
+                            ℹ️
+                        </button>
+                    </div>
                 </div>
                 <div className="setup-screen__status-row">
                     <div className={`setup-screen__color setup-screen__color--${myColor}`}>
@@ -353,6 +370,16 @@ export const SetupScreen: React.FC = () => {
                 isOpen={showRules}
                 onClose={() => setShowRules(false)}
                 gameMode={gameMode}
+            />
+            <ConfirmationModal
+                isOpen={showForfeitConfirm}
+                title={t('game.forfeit_title', 'Forfeit Game?')}
+                message={t('game.forfeit_message', 'Are you sure you want to give up? You will lose the game.')}
+                onConfirm={handleForfeit}
+                onCancel={() => setShowForfeitConfirm(false)}
+                confirmText={t('game.forfeit_confirm', 'Give Up')}
+                cancelText={t('common.cancel', 'Cancel')}
+                isDangerous={true}
             />
         </div>
     );

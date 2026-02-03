@@ -18,6 +18,15 @@ import { BayesianTracker } from './ai/BayesianTracker.js';
 import { ExpectimaxSearch } from './ai/ExpectimaxSearch.js';
 import { TiePatternTracker } from './ai/TiePatternTracker.js';
 
+// Debug logging - only active in development
+const DEBUG_AI = process.env.NODE_ENV !== 'production' && process.env.DEBUG_AI === 'true';
+
+function aiLog(...args: unknown[]): void {
+    if (DEBUG_AI) {
+        console.log('[AI]', ...args);
+    }
+}
+
 export class AIOpponentService {
     private trackers: Map<string, BayesianTracker> = new Map();
     private search: ExpectimaxSearch;
@@ -122,6 +131,78 @@ export class AIOpponentService {
     // 2.3  Move selection (now using Expectimax)
     // ----------------------------------------------------------------
 
+    /**
+     * Check if a move would be suicidal (attacking a revealed piece that beats us).
+     * Returns true if the move should be avoided.
+     */
+    private isSuicidalMove(
+        piece: { type: PieceType },
+        to: Position,
+        aiColor: PlayerColor,
+        gameState: GameState,
+        bayesianState: ReturnType<BayesianTracker['getState']>
+    ): boolean {
+        const targetCell = gameState.board[to.row][to.col];
+        if (!targetCell.piece || targetCell.piece.owner === aiColor) {
+            return false; // Not attacking anything
+        }
+
+        const defender = targetCell.piece;
+
+        // Check if we know the defender's type
+        let knownDefenderType: PieceType | null = null;
+
+        // Check if piece is revealed in game state
+        if (defender.isRevealed) {
+            knownDefenderType = defender.type;
+        }
+
+        // Check Bayesian tracking
+        if (!knownDefenderType && bayesianState) {
+            const tracked = bayesianState.trackedPieces.get(defender.id);
+            if (tracked?.knownType) {
+                knownDefenderType = tracked.knownType;
+            } else if (tracked?.beliefs) {
+                // Check for 99%+ certainty
+                for (const [type, prob] of Object.entries(tracked.beliefs)) {
+                    if (prob >= 0.99) {
+                        knownDefenderType = type as PieceType;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (!knownDefenderType) {
+            return false; // Unknown piece, not definitively suicidal
+        }
+
+        // Attacking king is always good
+        if (knownDefenderType === 'king') {
+            return false;
+        }
+
+        // Attacking pit is always bad
+        if (knownDefenderType === 'pit') {
+            return true;
+        }
+
+        // Same type = tie, not suicidal
+        if (piece.type === knownDefenderType) {
+            return false;
+        }
+
+        // Check if our piece beats the defender
+        const ourWins = RPSLS_WINS[piece.type];
+        if (ourWins && ourWins.includes(knownDefenderType)) {
+            return false; // We win
+        }
+
+        // We don't win and it's not a tie = we lose = suicidal
+        aiLog(`  Suicidal move detected: ${piece.type} vs revealed ${knownDefenderType}`);
+        return true;
+    }
+
     public selectMove(
         gameState: GameState,
         aiColor: PlayerColor
@@ -142,20 +223,33 @@ export class AIOpponentService {
         if (!bestMove) return null;
 
         // Controlled imperfection: small chance of picking a suboptimal move
+        // But NEVER pick a suicidal move (attacking revealed pieces that beat us)
         if (Math.random() < AI_SUBOPTIMAL_CHANCE) {
-            // Fall back to a random valid move from a random piece
+            aiLog(`Suboptimal path triggered (${(AI_SUBOPTIMAL_CHANCE * 100).toFixed(0)}% chance)`);
             const player = gameState.players[aiColor];
             if (player) {
+                const config = BOARD_CONFIG[gameState.gameMode];
+
+                // Collect ALL valid non-suicidal moves
+                const allSafeMoves: { from: Position; to: Position }[] = [];
                 const movablePieces = player.pieces.filter(p => p.type !== 'king' && p.type !== 'pit');
-                if (movablePieces.length > 0) {
-                    const randomPiece = movablePieces[Math.floor(Math.random() * movablePieces.length)];
-                    const config = BOARD_CONFIG[gameState.gameMode];
-                    const validMoves = this.getValidMovesForPiece(randomPiece, aiColor, gameState, config);
-                    if (validMoves.length > 0) {
-                        const randomTo = validMoves[Math.floor(Math.random() * validMoves.length)];
-                        return { from: { ...randomPiece.position }, to: randomTo };
+
+                for (const piece of movablePieces) {
+                    const validMoves = this.getValidMovesForPiece(piece, aiColor, gameState, config);
+                    for (const to of validMoves) {
+                        if (!this.isSuicidalMove(piece, to, aiColor, gameState, bayesianState)) {
+                            allSafeMoves.push({ from: { ...piece.position }, to });
+                        }
                     }
                 }
+
+                if (allSafeMoves.length > 0) {
+                    // Pick a random safe move
+                    const randomMove = allSafeMoves[Math.floor(Math.random() * allSafeMoves.length)];
+                    aiLog(`Picked random safe move from ${allSafeMoves.length} options`);
+                    return randomMove;
+                }
+                aiLog(`No safe moves available for suboptimal path, using best move`);
             }
         }
 
@@ -170,19 +264,33 @@ export class AIOpponentService {
         if (!player) return null;
 
         const config = BOARD_CONFIG[gameState.gameMode];
+        const bayesianState = this.trackers.get(gameState.sessionId)?.getState(gameState.sessionId);
+
+        // Collect all valid non-suicidal moves
+        const allSafeMoves: { from: Position; to: Position }[] = [];
         const movablePieces = player.pieces.filter(p => p.type !== 'king' && p.type !== 'pit');
-        // Shuffle for randomness
-        for (let i = movablePieces.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [movablePieces[i], movablePieces[j]] = [movablePieces[j], movablePieces[i]];
+
+        for (const piece of movablePieces) {
+            const validMoves = this.getValidMovesForPiece(piece, aiColor, gameState, config);
+            for (const to of validMoves) {
+                if (!this.isSuicidalMove(piece, to, aiColor, gameState, bayesianState)) {
+                    allSafeMoves.push({ from: { ...piece.position }, to });
+                }
+            }
         }
+
+        if (allSafeMoves.length > 0) {
+            return allSafeMoves[Math.floor(Math.random() * allSafeMoves.length)];
+        }
+
+        // If all moves are suicidal (unlikely), pick any valid move as last resort
         for (const piece of movablePieces) {
             const validMoves = this.getValidMovesForPiece(piece, aiColor, gameState, config);
             if (validMoves.length > 0) {
-                const to = validMoves[Math.floor(Math.random() * validMoves.length)];
-                return { from: { ...piece.position }, to };
+                return { from: { ...piece.position }, to: validMoves[0] };
             }
         }
+
         return null;
     }
 
