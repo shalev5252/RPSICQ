@@ -13,6 +13,7 @@ import {
     BLUE_SETUP_ROWS,
     MOVEMENT_DIRECTIONS,
     GameMode,
+    GameVariant,
     CombatElement,
     BOARD_CONFIG,
     RPSLS_WINS,
@@ -64,7 +65,7 @@ export class GameService {
         return null;
     }
 
-    public createSession(id: string, player1Id: string, player1Color: PlayerColor, player2Id: string, player2Color: PlayerColor, gameMode: GameMode = 'classic'): GameState {
+    public createSession(id: string, player1Id: string, player1Color: PlayerColor, player2Id: string, player2Color: PlayerColor, gameMode: GameMode = 'classic', gameVariant: GameVariant = 'standard'): GameState {
         const config = BOARD_CONFIG[gameMode];
         const initialBoard: Cell[][] = Array(config.rows).fill(null).map((_, row) =>
             Array(config.cols).fill(null).map((_, col) => ({
@@ -93,6 +94,7 @@ export class GameService {
         const gameState: GameState = {
             sessionId: id,
             gameMode,
+            gameVariant,
             opponentType: 'human',
             phase: 'setup',
             currentTurn: null,
@@ -121,7 +123,8 @@ export class GameService {
     public createSingleplayerSession(
         humanSocketId: string,
         humanPlayerId: string,
-        gameMode: GameMode = 'classic'
+        gameMode: GameMode = 'classic',
+        gameVariant: GameVariant = 'standard'
     ): GameState {
         const sessionId = uuidv4();
         const config = BOARD_CONFIG[gameMode];
@@ -158,6 +161,7 @@ export class GameService {
         const gameState: GameState = {
             sessionId,
             gameMode,
+            gameVariant,
             opponentType: 'ai',
             phase: 'setup',
             currentTurn: null,
@@ -440,10 +444,29 @@ export class GameService {
             // Randomly select starting player
             session.currentTurn = Math.random() < 0.5 ? 'red' : 'blue';
             session.turnStartTime = Date.now();
+
+            // Clear Day: reveal all pieces at game start
+            if (session.gameVariant === 'clearday') {
+                this.revealAllPieces(session);
+                console.log(`☀️ Clear Day mode: All pieces revealed for session ${session.sessionId}`);
+            }
         }
 
         console.log(`✔️ Player ${socketId} (${color}) confirmed setup. Both ready: ${bothReady}`);
         return { success: true, bothReady };
+    }
+
+    /**
+     * Reveal all pieces on the board. Used for Clear Day variant.
+     */
+    private revealAllPieces(session: GameState): void {
+        for (const row of session.board) {
+            for (const cell of row) {
+                if (cell.piece) {
+                    cell.piece.isRevealed = true;
+                }
+            }
+        }
     }
 
     /**

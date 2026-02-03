@@ -5,6 +5,7 @@
 export type PlayerColor = 'red' | 'blue';
 export type PlayerRole = PlayerColor;
 export type GameMode = 'classic' | 'rpsls';
+export type GameVariant = 'standard' | 'clearday';
 export type PieceType = 'king' | 'pit' | 'rock' | 'paper' | 'scissors' | 'lizard' | 'spock';
 export type CombatElement = 'rock' | 'paper' | 'scissors' | 'lizard' | 'spock';
 export type OpponentType = 'human' | 'ai';
@@ -49,6 +50,7 @@ export interface CombatState {
 export interface GameState {
     sessionId: string;
     gameMode: GameMode;
+    gameVariant: GameVariant;
     opponentType: OpponentType;
     phase: GamePhase;
     currentTurn: PlayerColor | null;
@@ -72,11 +74,13 @@ export interface GameState {
 export interface JoinQueuePayload {
     playerId: string;
     gameMode: GameMode;
+    gameVariant?: GameVariant;
 }
 
 export interface StartSingleplayerPayload {
     playerId: string;
     gameMode: GameMode;
+    gameVariant?: GameVariant;
 }
 
 export interface PlaceKingPitPayload {
@@ -135,6 +139,7 @@ export interface SetupStatePayload {
 // Room payloads
 export interface CreateRoomPayload {
     gameMode: GameMode;
+    gameVariant?: GameVariant;
 }
 
 export interface JoinRoomPayload {

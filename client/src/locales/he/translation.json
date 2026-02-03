@@ -45,7 +45,10 @@
         "room_share_hint": "שתף את הקוד הזה עם חבר",
         "room_waiting": "ממתין לחבר להצטרף...",
         "room_creating": "יוצר חדר...",
-        "room_joining": "מצטרף לחדר..."
+        "room_joining": "מצטרף לחדר...",
+        "select_variant": "בחר גרסה",
+        "variant_standard": "רגיל",
+        "variant_clearday": "יום בהיר"
     },
     "setup": {
         "title": "שלב ההכנה",

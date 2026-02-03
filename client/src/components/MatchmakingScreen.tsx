@@ -11,9 +11,11 @@ export const MatchmakingScreen: React.FC = () => {
     const isSearching = useMatchmaking().isSearching;
     const joinQueue = useMatchmaking().joinQueue;
     const leaveQueue = useMatchmaking().leaveQueue;
-    const { gameMode, setGameMode, opponentType, setOpponentType } = useGameStore((state) => ({
+    const { gameMode, setGameMode, gameVariant, setGameVariant, opponentType, setOpponentType } = useGameStore((state) => ({
         gameMode: state.gameMode,
         setGameMode: state.setGameMode,
+        gameVariant: state.gameVariant,
+        setGameVariant: state.setGameVariant,
         opponentType: state.opponentType,
         setOpponentType: state.setOpponentType
     }));
@@ -34,16 +36,16 @@ export const MatchmakingScreen: React.FC = () => {
 
     const handleJoin = () => {
         if (opponentType === 'ai') {
-            socket.emit(SOCKET_EVENTS.START_SINGLEPLAYER, { gameMode });
+            socket.emit(SOCKET_EVENTS.START_SINGLEPLAYER, { gameMode, gameVariant });
         } else {
-            joinQueue(gameMode);
+            joinQueue(gameMode, gameVariant);
         }
     };
 
     const handleCreateRoom = () => {
         setIsCreatingRoom(true);
         setRoomError(null);
-        socket.emit(SOCKET_EVENTS.CREATE_ROOM, { gameMode });
+        socket.emit(SOCKET_EVENTS.CREATE_ROOM, { gameMode, gameVariant });
     };
 
     const handleCancelRoom = () => {
@@ -69,6 +71,29 @@ export const MatchmakingScreen: React.FC = () => {
                 onSelectMode={setGameMode}
                 disabled={isBusy}
             />
+
+            {/* Variant selector */}
+            <div className="variant-select">
+                <h3 className="variant-select__title">{t('matchmaking.select_variant')}</h3>
+                <div className="variant-select__options">
+                    <button
+                        className={`variant-select__option ${gameVariant === 'standard' ? 'variant-select__option--selected' : ''}`}
+                        onClick={() => setGameVariant('standard')}
+                        disabled={isBusy}
+                    >
+                        <div className="variant-select__icon">🎭</div>
+                        <div className="variant-select__label">{t('matchmaking.variant_standard')}</div>
+                    </button>
+                    <button
+                        className={`variant-select__option ${gameVariant === 'clearday' ? 'variant-select__option--selected' : ''}`}
+                        onClick={() => setGameVariant('clearday')}
+                        disabled={isBusy}
+                    >
+                        <div className="variant-select__icon">☀️</div>
+                        <div className="variant-select__label">{t('matchmaking.variant_clearday')}</div>
+                    </button>
+                </div>
+            </div>
 
             <div className="opponent-select">
                 <h3 className="opponent-select__title">{t('matchmaking.select_opponent')}</h3>

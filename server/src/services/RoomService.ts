@@ -1,11 +1,12 @@
 import { Server } from 'socket.io';
-import { GameMode, SOCKET_EVENTS } from '@rps/shared';
+import { GameMode, GameVariant, SOCKET_EVENTS } from '@rps/shared';
 import { GameService } from './GameService.js';
 
 interface RoomEntry {
     code: string;
     hostSocketId: string;
     gameMode: GameMode;
+    gameVariant: GameVariant;
     createdAt: number;
     expiryTimer: ReturnType<typeof setTimeout>;
 }
@@ -48,7 +49,7 @@ export class RoomService {
     /**
      * Create a private room. Returns the room code.
      */
-    public createRoom(hostSocketId: string, gameMode: GameMode): { success: boolean; roomCode?: string; error?: string } {
+    public createRoom(hostSocketId: string, gameMode: GameMode, gameVariant: GameVariant = 'standard'): { success: boolean; roomCode?: string; error?: string } {
         // Prevent creating multiple rooms
         if (this.hostToRoom.has(hostSocketId)) {
             return { success: false, error: 'You already have an active room' };
@@ -64,6 +65,7 @@ export class RoomService {
                 code,
                 hostSocketId,
                 gameMode,
+                gameVariant,
                 createdAt: Date.now(),
                 expiryTimer,
             };
@@ -71,7 +73,8 @@ export class RoomService {
             this.rooms.set(code, entry);
             this.hostToRoom.set(hostSocketId, code);
 
-            console.log(`🏠 Room created: ${code} by ${hostSocketId} (mode: ${gameMode})`);
+            const variantSuffix = gameVariant !== 'standard' ? ` [${gameVariant}]` : '';
+            console.log(`🏠 Room created: ${code} by ${hostSocketId} (mode: ${gameMode}${variantSuffix})`);
             return { success: true, roomCode: code };
         } catch {
             return { success: false, error: 'Failed to create room' };
@@ -87,6 +90,7 @@ export class RoomService {
         errorCode?: string;
         hostSocketId?: string;
         gameMode?: GameMode;
+        gameVariant?: GameVariant;
     } {
         const room = this.rooms.get(code);
 
@@ -104,11 +108,11 @@ export class RoomService {
         }
 
         // Match found — clean up the room
-        const { hostSocketId, gameMode } = room;
+        const { hostSocketId, gameMode, gameVariant } = room;
         this.removeRoom(code);
 
         console.log(`🤝 Room ${code} joined by ${joinerSocketId} — pairing with ${hostSocketId}`);
-        return { success: true, hostSocketId, gameMode };
+        return { success: true, hostSocketId, gameMode, gameVariant };
     }
 
     /**
