@@ -45,7 +45,10 @@
         "room_share_hint": "Share this code with your friend",
         "room_waiting": "Waiting for friend to join...",
         "room_creating": "Creating room...",
-        "room_joining": "Joining room..."
+        "room_joining": "Joining room...",
+        "select_variant": "Select Variant",
+        "variant_standard": "Standard",
+        "variant_clearday": "Clear Day"
     },
     "setup": {
         "title": "Setup Phase",

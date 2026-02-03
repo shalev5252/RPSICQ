@@ -1,6 +1,6 @@
 import { Server, Socket } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
-import { SOCKET_EVENTS, JoinQueuePayload, StartSingleplayerPayload, PlaceKingPitPayload, MakeMovePayload, CombatChoicePayload, CreateRoomPayload, JoinRoomPayload, PlayerRole, SendEmotePayload, EmoteId } from '@rps/shared';
+import { SOCKET_EVENTS, JoinQueuePayload, StartSingleplayerPayload, PlaceKingPitPayload, MakeMovePayload, CombatChoicePayload, CreateRoomPayload, JoinRoomPayload, PlayerRole, SendEmotePayload, EmoteId, GameVariant } from '@rps/shared';
 import { MatchmakingService } from '../services/MatchmakingService.js';
 import { GameService } from '../services/GameService.js';
 import { RoomService } from '../services/RoomService.js';
@@ -210,7 +210,8 @@ export function setupSocketHandlers(io: Server): void {
         socket.on(SOCKET_EVENTS.JOIN_QUEUE, (payload: JoinQueuePayload) => {
             // Default to classic if gameMode is not provided (for fallback compatibility)
             const mode = payload.gameMode || 'classic';
-            matchmakingService.addToQueue(socket.id, mode);
+            const variant: GameVariant = payload.gameVariant || 'standard';
+            matchmakingService.addToQueue(socket.id, mode, variant);
         });
 
         socket.on(SOCKET_EVENTS.LEAVE_QUEUE, () => {
@@ -220,9 +221,10 @@ export function setupSocketHandlers(io: Server): void {
         // 4.1: Start singleplayer game against AI
         socket.on(SOCKET_EVENTS.START_SINGLEPLAYER, (payload: StartSingleplayerPayload) => {
             const mode = payload.gameMode || 'classic';
+            const variant: GameVariant = payload.gameVariant || 'standard';
             const pId = payload.playerId || playerId || socket.id;
 
-            const session = gameService.createSingleplayerSession(socket.id, pId, mode);
+            const session = gameService.createSingleplayerSession(socket.id, pId, mode, variant);
 
             // Join the session room
             socket.join(session.sessionId);
@@ -233,7 +235,8 @@ export function setupSocketHandlers(io: Server): void {
                 color: 'red' // human is always red
             });
 
-            console.log(`🤖 Singleplayer game started: session=${session.sessionId}, mode=${mode}`);
+            const variantSuffix = variant !== 'standard' ? ` [${variant}]` : '';
+            console.log(`🤖 Singleplayer game started: session=${session.sessionId}, mode=${mode}${variantSuffix}`);
         });
 
         socket.on(SOCKET_EVENTS.PLACE_KING_PIT, (payload: PlaceKingPitPayload) => {
@@ -572,9 +575,11 @@ export function setupSocketHandlers(io: Server): void {
 
         socket.on(SOCKET_EVENTS.CREATE_ROOM, (payload: CreateRoomPayload) => {
             const mode = payload.gameMode || 'classic';
-            console.log(`🏠 Player ${socket.id} creating room (mode: ${mode})`);
+            const variant: GameVariant = payload.gameVariant || 'standard';
+            const variantSuffix = variant !== 'standard' ? ` [${variant}]` : '';
+            console.log(`🏠 Player ${socket.id} creating room (mode: ${mode}${variantSuffix})`);
 
-            const result = roomService.createRoom(socket.id, mode);
+            const result = roomService.createRoom(socket.id, mode, variant);
             if (!result.success || !result.roomCode) {
                 socket.emit(SOCKET_EVENTS.ROOM_ERROR, { code: 'ROOM_CREATE_FAILED', message: result.error || 'Failed to create room' });
                 return;
@@ -625,8 +630,9 @@ export function setupSocketHandlers(io: Server): void {
             const isRedFirst = Math.random() < 0.5;
             const hostRole: PlayerRole = isRedFirst ? 'red' : 'blue';
             const joinerRole: PlayerRole = isRedFirst ? 'blue' : 'red';
+            const variant = roomResult.gameVariant || 'standard';
 
-            gameService.createSession(sessionId, roomResult.hostSocketId, hostRole, socket.id, joinerRole, roomResult.gameMode);
+            gameService.createSession(sessionId, roomResult.hostSocketId, hostRole, socket.id, joinerRole, roomResult.gameMode, variant);
 
             hostSocket.join(sessionId);
             socket.join(sessionId);
@@ -634,7 +640,8 @@ export function setupSocketHandlers(io: Server): void {
             hostSocket.emit(SOCKET_EVENTS.GAME_FOUND, { sessionId, color: hostRole });
             socket.emit(SOCKET_EVENTS.GAME_FOUND, { sessionId, color: joinerRole });
 
-            console.log(`⚔️ Room match! Session: ${sessionId} | ${roomResult.hostSocketId} (${hostRole}) vs ${socket.id} (${joinerRole}) [Mode: ${roomResult.gameMode}]`);
+            const variantSuffix = variant !== 'standard' ? ` [${variant}]` : '';
+            console.log(`⚔️ Room match! Session: ${sessionId} | ${roomResult.hostSocketId} (${hostRole}) vs ${socket.id} (${joinerRole}) [Mode: ${roomResult.gameMode}${variantSuffix}]`);
         });
 
         socket.on(SOCKET_EVENTS.FORFEIT_GAME, () => {

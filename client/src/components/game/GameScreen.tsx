@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useSocket } from '../../hooks/useSocket';
 import { useGameStore } from '../../store/gameStore';
 import type { PieceType, Position, PlayerPieceView } from '@rps/shared';
-import { SOCKET_EVENTS, BOARD_ROWS, BOARD_COLS, MOVEMENT_DIRECTIONS } from '@rps/shared';
+import { SOCKET_EVENTS, BOARD_ROWS, BOARD_COLS, MOVEMENT_DIRECTIONS, GameVariant } from '@rps/shared';
 import { Board } from '../setup/Board';
 import { TieBreakerModal } from './TieBreakerModal';
 import { TurnSkippedModal } from './TurnSkippedModal';
@@ -20,6 +20,7 @@ export const GameScreen: React.FC = () => {
     const myColor = useGameStore((state) => state.myColor);
     const gameState = useGameStore((state) => state.gameState);
     const gameMode = useGameStore((state) => state.gameMode);
+    const gameVariant: GameVariant = useGameStore((state) => state.gameVariant);
     const [selectedPiece, setSelectedPiece] = useState<{ id: string; position: Position } | null>(null);
     const [validMoves, setValidMoves] = useState<Position[]>([]);
     const [showRules, setShowRules] = useState(false);
@@ -203,22 +204,11 @@ export const GameScreen: React.FC = () => {
     return (
         <div className="game-screen">
             <div className="game-screen__header">
-                <div className="game-screen__header-actions">
-                    <button
-                        className="game-screen__icon-btn"
-                        onClick={() => setShowForfeitConfirm(true)}
-                        title={t('game.forfeit')}
-                    >
-                        🏳️
-                    </button>
-                    <button
-                        className="game-screen__icon-btn"
-                        onClick={() => setShowRules(true)}
-                        title={t('game.rules_title')}
-                    >
-                        ℹ️
-                    </button>
-                </div>
+                {gameVariant === 'clearday' && (
+                    <div className="game-screen__clearday-badge" title={t('matchmaking.variant_clearday')}>
+                        ☀️
+                    </div>
+                )}
                 <div className={`game-screen__turn-indicator ${isMyTurn ? 'game-screen__turn-indicator--my-turn' : 'game-screen__turn-indicator--opponent-turn'}`}>
                     {isMyTurn ? t('game.your_turn') : t('game.opponent_turn')}
                 </div>
@@ -248,6 +238,24 @@ export const GameScreen: React.FC = () => {
                     combatPosition={combatPosition}
                     combatPieceType={combatPieceType}
                 />
+            </div>
+
+            {/* Floating action bar */}
+            <div className="game-screen__action-bar">
+                <button
+                    className="game-screen__action-btn game-screen__action-btn--danger"
+                    onClick={() => setShowForfeitConfirm(true)}
+                    title={t('game.forfeit')}
+                >
+                    🏳️ {t('game.forfeit')}
+                </button>
+                <button
+                    className="game-screen__action-btn"
+                    onClick={() => setShowRules(true)}
+                    title={t('game.rules_title')}
+                >
+                    ℹ️ {t('game.rules_title')}
+                </button>
             </div>
 
             {isTieBreaker && <TieBreakerModal />}
