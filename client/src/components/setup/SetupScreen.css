@@ -32,6 +32,12 @@
     position: relative;
 }
 
+.setup-screen__header-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.setup-screen__icon-btn,
 .setup-screen__rules-btn {
     background: rgba(255, 255, 255, 0.1);
     border: none;
@@ -47,10 +53,13 @@
     color: #fff;
 }
 
+.setup-screen__icon-btn:hover,
 .setup-screen__rules-btn:hover {
     background: rgba(255, 255, 255, 0.2);
     transform: scale(1.1);
 }
+
+
 
 .setup-screen__status-row {
     display: flex;
@@ -310,12 +319,21 @@
 }
 
 @keyframes setup-reconnecting-pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.8; }
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.8;
+    }
 }
 
 @keyframes setup-reconnecting-spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 /* Mobile layout: < 768px */

@@ -1316,6 +1316,32 @@ export class GameService {
     }
 
     /**
+     * Forfeit the game. The opponent automatically wins.
+     */
+    public forfeitGame(socketId: string): { success: boolean; session?: GameState; error?: string } {
+        const session = this.getSessionBySocketId(socketId);
+        if (!session) return { success: false, error: 'Session not found' };
+
+        // Can only forfeit during active game states
+        if (session.phase !== 'setup' && session.phase !== 'playing' && session.phase !== 'combat' && session.phase !== 'tie_breaker') {
+            return { success: false, error: 'Cannot forfeit in current phase' };
+        }
+
+        const color = this.getPlayerColor(socketId);
+        if (!color) return { success: false, error: 'Player not found' };
+
+        const opponentColor = color === 'red' ? 'blue' : 'red';
+
+        session.phase = 'finished';
+        session.winner = opponentColor;
+        session.winReason = 'forfeit';
+
+        console.log(`🏳️ Player ${socketId} (${color}) forfeited game ${session.sessionId}`);
+
+        return { success: true, session };
+    }
+
+    /**
      * Request a rematch. Returns status indicating if both players have requested.
      */
     public requestRematch(socketId: string): {

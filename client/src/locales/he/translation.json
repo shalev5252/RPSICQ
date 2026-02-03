@@ -5,6 +5,9 @@
         "disconnected": "מנותק",
         "connecting": "מתחבר לשרת..."
     },
+    "common": {
+        "cancel": "ביטול"
+    },
     "colors": {
         "red": "אדום",
         "blue": "כחול"
@@ -116,24 +119,35 @@
         "turn_skipped": {
             "title": "אין מהלכים",
             "subtitle": "התור עובר ליריב"
+        },
+        "forfeit": "פרישה",
+        "forfeit_title": "לפרוש מהמשחק?",
+        "forfeit_message": "האם אתה בטוח שברצונך לפרוש? אתה תפסיד במשחק.",
+        "forfeit_confirm": "פרוש",
+        "game_over": {
+            "victory": "ניצחון!",
+            "defeat": "תבוסה!",
+            "draw": "תיקו!",
+            "reason_king_captured": "המלך נתפס",
+            "reason_no_moves": "אין מהלכים חוקיים",
+            "reason_timeout": "נגמר הזמן",
+            "reason_disconnect": "היריב התנתק",
+            "play_again": "שחק שוב",
+            "rematch_requested": "ביקש משחק חוזר...",
+            "return_home": "חזור לתפריט",
+            "msg_king_captured_win": "תפסת את המלך של היריב!",
+            "msg_king_captured_loss": "המלך שלך נתפס!",
+            "msg_forfeit_win": "היריב פרש.",
+            "msg_forfeit_loss": "פרשת מהמשחק.",
+            "msg_disconnect_win": "היריב התנתק.",
+            "msg_disconnect_loss": "התנתקת.",
+            "msg_timeout_win": "היריב איבד זמן.",
+            "msg_timeout_loss": "נגמר הזמן.",
+            "msg_draw": "המשחק הסתיים בתיקו.",
+            "opponent_rematch": "היריב רוצה לשחק שוב!",
+            "starting": "מתחיל...",
+            "waiting_opponent": "ממתין ליריב..."
         }
-    },
-    "game_over": {
-        "victory": "ניצחון!",
-        "defeat": "תבוסה!",
-        "draw": "תיקו!",
-        "reason_king_captured": "המלך נתפס",
-        "reason_no_moves": "אין מהלכים חוקיים",
-        "reason_timeout": "נגמר הזמן",
-        "reason_disconnect": "היריב התנתק",
-        "play_again": "שחק שוב",
-        "rematch_requested": "ביקש משחק חוזר...",
-        "return_home": "חזור לתפריט",
-        "msg_king_captured_win": "תפסת את המלך של היריב!",
-        "msg_king_captured_loss": "המלך שלך נתפס!",
-        "opponent_rematch": "היריב רוצה לשחק שוב!",
-        "starting": "מתחיל...",
-        "waiting_opponent": "ממתין ליריב..."
     },
     "emotes": {
         "title": "תגובות",

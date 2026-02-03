@@ -5,6 +5,9 @@
         "disconnected": "Disconnected",
         "connecting": "Connecting to server..."
     },
+    "common": {
+        "cancel": "Cancel"
+    },
     "colors": {
         "red": "RED",
         "blue": "BLUE"
@@ -125,6 +128,10 @@
             "title": "Can't Move",
             "subtitle": "Passes turn to opponent"
         },
+        "forfeit": "Give Up",
+        "forfeit_title": "Forfeit Game?",
+        "forfeit_message": "Are you sure you want to give up? You will lose the game.",
+        "forfeit_confirm": "Give Up",
         "game_over": {
             "victory": "Victory!",
             "defeat": "Defeat!",
@@ -138,6 +145,13 @@
             "return_home": "Return to Menu",
             "msg_king_captured_win": "You have captured the opponent's King!",
             "msg_king_captured_loss": "Your King has been captured!",
+            "msg_forfeit_win": "Opponent forfeited.",
+            "msg_forfeit_loss": "You forfeited.",
+            "msg_disconnect_win": "Opponent disconnected.",
+            "msg_disconnect_loss": "Disconnected.",
+            "msg_timeout_win": "Opponent timed out.",
+            "msg_timeout_loss": "Time ran out.",
+            "msg_draw": "Game ended in a draw.",
             "opponent_rematch": "Opponent wants to play again!",
             "starting": "Starting...",
             "waiting_opponent": "Waiting for opponent..."

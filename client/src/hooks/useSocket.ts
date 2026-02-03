@@ -19,6 +19,7 @@ import {
     CombatElement,
     EmoteId,
     EmoteReceivedPayload,
+    GameOverPayload,
 } from '@rps/shared';
 import { useSound } from '../context/SoundContext';
 
@@ -198,7 +199,7 @@ export function useSocket() {
             console.error('❌ Server error:', payload);
         };
 
-        const onGameOver = (payload: { winner: PlayerColor | null; reason: string }) => {
+        const onGameOver = (payload: GameOverPayload) => {
             console.log('🏁 Game Over:', payload);
 
             const myColor = useGameStore.getState().myColor;
@@ -216,7 +217,8 @@ export function useSocket() {
                 currentTurn: null,
                 phase: 'finished',
                 isMyTurn: false,
-                winner: payload.winner
+                winner: payload.winner,
+                winReason: payload.reason
             });
         };
 

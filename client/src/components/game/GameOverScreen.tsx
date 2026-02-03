@@ -47,6 +47,32 @@ export const GameOverScreen: React.FC = () => {
         return t('game.game_over.play_again');
     };
 
+    const getReasonMessage = () => {
+        const reason = gameState.winReason;
+
+        switch (reason) {
+            case 'forfeit':
+                return isWinner
+                    ? t('game.game_over.msg_forfeit_win', 'Opponent forfeited.')
+                    : t('game.game_over.msg_forfeit_loss', 'You forfeited.');
+            case 'disconnect':
+                return isWinner
+                    ? t('game.game_over.msg_disconnect_win', 'Opponent disconnected.')
+                    : t('game.game_over.msg_disconnect_loss', 'Disconnected.');
+            case 'timeout':
+                return isWinner
+                    ? t('game.game_over.msg_timeout_win', 'Opponent timed out.')
+                    : t('game.game_over.msg_timeout_loss', 'Time ran out.');
+            case 'draw':
+                return t('game.game_over.msg_draw', 'Game ended in a draw.');
+            case 'king_captured':
+            default:
+                return isWinner
+                    ? t('game.game_over.msg_king_captured_win')
+                    : t('game.game_over.msg_king_captured_loss');
+        }
+    };
+
     return (
         <div className="game-over-screen">
             <div className="game-over-screen__card">
@@ -55,10 +81,7 @@ export const GameOverScreen: React.FC = () => {
                 </div>
 
                 <div className="game-over-screen__message">
-                    {isWinner
-                        ? t('game.game_over.msg_king_captured_win')
-                        : t('game.game_over.msg_king_captured_loss')
-                    }
+                    {getReasonMessage()}
                 </div>
 
                 {!isSingleplayer && rematchState.opponentRequested && !rematchState.hasRequested && (
