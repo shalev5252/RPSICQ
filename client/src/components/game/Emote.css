@@ -83,7 +83,7 @@
 /* Emote Picker (Mobile FAB) */
 .emote-picker {
     position: fixed;
-    bottom: 20px;
+    bottom: 80px;
     right: 20px;
     z-index: 100;
 }
