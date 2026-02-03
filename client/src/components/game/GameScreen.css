@@ -19,11 +19,17 @@
     /* Constrain width for relative positioning */
 }
 
-.game-screen__rules-btn {
+.game-screen__header-actions {
     position: absolute;
     right: 0;
     top: 50%;
     transform: translateY(-50%);
+    display: flex;
+    gap: 8px;
+    z-index: 10;
+}
+
+.game-screen__icon-btn {
     background: rgba(255, 255, 255, 0.1);
     border: none;
     border-radius: 50%;
@@ -36,12 +42,11 @@
     cursor: pointer;
     transition: transform 0.2s, background 0.2s;
     color: #fff;
-    z-index: 10;
 }
 
-.game-screen__rules-btn:hover {
+.game-screen__icon-btn:hover {
     background: rgba(255, 255, 255, 0.2);
-    transform: translateY(-50%) scale(1.1);
+    transform: scale(1.1);
 }
 
 @media (max-width: 767px) {
@@ -56,19 +61,23 @@
         /* Reserve height stability */
     }
 
-    .game-screen__rules-btn {
+    .game-screen__header-actions {
         position: absolute;
-        width: 44px;
-        height: 44px;
-        font-size: 18px;
+        width: auto;
+        height: auto;
         right: 0;
         top: 50%;
         transform: translateY(-50%);
-        /* Remove static positioning from previous mobile style */
     }
 
-    .game-screen__rules-btn:hover {
-        transform: translateY(-50%) scale(1.1);
+    .game-screen__icon-btn {
+        width: 44px;
+        height: 44px;
+        font-size: 18px;
+    }
+
+    .game-screen__icon-btn:hover {
+        transform: scale(1.1);
     }
 }
 

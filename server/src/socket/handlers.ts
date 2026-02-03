@@ -637,6 +637,22 @@ export function setupSocketHandlers(io: Server): void {
             console.log(`⚔️ Room match! Session: ${sessionId} | ${roomResult.hostSocketId} (${hostRole}) vs ${socket.id} (${joinerRole}) [Mode: ${roomResult.gameMode}]`);
         });
 
+        socket.on(SOCKET_EVENTS.FORFEIT_GAME, () => {
+            console.log(`🏳️ Player ${socket.id} requesting forfeit`);
+            const result = gameService.forfeitGame(socket.id);
+
+            if (!result.success || !result.session) {
+                socket.emit(SOCKET_EVENTS.ERROR, { code: 'FORFEIT_ERROR', message: result.error });
+                return;
+            }
+
+            // Emit GAME_OVER to everyone in the session
+            io.to(result.session.sessionId).emit(SOCKET_EVENTS.GAME_OVER, {
+                winner: result.session.winner,
+                reason: result.session.winReason ?? 'forfeit'
+            });
+        });
+
         socket.on(SOCKET_EVENTS.CANCEL_ROOM, () => {
             console.log(`❌ Player ${socket.id} cancelling room`);
             roomService.cancelRoom(socket.id);

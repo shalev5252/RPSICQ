@@ -128,5 +128,6 @@ export const SOCKET_EVENTS = {
     ROOM_EXPIRED: 'room_expired',
     SEND_EMOTE: 'send_emote',
     EMOTE_RECEIVED: 'emote_received',
+    FORFEIT_GAME: 'forfeit_game',
     ERROR: 'error',
 } as const;

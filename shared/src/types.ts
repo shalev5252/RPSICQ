@@ -60,7 +60,7 @@ export interface GameState {
     turnStartTime: number | null;
     combatState: CombatState | null;
     winner: PlayerColor | null;
-    winReason?: 'king_captured' | 'timeout' | 'disconnect' | 'draw';
+    winReason?: 'king_captured' | 'timeout' | 'disconnect' | 'draw' | 'forfeit';
     rematchRequests?: {
         red: boolean;
         blue: boolean;
@@ -116,7 +116,7 @@ export interface CombatResultPayload {
 
 export interface GameOverPayload {
     winner: PlayerColor | null;
-    reason: 'king_captured' | 'timeout' | 'disconnect' | 'draw';
+    reason: 'king_captured' | 'timeout' | 'disconnect' | 'draw' | 'forfeit';
 }
 
 export interface ErrorPayload {
