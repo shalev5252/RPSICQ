@@ -118,6 +118,7 @@
             "choose_again": "Choose again...",
             "confirm": "Confirm Choice",
             "waiting": "Waiting for opponent...",
+            "processing_battle": "Processing battle...",
             "your_choice": "Your pick:",
             "round": "Round {{count}}",
             "drag_hint": "Drag to move",

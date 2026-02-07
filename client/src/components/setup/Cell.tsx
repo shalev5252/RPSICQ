@@ -21,6 +21,7 @@ interface CellProps {
     // Combat visualization
     isCombatCell?: boolean;
     combatPieceType?: PieceType | null;
+    isAttackerCell?: boolean;
 }
 
 export const Cell: React.FC<CellProps> = ({
@@ -37,6 +38,7 @@ export const Cell: React.FC<CellProps> = ({
     onClick,
     isCombatCell,
     combatPieceType,
+    isAttackerCell,
 }) => {
     // Track mouseDown time for short-click vs long-press detection
     const mouseDownTimeRef = React.useRef<number>(0);
@@ -118,7 +120,7 @@ export const Cell: React.FC<CellProps> = ({
                         {PIECE_ICONS[combatPieceType]}
                     </span>
                 </div>
-            ) : piece && (
+            ) : piece && !isAttackerCell && (
                 <div
                     draggable={isPieceDraggable}
                     onDragStart={handlePieceDragStart}

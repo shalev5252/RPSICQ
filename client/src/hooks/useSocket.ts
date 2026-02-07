@@ -30,7 +30,7 @@ export function useSocket() {
     const { playSound } = useSound();
 
     // Buffers for events that arrive during tie-breaker reveal/result animation
-    const pendingGameStateRef = useRef<{ board: PlayerCellView[][]; currentTurn: PlayerColor | null; phase: string; isMyTurn: boolean; combatPosition?: Position; combatPieceType?: PieceType } | null>(null);
+    const pendingGameStateRef = useRef<{ board: PlayerCellView[][]; currentTurn: PlayerColor | null; phase: string; isMyTurn: boolean; combatPosition?: Position; combatPieceType?: PieceType; combatAttackerPosition?: Position } | null>(null);
     const pendingRetryRef = useRef(false);
     const revealTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const resultTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -109,7 +109,7 @@ export function useSocket() {
         };
 
         // Applies a game state payload to the store (sounds + state update)
-        const applyGameState = (payload: { board: PlayerCellView[][]; currentTurn: PlayerColor | null; phase: string; isMyTurn: boolean; combatPosition?: Position; combatPieceType?: PieceType }) => {
+        const applyGameState = (payload: { board: PlayerCellView[][]; currentTurn: PlayerColor | null; phase: string; isMyTurn: boolean; combatPosition?: Position; combatPieceType?: PieceType; combatAttackerPosition?: Position }) => {
             // Sound Effect Logic
             const prevState = useGameStore.getState().gameState;
             const currentPhase = useGameStore.getState().gamePhase;
@@ -143,7 +143,7 @@ export function useSocket() {
             useGameStore.getState().setGamePhase(payload.phase as GamePhase);
         };
 
-        const onGameState = (payload: { board: PlayerCellView[][]; currentTurn: PlayerColor | null; phase: string; isMyTurn: boolean; combatPosition?: Position; combatPieceType?: PieceType }) => {
+        const onGameState = (payload: { board: PlayerCellView[][]; currentTurn: PlayerColor | null; phase: string; isMyTurn: boolean; combatPosition?: Position; combatPieceType?: PieceType; combatAttackerPosition?: Position }) => {
             console.log('📊 Game state update:', payload);
 
             // If a reveal or result animation is active, buffer this update
@@ -184,12 +184,15 @@ export function useSocket() {
                     // Resolution: show result screen, then flush game state
                     store.setTieBreakerShowingResult(true);
                     resultTimerRef.current = setTimeout(() => {
-                        useGameStore.getState().setTieBreakerShowingResult(false);
-                        useGameStore.getState().setTieBreakerLastReveal(null);
+                        // Apply game state FIRST to unmount modal before clearing animation states
+                        // This prevents the brief "waiting" screen flash
                         if (pendingGameStateRef.current) {
                             applyGameState(pendingGameStateRef.current);
                             pendingGameStateRef.current = null;
                         }
+                        // Now clear animation states (modal already unmounted)
+                        useGameStore.getState().setTieBreakerShowingResult(false);
+                        useGameStore.getState().setTieBreakerLastReveal(null);
                     }, RESULT_DURATION);
                 }
             }, REVEAL_DURATION);

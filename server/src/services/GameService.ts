@@ -1137,6 +1137,7 @@ export class GameService {
         gameMode: GameMode;
         combatPosition?: Position;
         combatPieceType?: PieceType;
+        combatAttackerPosition?: Position;
     } | null {
         const session = this.getSessionBySocketId(socketId);
         if (!session) return null;
@@ -1172,12 +1173,18 @@ export class GameService {
         // Include combat position during tie-breaker phase
         let combatPosition: Position | undefined;
         let combatPieceType: PieceType | undefined;
+        let combatAttackerPosition: Position | undefined;
         if (session.phase === 'tie_breaker' && session.combatState) {
             const defender = session.players.red?.pieces.find(p => p.id === session.combatState!.defenderId) ||
                 session.players.blue?.pieces.find(p => p.id === session.combatState!.defenderId);
+            const attacker = session.players.red?.pieces.find(p => p.id === session.combatState!.attackerId) ||
+                session.players.blue?.pieces.find(p => p.id === session.combatState!.attackerId);
             if (defender) {
                 combatPosition = defender.position;
                 combatPieceType = defender.type;
+            }
+            if (attacker) {
+                combatAttackerPosition = attacker.position;
             }
         }
 
@@ -1188,7 +1195,8 @@ export class GameService {
             isMyTurn: session.currentTurn === color,
             gameMode: session.gameMode,
             combatPosition,
-            combatPieceType
+            combatPieceType,
+            combatAttackerPosition
         };
     }
 

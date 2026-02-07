@@ -34,6 +34,7 @@ export const GameScreen: React.FC = () => {
     const isTieBreaker = gameState?.phase === 'tie_breaker';
     const combatPosition = gameState?.combatPosition ?? null;
     const combatPieceType = gameState?.combatPieceType ?? null;
+    const combatAttackerPosition = gameState?.combatAttackerPosition ?? null;
     const showTurnSkipped = useGameStore((state) => state.showTurnSkipped);
     const setShowTurnSkipped = useGameStore((state) => state.setShowTurnSkipped);
     const opponentReconnecting = useGameStore((state) => state.opponentReconnecting);
@@ -244,6 +245,7 @@ export const GameScreen: React.FC = () => {
                     selectedPiecePosition={selectedPiece?.position ?? null}
                     combatPosition={combatPosition}
                     combatPieceType={combatPieceType}
+                    combatAttackerPosition={combatAttackerPosition}
                 />
             </div>
 

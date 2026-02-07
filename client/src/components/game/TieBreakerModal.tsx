@@ -27,6 +27,9 @@ export const TieBreakerModal: React.FC = () => {
     const showingResult = useGameStore((state) => state.tieBreakerState.showingResult);
     const uniqueId = useGameStore((state) => state.tieBreakerState.uniqueId);
     const gameMode = useGameStore((state) => state.gameMode);
+    const opponentType = useGameStore((state) => state.opponentType);
+
+    const isSingleplayer = opponentType === 'ai';
 
     // Reset local state when a new tie-breaker session starts (uniqueId changes)
     useEffect(() => {
@@ -307,8 +310,11 @@ export const TieBreakerModal: React.FC = () => {
                                 {t('game.tie_breaker.confirm')}
                             </button>
                         </motion.div>
+                    ) : isSingleplayer ? (
+                        /* ── Singleplayer: render nothing while waiting for AI (instant response) ── */
+                        <></>
                     ) : (
-                        /* ── Waiting for opponent ── */
+                        /* ── Multiplayer: Waiting for opponent ── */
                         <motion.div
                             key="waiting"
                             className="tie-breaker-modal__waiting"

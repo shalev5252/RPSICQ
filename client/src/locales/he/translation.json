@@ -110,6 +110,7 @@
             "choose_again": "בחר שנית...",
             "confirm": "אשר בחירה",
             "waiting": "ממתין ליריב...",
+            "processing_battle": "מעבד קרב...",
             "your_choice": "הבחירה שלך:",
             "round": "סיבוב {{count}}",
             "drag_hint": "גרור להזיז",
