@@ -867,6 +867,7 @@ export class GameService {
         // Switch turn
         session.currentTurn = color === 'red' ? 'blue' : 'red';
         session.turnStartTime = Date.now();
+        this.resetDrawOffersForTurn(session.sessionId);
 
         console.log(`⏭️ ${color} turn skipped (no movable pieces)`);
         return { success: true };
@@ -901,6 +902,121 @@ export class GameService {
         session.winner = null;
         session.winReason = 'draw';
         console.log(`🤝 Game ${sessionId} ended in a draw (no movable pieces)`);
+    }
+
+    /**
+     * Offer a draw to the opponent.
+     * Only the current player can offer a draw, and only once per turn.
+     */
+    public offerDraw(socketId: string): { success: boolean; error?: string; opponentSocketId?: string } {
+        const session = this.getSessionBySocketId(socketId);
+        if (!session) {
+            return { success: false, error: 'Session not found' };
+        }
+
+        // Only allowed in PvP games
+        if (session.opponentType === 'ai') {
+            return { success: false, error: 'Draw offers not available in singleplayer' };
+        }
+
+        // Only allowed during playing phase
+        if (session.phase !== 'playing') {
+            return { success: false, error: 'Draw offers only allowed during playing phase' };
+        }
+
+        const playerColor = this.getPlayerColor(socketId);
+        if (!playerColor) {
+            return { success: false, error: 'Player not found in session' };
+        }
+
+        // Only current player can offer draw
+        if (session.currentTurn !== playerColor) {
+            return { success: false, error: 'Only the current player can offer a draw' };
+        }
+
+        // Check if already offered this turn
+        if (session.drawOffersMadeThisTurn?.[playerColor]) {
+            return { success: false, error: 'Already offered draw this turn' };
+        }
+
+        // Check if there's already a pending offer
+        if (session.pendingDrawOffer) {
+            return { success: false, error: 'A draw offer is already pending' };
+        }
+
+        // Record the draw offer
+        session.pendingDrawOffer = playerColor;
+        if (!session.drawOffersMadeThisTurn) {
+            session.drawOffersMadeThisTurn = { red: false, blue: false };
+        }
+        session.drawOffersMadeThisTurn[playerColor] = true;
+
+        // Get opponent socket ID
+        const opponentColor = playerColor === 'red' ? 'blue' : 'red';
+        const opponentSocketId = session.players[opponentColor]?.socketId;
+
+        console.log(`🤝 Player ${playerColor} offered draw in session ${session.sessionId}`);
+
+        return { success: true, opponentSocketId };
+    }
+
+    /**
+     * Respond to a pending draw offer.
+     */
+    public respondToDraw(socketId: string, accepted: boolean): {
+        success: boolean;
+        error?: string;
+        session?: GameState;
+        offererSocketId?: string;
+    } {
+        const session = this.getSessionBySocketId(socketId);
+        if (!session) {
+            return { success: false, error: 'Session not found' };
+        }
+
+        if (!session.pendingDrawOffer) {
+            return { success: false, error: 'No pending draw offer' };
+        }
+
+        const playerColor = this.getPlayerColor(socketId);
+        if (!playerColor) {
+            return { success: false, error: 'Player not found in session' };
+        }
+
+        // Only the opponent of the offerer can respond
+        if (session.pendingDrawOffer === playerColor) {
+            return { success: false, error: 'Cannot respond to your own draw offer' };
+        }
+
+        const offererColor = session.pendingDrawOffer as 'red' | 'blue';
+        const offererSocketId = session.players[offererColor]?.socketId;
+
+        // Clear the pending offer
+        session.pendingDrawOffer = undefined;
+
+        if (accepted) {
+            // End game as draw
+            session.phase = 'finished';
+            session.winner = null;
+            session.winReason = 'draw_offer';
+            console.log(`🤝 Game ${session.sessionId} ended in agreed draw`);
+            return { success: true, session, offererSocketId };
+        } else {
+            // Draw declined - offerer cannot offer again until next turn
+            console.log(`❌ Draw offer declined in session ${session.sessionId}`);
+            return { success: true, session, offererSocketId };
+        }
+    }
+
+    /**
+     * Reset draw offer state when turn changes.
+     */
+    public resetDrawOffersForTurn(sessionId: string): void {
+        const session = this.sessions.get(sessionId);
+        if (!session) return;
+
+        session.pendingDrawOffer = undefined;
+        session.drawOffersMadeThisTurn = { red: false, blue: false };
     }
 
     /**
@@ -1098,6 +1214,7 @@ export class GameService {
             // Switch turn
             session.currentTurn = color === 'red' ? 'blue' : 'red';
             session.turnStartTime = Date.now();
+            this.resetDrawOffersForTurn(session.sessionId);
 
             return { success: true, combat: true };
         }
@@ -1121,6 +1238,7 @@ export class GameService {
         // Switch turn
         session.currentTurn = color === 'red' ? 'blue' : 'red';
         session.turnStartTime = Date.now();
+        this.resetDrawOffersForTurn(session.sessionId);
 
         console.log(`♟️ ${color} moved ${piece.type} from (${from.row},${from.col}) to (${to.row},${to.col})`);
         return { success: true, combat: false };
@@ -1137,6 +1255,7 @@ export class GameService {
         gameMode: GameMode;
         combatPosition?: Position;
         combatPieceType?: PieceType;
+        combatAttackerPosition?: Position;
     } | null {
         const session = this.getSessionBySocketId(socketId);
         if (!session) return null;
@@ -1172,12 +1291,18 @@ export class GameService {
         // Include combat position during tie-breaker phase
         let combatPosition: Position | undefined;
         let combatPieceType: PieceType | undefined;
+        let combatAttackerPosition: Position | undefined;
         if (session.phase === 'tie_breaker' && session.combatState) {
             const defender = session.players.red?.pieces.find(p => p.id === session.combatState!.defenderId) ||
                 session.players.blue?.pieces.find(p => p.id === session.combatState!.defenderId);
+            const attacker = session.players.red?.pieces.find(p => p.id === session.combatState!.attackerId) ||
+                session.players.blue?.pieces.find(p => p.id === session.combatState!.attackerId);
             if (defender) {
                 combatPosition = defender.position;
                 combatPieceType = defender.type;
+            }
+            if (attacker) {
+                combatAttackerPosition = attacker.position;
             }
         }
 
@@ -1188,7 +1313,8 @@ export class GameService {
             isMyTurn: session.currentTurn === color,
             gameMode: session.gameMode,
             combatPosition,
-            combatPieceType
+            combatPieceType,
+            combatAttackerPosition
         };
     }
 
@@ -1622,10 +1748,12 @@ export class GameService {
         session.currentTurn = null;
         session.turnStartTime = null;
         session.combatState = null;
-        session.winner = null;
         session.winReason = undefined;
         session.rematchRequests = undefined;
         session.aiReady = false;
+
+        // Reset draw offer state
+        this.resetDrawOffersForTurn(sessionId);
 
         // Re-initialize AI session tracking for rematch
         if (session.opponentType === 'ai') {

@@ -18,6 +18,7 @@ interface BoardProps {
     // Combat visualization
     combatPosition?: Position | null;
     combatPieceType?: PieceType | null;
+    combatAttackerPosition?: Position | null;
 }
 
 export const Board: React.FC<BoardProps> = ({
@@ -32,6 +33,7 @@ export const Board: React.FC<BoardProps> = ({
     selectedPiecePosition,
     combatPosition,
     combatPieceType,
+    combatAttackerPosition,
 }) => {
     // Transform board so each player's rows appear at the bottom
     // Red rows are 0-1, Blue rows are 4-5
@@ -104,6 +106,7 @@ export const Board: React.FC<BoardProps> = ({
                                 isSelected={selectedPiecePosition?.row === actualRowIndex && selectedPiecePosition?.col === colIndex}
                                 isCombatCell={combatPosition?.row === actualRowIndex && combatPosition?.col === colIndex}
                                 combatPieceType={combatPosition?.row === actualRowIndex && combatPosition?.col === colIndex ? combatPieceType : undefined}
+                                isAttackerCell={combatAttackerPosition?.row === actualRowIndex && combatAttackerPosition?.col === colIndex}
                             />
                         ))}
                     </div>

@@ -118,6 +118,7 @@
             "choose_again": "Choose again...",
             "confirm": "Confirm Choice",
             "waiting": "Waiting for opponent...",
+            "processing_battle": "Processing battle...",
             "your_choice": "Your pick:",
             "round": "Round {{count}}",
             "drag_hint": "Drag to move",
@@ -136,6 +137,14 @@
         "forfeit_title": "Forfeit Game?",
         "forfeit_message": "Are you sure you want to give up? You will lose the game.",
         "forfeit_confirm": "Give Up",
+        "offer_draw": "Offer Draw",
+        "draw_declined": "Draw offer declined",
+        "draw_offer": {
+            "title": "Draw Offered",
+            "subtitle": "Your opponent offers a draw",
+            "accept": "Accept",
+            "decline": "Decline"
+        },
         "game_over": {
             "victory": "Victory!",
             "defeat": "Defeat!",

@@ -110,6 +110,7 @@
             "choose_again": "בחר שנית...",
             "confirm": "אשר בחירה",
             "waiting": "ממתין ליריב...",
+            "processing_battle": "מעבד קרב...",
             "your_choice": "הבחירה שלך:",
             "round": "סיבוב {{count}}",
             "drag_hint": "גרור להזיז",
@@ -128,6 +129,14 @@
         "forfeit_title": "לפרוש מהמשחק?",
         "forfeit_message": "האם אתה בטוח שברצונך לפרוש? אתה תפסיד במשחק.",
         "forfeit_confirm": "פרוש",
+        "offer_draw": "להציע תיקו",
+        "draw_declined": "הצעת התיקו נדחתה",
+        "draw_offer": {
+            "title": "הצעת תיקו",
+            "subtitle": "היריב מציע תיקו",
+            "accept": "לקבל",
+            "decline": "לדחות"
+        },
         "game_over": {
             "victory": "ניצחון!",
             "defeat": "תבוסה!",

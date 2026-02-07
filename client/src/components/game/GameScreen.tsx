@@ -11,12 +11,13 @@ import { RulesModal } from './RulesModal';
 import { EmoteBar } from './EmoteBar';
 import { EmotePicker } from './EmotePicker';
 import { EmoteDisplay } from './EmoteDisplay';
+import { DrawOfferModal } from './DrawOfferModal';
 import { ConfirmationModal } from '../common/ConfirmationModal';
 import './GameScreen.css';
 import './Emote.css';
 
 export const GameScreen: React.FC = () => {
-    const { socket } = useSocket();
+    const { socket, offerDraw, respondToDraw } = useSocket();
     const myColor = useGameStore((state) => state.myColor);
     const gameState = useGameStore((state) => state.gameState);
     const gameMode = useGameStore((state) => state.gameMode);
@@ -34,13 +35,18 @@ export const GameScreen: React.FC = () => {
     const isTieBreaker = gameState?.phase === 'tie_breaker';
     const combatPosition = gameState?.combatPosition ?? null;
     const combatPieceType = gameState?.combatPieceType ?? null;
+    const combatAttackerPosition = gameState?.combatAttackerPosition ?? null;
     const showTurnSkipped = useGameStore((state) => state.showTurnSkipped);
     const setShowTurnSkipped = useGameStore((state) => state.setShowTurnSkipped);
     const opponentReconnecting = useGameStore((state) => state.opponentReconnecting);
     const opponentType = useGameStore((state) => state.opponentType);
     const receivedEmote = useGameStore((state) => state.receivedEmote);
+    const pendingDrawOffer = useGameStore((state) => state.pendingDrawOffer);
+    const hasOfferedDrawThisTurn = useGameStore((state) => state.hasOfferedDrawThisTurn);
+    const drawDeclined = useGameStore((state) => state.drawDeclined);
 
     const isPvP = opponentType === 'human';
+    const canOfferDraw = isPvP && isMyTurn && !hasOfferedDrawThisTurn;
 
     const handleForfeit = useCallback(() => {
         if (!socket) return;
@@ -244,11 +250,21 @@ export const GameScreen: React.FC = () => {
                     selectedPiecePosition={selectedPiece?.position ?? null}
                     combatPosition={combatPosition}
                     combatPieceType={combatPieceType}
+                    combatAttackerPosition={combatAttackerPosition}
                 />
             </div>
 
             {/* Floating action bar */}
             <div className="game-screen__action-bar">
+                {canOfferDraw && (
+                    <button
+                        className="game-screen__action-btn game-screen__action-btn--draw"
+                        onClick={offerDraw}
+                        title={t('game.offer_draw')}
+                    >
+                        🤝 {t('game.offer_draw')}
+                    </button>
+                )}
                 <button
                     className="game-screen__action-btn game-screen__action-btn--danger"
                     onClick={() => setShowForfeitConfirm(true)}
@@ -264,6 +280,13 @@ export const GameScreen: React.FC = () => {
                     ℹ️ {t('game.rules_title')}
                 </button>
             </div>
+
+            {/* Draw offer declined notification */}
+            {drawDeclined && (
+                <div className="game-screen__toast">
+                    {t('game.draw_declined')}
+                </div>
+            )}
 
             {isTieBreaker && <TieBreakerModal />}
             {showTurnSkipped && (
@@ -286,6 +309,14 @@ export const GameScreen: React.FC = () => {
                 cancelText={t('common.cancel', 'Cancel')}
                 isDangerous={true}
             />
+
+            {/* Draw offer modal for incoming offers */}
+            {pendingDrawOffer && (
+                <DrawOfferModal
+                    onAccept={() => respondToDraw(true)}
+                    onDecline={() => respondToDraw(false)}
+                />
+            )}
 
             {/* Emote UI - only for PvP games */}
             {isPvP && (

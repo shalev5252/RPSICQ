@@ -62,12 +62,17 @@ export interface GameState {
     turnStartTime: number | null;
     combatState: CombatState | null;
     winner: PlayerColor | null;
-    winReason?: 'king_captured' | 'timeout' | 'disconnect' | 'draw' | 'forfeit' | 'elimination';
+    winReason?: 'king_captured' | 'timeout' | 'disconnect' | 'draw' | 'forfeit' | 'elimination' | 'draw_offer';
     rematchRequests?: {
         red: boolean;
         blue: boolean;
     };
     aiReady?: boolean;
+    pendingDrawOffer?: PlayerColor;  // Who sent the pending draw offer
+    drawOffersMadeThisTurn?: {       // Track if player has offered draw this turn
+        red: boolean;
+        blue: boolean;
+    };
 }
 
 // Socket Event Payloads
@@ -120,7 +125,7 @@ export interface CombatResultPayload {
 
 export interface GameOverPayload {
     winner: PlayerColor | null;
-    reason: 'king_captured' | 'timeout' | 'disconnect' | 'draw' | 'forfeit' | 'elimination';
+    reason: 'king_captured' | 'timeout' | 'disconnect' | 'draw' | 'forfeit' | 'elimination' | 'draw_offer';
 }
 
 export interface ErrorPayload {
@@ -186,4 +191,13 @@ export interface SendEmotePayload {
 export interface EmoteReceivedPayload {
     emoteId: EmoteId;
     from: PlayerColor;
+}
+
+// Draw offer types
+export interface DrawOfferPayload {
+    from: PlayerColor;
+}
+
+export interface DrawResponsePayload {
+    accepted: boolean;
 }

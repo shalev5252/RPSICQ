@@ -20,6 +20,7 @@ import {
     EmoteId,
     EmoteReceivedPayload,
     GameOverPayload,
+    DrawOfferPayload,
 } from '@rps/shared';
 import { useSound } from '../context/SoundContext';
 
@@ -30,11 +31,12 @@ export function useSocket() {
     const { playSound } = useSound();
 
     // Buffers for events that arrive during tie-breaker reveal/result animation
-    const pendingGameStateRef = useRef<{ board: PlayerCellView[][]; currentTurn: PlayerColor | null; phase: string; isMyTurn: boolean; combatPosition?: Position; combatPieceType?: PieceType } | null>(null);
+    const pendingGameStateRef = useRef<{ board: PlayerCellView[][]; currentTurn: PlayerColor | null; phase: string; isMyTurn: boolean; combatPosition?: Position; combatPieceType?: PieceType; combatAttackerPosition?: Position } | null>(null);
     const pendingRetryRef = useRef(false);
     const revealTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const resultTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const emoteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const drawDeclineTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
         const socket = socketRef.current;
@@ -109,7 +111,7 @@ export function useSocket() {
         };
 
         // Applies a game state payload to the store (sounds + state update)
-        const applyGameState = (payload: { board: PlayerCellView[][]; currentTurn: PlayerColor | null; phase: string; isMyTurn: boolean; combatPosition?: Position; combatPieceType?: PieceType }) => {
+        const applyGameState = (payload: { board: PlayerCellView[][]; currentTurn: PlayerColor | null; phase: string; isMyTurn: boolean; combatPosition?: Position; combatPieceType?: PieceType; combatAttackerPosition?: Position }) => {
             // Sound Effect Logic
             const prevState = useGameStore.getState().gameState;
             const currentPhase = useGameStore.getState().gamePhase;
@@ -132,6 +134,11 @@ export function useSocket() {
                         playSound(sound);
                     }
                 }
+
+                // Reset draw offer state on turn change
+                if (turnChanged && payload.currentTurn === useGameStore.getState().myColor) {
+                    useGameStore.getState().setHasOfferedDrawThisTurn(false);
+                }
             }
 
             useGameStore.getState().setGameState(payload);
@@ -143,7 +150,7 @@ export function useSocket() {
             useGameStore.getState().setGamePhase(payload.phase as GamePhase);
         };
 
-        const onGameState = (payload: { board: PlayerCellView[][]; currentTurn: PlayerColor | null; phase: string; isMyTurn: boolean; combatPosition?: Position; combatPieceType?: PieceType }) => {
+        const onGameState = (payload: { board: PlayerCellView[][]; currentTurn: PlayerColor | null; phase: string; isMyTurn: boolean; combatPosition?: Position; combatPieceType?: PieceType; combatAttackerPosition?: Position }) => {
             console.log('📊 Game state update:', payload);
 
             // If a reveal or result animation is active, buffer this update
@@ -184,12 +191,15 @@ export function useSocket() {
                     // Resolution: show result screen, then flush game state
                     store.setTieBreakerShowingResult(true);
                     resultTimerRef.current = setTimeout(() => {
-                        useGameStore.getState().setTieBreakerShowingResult(false);
-                        useGameStore.getState().setTieBreakerLastReveal(null);
+                        // Apply game state FIRST to unmount modal before clearing animation states
+                        // This prevents the brief "waiting" screen flash
                         if (pendingGameStateRef.current) {
                             applyGameState(pendingGameStateRef.current);
                             pendingGameStateRef.current = null;
                         }
+                        // Now clear animation states (modal already unmounted)
+                        useGameStore.getState().setTieBreakerShowingResult(false);
+                        useGameStore.getState().setTieBreakerLastReveal(null);
                     }, RESULT_DURATION);
                 }
             }, REVEAL_DURATION);
@@ -335,6 +345,25 @@ export function useSocket() {
             }, 2500);
         };
 
+        const onDrawOffered = (payload: DrawOfferPayload) => {
+            console.log(`🤝 Draw offered by: ${payload.from}`);
+            useGameStore.getState().setPendingDrawOffer(payload.from);
+        };
+
+        const onDrawDeclined = () => {
+            console.log(`❌ Draw offer was declined`);
+            useGameStore.getState().setDrawDeclined(true);
+
+            // Clear any existing timer
+            if (drawDeclineTimerRef.current) clearTimeout(drawDeclineTimerRef.current);
+
+            // Auto-clear notification after 3 seconds
+            drawDeclineTimerRef.current = setTimeout(() => {
+                useGameStore.getState().setDrawDeclined(false);
+                drawDeclineTimerRef.current = null;
+            }, 3000);
+        };
+
         socket.on('connect', onConnect);
         socket.on('disconnect', onDisconnect);
         socket.on('connect_error', onConnectError);
@@ -355,6 +384,8 @@ export function useSocket() {
         socket.on(SOCKET_EVENTS.ROOM_ERROR, onRoomError);
         socket.on(SOCKET_EVENTS.ROOM_EXPIRED, onRoomExpired);
         socket.on(SOCKET_EVENTS.EMOTE_RECEIVED, onEmoteReceived);
+        socket.on(SOCKET_EVENTS.DRAW_OFFERED, onDrawOffered);
+        socket.on(SOCKET_EVENTS.DRAW_DECLINED, onDrawDeclined);
         socket.on(SOCKET_EVENTS.ERROR, onError);
 
         // Sync state immediately if socket is already connected (handles race condition on mount)
@@ -384,11 +415,13 @@ export function useSocket() {
             socket.off(SOCKET_EVENTS.ROOM_ERROR, onRoomError);
             socket.off(SOCKET_EVENTS.ROOM_EXPIRED, onRoomExpired);
             socket.off(SOCKET_EVENTS.EMOTE_RECEIVED, onEmoteReceived);
+            socket.off(SOCKET_EVENTS.DRAW_OFFERED, onDrawOffered);
+            socket.off(SOCKET_EVENTS.DRAW_DECLINED, onDrawDeclined);
             socket.off(SOCKET_EVENTS.ERROR, onError);
-            if (revealTimerRef.current) clearTimeout(revealTimerRef.current);
             if (revealTimerRef.current) clearTimeout(revealTimerRef.current);
             if (resultTimerRef.current) clearTimeout(resultTimerRef.current);
             if (emoteTimerRef.current) clearTimeout(emoteTimerRef.current);
+            if (drawDeclineTimerRef.current) clearTimeout(drawDeclineTimerRef.current);
             // Do NOT disconnect base socket on unmount of hook, usually
         };
     }, [setConnectionStatus, playSound]);
@@ -416,11 +449,26 @@ export function useSocket() {
         }, 3000);
     };
 
+    const offerDraw = () => {
+        const hasOffered = useGameStore.getState().hasOfferedDrawThisTurn;
+        if (hasOffered) return;
+
+        socketRef.current?.emit(SOCKET_EVENTS.OFFER_DRAW);
+        useGameStore.getState().setHasOfferedDrawThisTurn(true);
+    };
+
+    const respondToDraw = (accepted: boolean) => {
+        socketRef.current?.emit(SOCKET_EVENTS.RESPOND_DRAW, { accepted });
+        useGameStore.getState().setPendingDrawOffer(null);
+    };
+
     return {
         socket: socketRef.current,
         isConnected,
         joinQueue,
         leaveQueue,
         sendEmote,
+        offerDraw,
+        respondToDraw,
     };
 }

@@ -1,6 +1,6 @@
 import { Server, Socket } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
-import { SOCKET_EVENTS, JoinQueuePayload, StartSingleplayerPayload, PlaceKingPitPayload, MakeMovePayload, CombatChoicePayload, CreateRoomPayload, JoinRoomPayload, PlayerRole, SendEmotePayload, EmoteId, GameVariant } from '@rps/shared';
+import { SOCKET_EVENTS, JoinQueuePayload, StartSingleplayerPayload, PlaceKingPitPayload, MakeMovePayload, CombatChoicePayload, CreateRoomPayload, JoinRoomPayload, PlayerRole, SendEmotePayload, EmoteId, GameVariant, DrawResponsePayload } from '@rps/shared';
 import { MatchmakingService } from '../services/MatchmakingService.js';
 import { GameService } from '../services/GameService.js';
 import { RoomService } from '../services/RoomService.js';
@@ -673,6 +673,51 @@ export function setupSocketHandlers(io: Server): void {
                 winner: result.session.winner,
                 reason: result.session.winReason ?? 'forfeit'
             });
+        });
+
+        // Draw offer handlers
+        socket.on(SOCKET_EVENTS.OFFER_DRAW, () => {
+            console.log(`🤝 Player ${socket.id} offering draw`);
+            const result = gameService.offerDraw(socket.id);
+
+            if (!result.success) {
+                socket.emit(SOCKET_EVENTS.ERROR, { code: 'DRAW_OFFER_ERROR', message: result.error });
+                return;
+            }
+
+            // Notify opponent about the draw offer
+            if (result.opponentSocketId) {
+                const playerColor = gameService.getPlayerColor(socket.id);
+                io.to(result.opponentSocketId).emit(SOCKET_EVENTS.DRAW_OFFERED, {
+                    from: playerColor
+                });
+            }
+        });
+
+        socket.on(SOCKET_EVENTS.RESPOND_DRAW, (payload: DrawResponsePayload) => {
+            if (!payload || typeof payload.accepted !== 'boolean') {
+                socket.emit(SOCKET_EVENTS.ERROR, { code: 'INVALID_PAYLOAD', message: 'Invalid draw response payload' });
+                return;
+            }
+
+            console.log(`🤝 Player ${socket.id} responding to draw: ${payload.accepted ? 'accepted' : 'declined'}`);
+            const result = gameService.respondToDraw(socket.id, payload.accepted);
+
+            if (!result.success) {
+                socket.emit(SOCKET_EVENTS.ERROR, { code: 'DRAW_RESPONSE_ERROR', message: result.error });
+                return;
+            }
+
+            if (payload.accepted && result.session) {
+                // Game ends in draw - notify both players
+                io.to(result.session.sessionId).emit(SOCKET_EVENTS.GAME_OVER, {
+                    winner: null,
+                    reason: 'draw_offer'
+                });
+            } else if (result.offererSocketId) {
+                // Draw declined - notify the offerer
+                io.to(result.offererSocketId).emit(SOCKET_EVENTS.DRAW_DECLINED);
+            }
         });
 
         socket.on(SOCKET_EVENTS.CANCEL_ROOM, () => {

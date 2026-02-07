@@ -61,11 +61,12 @@ interface GameStore {
         phase: string;
         isMyTurn: boolean;
         winner?: PlayerColor | null;
-        winReason?: 'king_captured' | 'timeout' | 'disconnect' | 'draw' | 'forfeit' | 'elimination';
+        winReason?: 'king_captured' | 'timeout' | 'disconnect' | 'draw' | 'forfeit' | 'elimination' | 'draw_offer';
         combatPosition?: Position;
         combatPieceType?: PieceType;
+        combatAttackerPosition?: Position;
     } | null;
-    setGameState: (state: { board: PlayerCellView[][]; currentTurn: PlayerColor | null; phase: string; isMyTurn: boolean; winner?: PlayerColor | null; winReason?: 'king_captured' | 'timeout' | 'disconnect' | 'draw' | 'forfeit' | 'elimination'; combatPosition?: Position; combatPieceType?: PieceType } | null) => void;
+    setGameState: (state: { board: PlayerCellView[][]; currentTurn: PlayerColor | null; phase: string; isMyTurn: boolean; winner?: PlayerColor | null; winReason?: 'king_captured' | 'timeout' | 'disconnect' | 'draw' | 'forfeit' | 'elimination' | 'draw_offer'; combatPosition?: Position; combatPieceType?: PieceType; combatAttackerPosition?: Position } | null) => void;
     // Rematch state
     rematchState: RematchState;
     setRematchState: (state: Partial<RematchState>) => void;
@@ -100,6 +101,13 @@ interface GameStore {
     setReceivedEmote: (emote: { emoteId: EmoteId; from: PlayerColor } | null) => void;
     emoteCooldown: boolean;
     setEmoteCooldown: (cooldown: boolean) => void;
+    // Draw offer state
+    pendingDrawOffer: PlayerColor | null;  // Who sent the draw offer (opponent's color)
+    setPendingDrawOffer: (from: PlayerColor | null) => void;
+    hasOfferedDrawThisTurn: boolean;
+    setHasOfferedDrawThisTurn: (offered: boolean) => void;
+    drawDeclined: boolean;  // Notification that opponent declined
+    setDrawDeclined: (declined: boolean) => void;
     reset: () => void;
 }
 
@@ -150,6 +158,9 @@ const initialState = {
     pvpMode: 'random' as 'random' | 'friend',
     receivedEmote: null,
     emoteCooldown: false,
+    pendingDrawOffer: null,
+    hasOfferedDrawThisTurn: false,
+    drawDeclined: false,
 };
 
 export const useGameStore = create<GameStore>((set) => ({
@@ -225,5 +236,8 @@ export const useGameStore = create<GameStore>((set) => ({
     setPvpMode: (mode) => set({ pvpMode: mode }),
     setReceivedEmote: (emote) => set({ receivedEmote: emote }),
     setEmoteCooldown: (cooldown) => set({ emoteCooldown: cooldown }),
+    setPendingDrawOffer: (from) => set({ pendingDrawOffer: from }),
+    setHasOfferedDrawThisTurn: (offered) => set({ hasOfferedDrawThisTurn: offered }),
+    setDrawDeclined: (declined) => set({ drawDeclined: declined }),
     reset: () => set(initialState),
 }));
