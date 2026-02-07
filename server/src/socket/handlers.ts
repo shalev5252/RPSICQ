@@ -235,6 +235,12 @@ export function setupSocketHandlers(io: Server): void {
                 color: 'red' // human is always red
             });
 
+            // Emit initial SETUP_STATE so client knows board state/dimensions and readiness
+            const setupView = gameService.getPlayerSetupView(socket.id);
+            if (setupView) {
+                socket.emit(SOCKET_EVENTS.SETUP_STATE, setupView);
+            }
+
             const variantSuffix = variant !== 'standard' ? ` [${variant}]` : '';
             console.log(`🤖 Singleplayer game started: session=${session.sessionId}, mode=${mode}${variantSuffix}`);
         });
@@ -638,7 +644,16 @@ export function setupSocketHandlers(io: Server): void {
             socket.join(sessionId);
 
             hostSocket.emit(SOCKET_EVENTS.GAME_FOUND, { sessionId, color: hostRole });
+            const hostSetup = gameService.getPlayerSetupView(hostSocket.id);
+            if (hostSetup) {
+                hostSocket.emit(SOCKET_EVENTS.SETUP_STATE, hostSetup);
+            }
+
             socket.emit(SOCKET_EVENTS.GAME_FOUND, { sessionId, color: joinerRole });
+            const joinerSetup = gameService.getPlayerSetupView(socket.id);
+            if (joinerSetup) {
+                socket.emit(SOCKET_EVENTS.SETUP_STATE, joinerSetup);
+            }
 
             const variantSuffix = variant !== 'standard' ? ` [${variant}]` : '';
             console.log(`⚔️ Room match! Session: ${sessionId} | ${roomResult.hostSocketId} (${hostRole}) vs ${socket.id} (${joinerRole}) [Mode: ${roomResult.gameMode}${variantSuffix}]`);

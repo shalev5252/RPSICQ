@@ -16,6 +16,8 @@ import {
     GameVariant,
     CombatElement,
     BOARD_CONFIG,
+    ONSLAUGHT_CONFIG,
+    ONSLAUGHT_END_PIECE_COUNT,
     RPSLS_WINS,
     AI_ID_PREFIX,
     AI_SOCKET_PREFIX
@@ -66,7 +68,7 @@ export class GameService {
     }
 
     public createSession(id: string, player1Id: string, player1Color: PlayerColor, player2Id: string, player2Color: PlayerColor, gameMode: GameMode = 'classic', gameVariant: GameVariant = 'standard'): GameState {
-        const config = BOARD_CONFIG[gameMode];
+        const config = gameVariant === 'onslaught' ? ONSLAUGHT_CONFIG[gameMode] : BOARD_CONFIG[gameMode];
         const initialBoard: Cell[][] = Array(config.rows).fill(null).map((_, row) =>
             Array(config.cols).fill(null).map((_, col) => ({
                 row,
@@ -117,6 +119,11 @@ export class GameService {
         this.setupStates.set(player2Id, { hasPlacedKingPit: false, hasShuffled: false });
 
         console.log(`📝 Session ${id} created and stored.`);
+
+        if (gameVariant === 'onslaught') {
+            this.initializeOnslaughtGame(gameState);
+        }
+
         return gameState;
     }
 
@@ -127,7 +134,7 @@ export class GameService {
         gameVariant: GameVariant = 'standard'
     ): GameState {
         const sessionId = uuidv4();
-        const config = BOARD_CONFIG[gameMode];
+        const config = gameVariant === 'onslaught' ? ONSLAUGHT_CONFIG[gameMode] : BOARD_CONFIG[gameMode];
         const initialBoard: Cell[][] = Array(config.rows).fill(null).map((_, row) =>
             Array(config.cols).fill(null).map((_, col) => ({
                 row,
@@ -187,7 +194,72 @@ export class GameService {
         this.aiService.initSession(sessionId, aiColor);
 
         console.log(`🤖 Singleplayer session ${sessionId} created (human=${humanColor}, AI=${aiColor}, mode=${gameMode})`);
+
+        if (gameVariant === 'onslaught') {
+            this.initializeOnslaughtGame(gameState);
+        }
+
         return gameState;
+    }
+
+    private initializeOnslaughtGame(session: GameState): void {
+        const gameMode = session.gameMode;
+        const config = ONSLAUGHT_CONFIG[gameMode]; // We know it's onslaught here
+
+        // Setup for both players
+        const players = [session.players.red, session.players.blue];
+
+        for (const player of players) {
+            if (!player) continue;
+
+            // Generate pieces
+            const rpsPieces: PieceType[] = [];
+            const piecesConfig = config.pieces;
+
+            for (let i = 0; i < piecesConfig.rock; i++) rpsPieces.push('rock');
+            for (let i = 0; i < piecesConfig.paper; i++) rpsPieces.push('paper');
+            for (let i = 0; i < piecesConfig.scissors; i++) rpsPieces.push('scissors');
+            for (let i = 0; i < (piecesConfig.lizard || 0); i++) rpsPieces.push('lizard');
+            for (let i = 0; i < (piecesConfig.spock || 0); i++) rpsPieces.push('spock');
+
+            // Shuffle pieces
+            for (let i = rpsPieces.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [rpsPieces[i], rpsPieces[j]] = [rpsPieces[j], rpsPieces[i]];
+            }
+
+            // Determine valid cells
+            const validRows = this.getSetupRows(player.color);
+            const emptyCells: Position[] = [];
+
+            for (const rowIndex of validRows) {
+                for (let col = 0; col < config.cols; col++) {
+                    // Onslaught boards are small, we assume full rows are used or enough capacity
+                    emptyCells.push({ row: rowIndex, col });
+                }
+            }
+
+            // Fill
+            for (let i = 0; i < rpsPieces.length && i < emptyCells.length; i++) {
+                const piece: Piece = {
+                    id: uuidv4(),
+                    owner: player.color,
+                    type: rpsPieces[i],
+                    position: emptyCells[i],
+                    isRevealed: true, // Onslaught = No Fog of War
+                    hasHalo: false
+                };
+                player.pieces.push(piece);
+                session.board[emptyCells[i].row][emptyCells[i].col].piece = piece;
+            }
+
+            // Update setup state
+            const setupState = this.setupStates.get(player.socketId);
+            if (setupState) {
+                setupState.hasPlacedKingPit = true; // Skipped, but marked done
+                setupState.hasShuffled = true;
+            }
+        }
     }
 
     public getSession(sessionId: string): GameState | undefined {
@@ -237,6 +309,9 @@ export class GameService {
 
         if (session.phase !== 'setup') {
             return { success: false, error: 'Not in setup phase' };
+        }
+        if (session.gameVariant === 'onslaught') {
+            return { success: false, error: 'Manual placement disabled in Onslaught mode' };
         }
         if (player.isReady) {
             return { success: false, error: 'Setup already confirmed' };
@@ -339,7 +414,13 @@ export class GameService {
             return { success: false, error: 'Cannot reshuffle when ready' };
         }
 
+        // Use Onslaught config if applicable
+        const effectiveConfig = session.gameVariant === 'onslaught'
+            ? ONSLAUGHT_CONFIG[gameMode]
+            : config;
+
         const setupState = this.setupStates.get(socketId);
+        // For Onslaught, King/Pit are effectively "placed" (skipped), so we double check the flag which we set to true
         if (!setupState?.hasPlacedKingPit) {
             return { success: false, error: 'Must place King and Pit first' };
         }
@@ -348,8 +429,9 @@ export class GameService {
         const validRows = this.getSetupRows(color);
         const emptyCells: Position[] = [];
 
+        // Use effective config dimensions
         for (const rowIndex of validRows) {
-            for (let col = 0; col < config.cols; col++) {
+            for (let col = 0; col < effectiveConfig.cols; col++) {
                 const cell = session.board[rowIndex][col];
                 // Cell is empty or has RPS piece (which we'll replace)
                 if (!cell.piece || (cell.piece.owner === color && !['king', 'pit'].includes(cell.piece.type))) {
@@ -366,7 +448,7 @@ export class GameService {
 
         // Create RPS pieces based on game mode config
         const rpsPieces: PieceType[] = [];
-        const piecesConfig = config.pieces;
+        const piecesConfig = effectiveConfig.pieces;
 
         for (let i = 0; i < piecesConfig.rock; i++) rpsPieces.push('rock');
         for (let i = 0; i < piecesConfig.paper; i++) rpsPieces.push('paper');
@@ -387,7 +469,7 @@ export class GameService {
                 owner: color,
                 type: rpsPieces[i],
                 position: emptyCells[i],
-                isRevealed: false,
+                isRevealed: session.gameVariant === 'onslaught' || session.gameVariant === 'clearday',
                 hasHalo: false
             };
             player.pieces.push(piece);
@@ -470,6 +552,64 @@ export class GameService {
     }
 
     /**
+     * Check for Onslaught win conditions (Elimination or Showdown).
+     * Returns true if the game ended or transitioned to tie-breaker.
+     */
+    private handleOnslaughtCheck(session: GameState): boolean {
+        const redCount = session.players.red?.pieces.length || 0;
+        const blueCount = session.players.blue?.pieces.length || 0;
+
+        if (redCount === 0) {
+            session.phase = 'finished';
+            session.winner = 'blue';
+            session.winReason = 'elimination';
+            console.log(`⚔️ Onslaught: Blue wins by elimination!`);
+            return true;
+        }
+        if (blueCount === 0) {
+            session.phase = 'finished';
+            session.winner = 'red';
+            session.winReason = 'elimination';
+            console.log(`⚔️ Onslaught: Red wins by elimination!`);
+            return true;
+        }
+
+        if (redCount === 1 && blueCount === 1) {
+            // Showdown logic
+            const redPiece = session.players.red!.pieces[0];
+            const bluePiece = session.players.blue!.pieces[0];
+
+            console.log(`⚔️ Onslaught Showdown: ${redPiece.type} (red) vs ${bluePiece.type} (blue)`);
+
+            // Reuse resolveCombat logic for comparison
+            const result = this.resolveCombat(redPiece, bluePiece, session.gameMode);
+
+            if (result === 'attacker_wins') {
+                session.phase = 'finished';
+                session.winner = 'red';
+                session.winReason = 'elimination';
+                console.log(`⚔️ Onslaught Showdown: Red wins!`);
+            } else if (result === 'defender_wins') {
+                session.phase = 'finished';
+                session.winner = 'blue';
+                session.winReason = 'elimination';
+                console.log(`⚔️ Onslaught Showdown: Blue wins!`);
+            } else {
+                // Tie - Trigger Tie Breaker
+                session.phase = 'tie_breaker';
+                session.combatState = {
+                    attackerId: redPiece.id,
+                    defenderId: bluePiece.id,
+                    isTie: true
+                };
+                console.log(`⚔️ Onslaught Showdown: Tie! Entering Tie Breaker.`);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * Perform full AI setup: place King/Pit strategically, randomize pieces, confirm.
      * Called after the human player's setup is done in a singleplayer session.
      */
@@ -490,19 +630,22 @@ export class GameService {
         const aiSocketId = this.getAISocketId(sessionId);
         if (!aiSocketId) return { success: false, error: 'AI socket not found' };
 
-        // Generate strategic placement
-        const { kingPosition, pitPosition } = this.aiService.generateSetup(session.gameMode, aiColor);
+        // In Onslaught, pieces are already placed by initializeOnslaughtGame
+        if (session.gameVariant !== 'onslaught') {
+            // Generate strategic placement
+            const { kingPosition, pitPosition } = this.aiService.generateSetup(session.gameMode, aiColor);
 
-        // Place King and Pit
-        const placeResult = this.placeKingPit(aiSocketId, kingPosition, pitPosition);
-        if (!placeResult.success) {
-            return { success: false, error: `AI King/Pit placement failed: ${placeResult.error}` };
-        }
+            // Place King and Pit
+            const placeResult = this.placeKingPit(aiSocketId, kingPosition, pitPosition);
+            if (!placeResult.success) {
+                return { success: false, error: `AI King/Pit placement failed: ${placeResult.error}` };
+            }
 
-        // Randomize pieces
-        const randomizeResult = this.randomizePieces(aiSocketId);
-        if (!randomizeResult.success) {
-            return { success: false, error: `AI randomize failed: ${randomizeResult.error}` };
+            // Randomize pieces
+            const randomizeResult = this.randomizePieces(aiSocketId);
+            if (!randomizeResult.success) {
+                return { success: false, error: `AI randomize failed: ${randomizeResult.error}` };
+            }
         }
 
         // Confirm setup
@@ -634,7 +777,9 @@ export class GameService {
         if (!session || session.phase !== 'playing') return [];
 
         const gameMode = session.gameMode;
-        const config = BOARD_CONFIG[gameMode];
+        const config = session.gameVariant === 'onslaught'
+            ? ONSLAUGHT_CONFIG[gameMode]
+            : BOARD_CONFIG[gameMode];
         const color = this.getPlayerColor(socketId);
         if (!color) return [];
 
@@ -930,6 +1075,12 @@ export class GameService {
             // Reveal and add halo to winner
             winner.isRevealed = true;
             winner.hasHalo = true;
+
+            if (session.gameVariant === 'onslaught') {
+                if (this.handleOnslaughtCheck(session)) {
+                    return { success: true, combat: true };
+                }
+            }
 
             // --- AI Inference Integration ---
             if (session.opponentType === 'ai') {
@@ -1243,6 +1394,22 @@ export class GameService {
             winner.isRevealed = true;
             winner.hasHalo = true;
 
+            if (session.gameVariant === 'onslaught') {
+                if (this.handleOnslaughtCheck(session)) {
+                    session.combatState = null;
+                    return {
+                        success: true,
+                        bothChosen: true,
+                        attackerChoice: resolvedAttackerChoice,
+                        defenderChoice: resolvedDefenderChoice,
+                        attackerId: resolvedAttackerId,
+                        defenderId: resolvedDefenderId,
+                        attackerOwner,
+                        defenderOwner
+                    };
+                }
+            }
+
             // Return to playing phase
             session.phase = 'playing';
             session.combatState = null;
@@ -1421,7 +1588,9 @@ export class GameService {
         const session = this.sessions.get(sessionId);
         if (!session) return { success: false, error: 'Session not found' };
 
-        const config = BOARD_CONFIG[session.gameMode];
+        const config = session.gameVariant === 'onslaught'
+            ? ONSLAUGHT_CONFIG[session.gameMode]
+            : BOARD_CONFIG[session.gameMode];
 
         // Reset board to empty using mode-specific dimensions
         session.board = Array(config.rows).fill(null).map((_, row) =>
@@ -1442,6 +1611,11 @@ export class GameService {
             session.players.blue.pieces = [];
             session.players.blue.isReady = false;
             this.setupStates.set(session.players.blue.socketId, { hasPlacedKingPit: false, hasShuffled: false });
+        }
+
+        // For Onslaught, re-run initialization to place pieces and set flags
+        if (session.gameVariant === 'onslaught') {
+            this.initializeOnslaughtGame(session);
         }
 
         // Reset game state

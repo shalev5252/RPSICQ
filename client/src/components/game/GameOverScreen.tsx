@@ -65,6 +65,10 @@ export const GameOverScreen: React.FC = () => {
                     : t('game.game_over.msg_timeout_loss', 'Time ran out.');
             case 'draw':
                 return t('game.game_over.msg_draw', 'Game ended in a draw.');
+            case 'elimination':
+                return isWinner
+                    ? t('game.game_over.msg_elimination_win', 'You eliminated the enemy army!')
+                    : t('game.game_over.msg_elimination_loss', 'Your army was eliminated!');
             case 'king_captured':
             default:
                 return isWinner

@@ -59,31 +59,50 @@ export class ExpectimaxSearch {
 
         const opponentColor: PlayerColor = aiColor === 'red' ? 'blue' : 'red';
 
-        // Determine search depth dynamically based on piece count
-        // More pieces = shallower search for performance; fewer pieces = deeper for tactics
+        // Determine search depth dynamically based on piece count and game variant
+        // Onslaught has smaller board - can search deeper for smarter play
         const totalPieces = (gameState.players[aiColor]?.pieces.length ?? 0) +
             (gameState.players[opponentColor]?.pieces.length ?? 0);
-        let depth = 2;  // default for early/mid game
-        if (totalPieces <= 6) {
-            depth = 4;  // endgame: precise tactics, solve the board
-        } else if (totalPieces <= 10) {
-            depth = 3;  // late midgame: look deeper for combinations
+
+        // Depth thresholds (applies to all modes):
+        // - Early game (>25 pieces): depth 2
+        // - Mid game (<=25 pieces): depth 3
+        // - Late game (<=15 pieces): depth 4
+        // - Endgame (<=10 pieces): depth 5
+        let depth: number;
+        if (totalPieces <= 12) {
+            depth = 6;  // Endgame: precise tactics
+        } else if (totalPieces <= 17) {
+            depth = 5;  // Late game
+        } else if (totalPieces <= 23) {
+            depth = 4;  // Mid game
+        } else {
+            depth = 3;  // Early game (>25 pieces)
+        }
+
+        // Onslaught bonus: search one level deeper due to smaller board
+        if (gameState.gameVariant === 'onslaught') {
+            depth = Math.min(depth + 1, 6);
         }
 
         aiLog(`Search depth: ${depth}, Total pieces: ${totalPieces}`);
 
-        // --- Emergency check: King in danger ---
-        const emergencyMove = this.checkKingEmergency(gameState, aiColor, bayesianState, weights);
-        if (emergencyMove) {
-            aiLog(`EMERGENCY: King in danger! Moving to defend.`);
-            return emergencyMove;
+        // --- Emergency check: King in danger (skip for Onslaught - no King) ---
+        if (gameState.gameVariant !== 'onslaught') {
+            const emergencyMove = this.checkKingEmergency(gameState, aiColor, bayesianState, weights);
+            if (emergencyMove) {
+                aiLog(`EMERGENCY: King in danger! Moving to defend.`);
+                return emergencyMove;
+            }
         }
 
         // Generate all candidate moves
         const candidates: ScoredMove[] = [];
 
         for (const piece of aiPlayer.pieces) {
-            if (piece.type === 'king' || piece.type === 'pit') continue;
+            // In standard mode, skip King and Pit (they don't move offensively)
+            // In Onslaught, there are no King/Pit pieces, so this is a no-op safety check
+            if (gameState.gameVariant !== 'onslaught' && (piece.type === 'king' || piece.type === 'pit')) continue;
 
             const validMoves = this.evaluator.getValidMoves(piece, aiColor, gameState);
             for (const to of validMoves) {
@@ -504,7 +523,8 @@ export class ExpectimaxSearch {
         let totalWeight = 0;
 
         for (const piece of opponentPlayer.pieces) {
-            if (piece.type === 'king' || piece.type === 'pit') continue;
+            // Skip King/Pit in opponent model for standard mode
+            if (gameState.gameVariant !== 'onslaught' && (piece.type === 'king' || piece.type === 'pit')) continue;
 
             const validMoves = this.evaluator.getValidMoves(piece, opponentColor, gameState);
             for (const to of validMoves) {
@@ -621,7 +641,8 @@ export class ExpectimaxSearch {
         let bestScore = -Infinity;
 
         for (const piece of aiPlayer.pieces) {
-            if (piece.type === 'king' || piece.type === 'pit') continue;
+            // Skip King/Pit in standard mode only
+            if (gameState.gameVariant !== 'onslaught' && (piece.type === 'king' || piece.type === 'pit')) continue;
 
             const validMoves = this.evaluator.getValidMoves(piece, aiColor, gameState);
             for (const to of validMoves) {

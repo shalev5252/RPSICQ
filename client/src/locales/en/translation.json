@@ -48,7 +48,8 @@
         "room_joining": "Joining room...",
         "select_variant": "Select Variant",
         "variant_standard": "Standard",
-        "variant_clearday": "Clear Day"
+        "variant_clearday": "Clear Day",
+        "variant_onslaught": "Onslaught"
     },
     "setup": {
         "title": "Setup Phase",
@@ -143,6 +144,7 @@
             "reason_no_moves": "No Valid Moves",
             "reason_timeout": "Time Out",
             "reason_disconnect": "Opponent Disconnected",
+            "reason_elimination": "Elimination",
             "play_again": "Play Again",
             "rematch_requested": "Rematch Requested...",
             "return_home": "Return to Menu",
@@ -154,6 +156,8 @@
             "msg_disconnect_loss": "Disconnected.",
             "msg_timeout_win": "Opponent timed out.",
             "msg_timeout_loss": "Time ran out.",
+            "msg_elimination_win": "You eliminated the enemy army!",
+            "msg_elimination_loss": "Your army was eliminated!",
             "msg_draw": "Game ended in a draw.",
             "opponent_rematch": "Opponent wants to play again!",
             "starting": "Starting...",

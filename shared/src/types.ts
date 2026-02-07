@@ -5,7 +5,7 @@
 export type PlayerColor = 'red' | 'blue';
 export type PlayerRole = PlayerColor;
 export type GameMode = 'classic' | 'rpsls';
-export type GameVariant = 'standard' | 'clearday';
+export type GameVariant = 'standard' | 'clearday' | 'onslaught';
 export type PieceType = 'king' | 'pit' | 'rock' | 'paper' | 'scissors' | 'lizard' | 'spock';
 export type CombatElement = 'rock' | 'paper' | 'scissors' | 'lizard' | 'spock';
 export type OpponentType = 'human' | 'ai';
@@ -62,7 +62,7 @@ export interface GameState {
     turnStartTime: number | null;
     combatState: CombatState | null;
     winner: PlayerColor | null;
-    winReason?: 'king_captured' | 'timeout' | 'disconnect' | 'draw' | 'forfeit';
+    winReason?: 'king_captured' | 'timeout' | 'disconnect' | 'draw' | 'forfeit' | 'elimination';
     rematchRequests?: {
         red: boolean;
         blue: boolean;
@@ -120,7 +120,7 @@ export interface CombatResultPayload {
 
 export interface GameOverPayload {
     winner: PlayerColor | null;
-    reason: 'king_captured' | 'timeout' | 'disconnect' | 'draw' | 'forfeit';
+    reason: 'king_captured' | 'timeout' | 'disconnect' | 'draw' | 'forfeit' | 'elimination';
 }
 
 export interface ErrorPayload {

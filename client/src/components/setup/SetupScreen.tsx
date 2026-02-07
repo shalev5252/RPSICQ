@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useSocket } from '../../hooks/useSocket';
 import { useGameStore } from '../../store/gameStore';
 import type { PieceType, Position, PlayerCellView, PlayerPieceView } from '@rps/shared';
-import { SOCKET_EVENTS, RED_SETUP_ROWS, BLUE_SETUP_ROWS, BOARD_CONFIG } from '@rps/shared';
+import { SOCKET_EVENTS, RED_SETUP_ROWS, BLUE_SETUP_ROWS, BOARD_CONFIG, ONSLAUGHT_CONFIG } from '@rps/shared';
 import { Board } from './Board';
 import { PieceTray } from './PieceTray';
 import { RulesModal } from '../game/RulesModal';
@@ -17,6 +17,7 @@ export const SetupScreen: React.FC = () => {
     const setupState = useGameStore((state) => state.setupState);
     const gamePhase = useGameStore((state) => state.gamePhase);
     const gameMode = useGameStore((state) => state.gameMode);
+    const gameVariant = useGameStore((state) => state.gameVariant);
     const setKingPosition = useGameStore((state) => state.setKingPosition);
     const setPitPosition = useGameStore((state) => state.setPitPosition);
 
@@ -35,7 +36,9 @@ export const SetupScreen: React.FC = () => {
 
     const validDropRows = myColor === 'red' ? RED_SETUP_ROWS : BLUE_SETUP_ROWS;
     const activeRows = BOARD_CONFIG[gameMode].rows;
-    const activeCols = BOARD_CONFIG[gameMode].cols;
+    const activeCols = gameVariant === 'onslaught'
+        ? ONSLAUGHT_CONFIG[gameMode].cols
+        : BOARD_CONFIG[gameMode].cols;
 
     // Convert rows to Position array for Board component
     // Valid cells are shown if dragging OR if a piece is selected
@@ -264,7 +267,7 @@ export const SetupScreen: React.FC = () => {
         return <div className="setup-screen">{t('setup.loading')}</div>;
     }
 
-    const canShuffle = kingPlaced && pitPlaced;
+    const canShuffle = (kingPlaced && pitPlaced) || gameVariant === 'onslaught';
     const canConfirm = setupState.hasShuffled && !setupState.isReady;
 
     return (
@@ -309,18 +312,20 @@ export const SetupScreen: React.FC = () => {
             )}
 
             <div className="setup-screen__content">
-                <div className="setup-screen__tray">
-                    <PieceTray
-                        myColor={myColor}
-                        kingPlaced={kingPlaced}
-                        pitPlaced={pitPlaced}
-                        onDragStart={handleDragStart}
-                        onDragEnd={handleDragEnd}
-                        selectedPiece={selectedTrayPiece}
-                        onPieceClick={handleTrayPieceClick}
-                        gameMode={gameMode}
-                    />
-                </div>
+                {gameVariant !== 'onslaught' && (
+                    <div className="setup-screen__tray">
+                        <PieceTray
+                            myColor={myColor}
+                            kingPlaced={kingPlaced}
+                            pitPlaced={pitPlaced}
+                            onDragStart={handleDragStart}
+                            onDragEnd={handleDragEnd}
+                            selectedPiece={selectedTrayPiece}
+                            onPieceClick={handleTrayPieceClick}
+                            gameMode={gameMode}
+                        />
+                    </div>
+                )}
 
                 <div className="setup-screen__board-container">
                     <div className="setup-screen__board-label setup-screen__board-label--opponent">
