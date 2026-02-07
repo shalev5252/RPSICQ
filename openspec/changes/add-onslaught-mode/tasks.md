@@ -30,5 +30,5 @@
 - [x] 4.5 Hide Turn Timer if variant is Onslaught. (Timer not visually present yet, skipped)
 
 ## 5. Verification
-- [ ] 5.1 Manual Test: Classic Onslaught (6x3 board, 2 of each piece, no king/pit). winning logic.
-- [ ] 5.2 Manual Test: RPSLS Onslaught (6x5 board, 2 of each piece).
+- [x] 5.1 Manual Test: Classic Onslaught (6x3 board, 2 of each piece, no king/pit). winning logic.
+- [x] 5.2 Manual Test: RPSLS Onslaught (6x5 board, 2 of each piece).

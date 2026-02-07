@@ -65,10 +65,10 @@ export class ExpectimaxSearch {
             (gameState.players[opponentColor]?.pieces.length ?? 0);
 
         // Depth thresholds (applies to all modes):
-        // - Early game (>25 pieces): depth 2
-        // - Mid game (<=25 pieces): depth 3
-        // - Late game (<=15 pieces): depth 4
-        // - Endgame (<=10 pieces): depth 5
+        // - Early game (>23 pieces): depth 3
+        // - Mid game (<=23 pieces): depth 4
+        // - Late game (<=17 pieces): depth 5
+        // - Endgame (<=12 pieces): depth 6
         let depth: number;
         if (totalPieces <= 12) {
             depth = 6;  // Endgame: precise tactics

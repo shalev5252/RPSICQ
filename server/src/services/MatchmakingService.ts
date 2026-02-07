@@ -143,7 +143,6 @@ export class MatchmakingService {
         socket2.join(sessionId);
 
         // Notify players
-        // Notify players
         socket1.emit(SOCKET_EVENTS.GAME_FOUND, {
             sessionId,
             color: p1Role

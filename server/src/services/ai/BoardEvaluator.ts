@@ -40,8 +40,6 @@ export class BoardEvaluator {
 
         if (!aiPlayer || !opponentPlayer) return 0;
 
-        if (!aiPlayer || !opponentPlayer) return 0;
-
         if (gameState.gameVariant === 'onslaught') {
             return this.evaluateOnslaught(gameState, aiColor, weights, bayesianState, config);
         }

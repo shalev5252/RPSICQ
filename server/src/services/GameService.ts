@@ -17,7 +17,6 @@ import {
     CombatElement,
     BOARD_CONFIG,
     ONSLAUGHT_CONFIG,
-    ONSLAUGHT_END_PIECE_COUNT,
     RPSLS_WINS,
     AI_ID_PREFIX,
     AI_SOCKET_PREFIX

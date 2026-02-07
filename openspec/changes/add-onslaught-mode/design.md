@@ -51,10 +51,10 @@ checkWinCondition(session: GameState): ... {
 
 ### Showdown Logic
 1. Get the type of the remaining RED piece and BLUE piece.
-2. Determine winner using `COMBAT_OUTCOMES`.
-3. If outcome is `win` -> Red wins game.
-4. If outcome is `lose` -> Blue wins game.
-5. If outcome is `tie` -> Trigger `tie_breaker` phase.
+2. Determine winner using `RPSLS_WINS` (covers all five elements: Rock, Paper, Scissors, Lizard, Spock).
+3. If RED piece type is in `RPSLS_WINS[BLUE piece type]` -> Blue wins game.
+4. If BLUE piece type is in `RPSLS_WINS[RED piece type]` -> Red wins game.
+5. If same type -> Trigger `tie_breaker` phase.
    - Note: This tie breaker needs to be treated as "Final Game Winning Tie Breaker".
    - Current tie breaker logic restarts combat. We can reuse this, but the Result of the combat must be Game Over, not just piece removal (since pieces are reused or removed, but here we just need a winner). 
    - Actually, standard tie breaker logic allows players to pick a new element. Then they fight again. This works perfectly. If they pick different elements, one wins -> Game Over. If they pick same -> Tie again.
