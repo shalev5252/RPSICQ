@@ -92,6 +92,14 @@ export const MatchmakingScreen: React.FC = () => {
                         <div className="variant-select__icon">☀️</div>
                         <div className="variant-select__label">{t('matchmaking.variant_clearday')}</div>
                     </button>
+                    <button
+                        className={`variant-select__option ${gameVariant === 'onslaught' ? 'variant-select__option--selected' : ''}`}
+                        onClick={() => setGameVariant('onslaught')}
+                        disabled={isBusy}
+                    >
+                        <div className="variant-select__icon">⚔️</div>
+                        <div className="variant-select__label">{t('matchmaking.variant_onslaught')}</div>
+                    </button>
                 </div>
             </div>
 

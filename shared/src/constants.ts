@@ -47,6 +47,37 @@ export const BOARD_CONFIG = {
     }
 } as const;
 
+export const ONSLAUGHT_CONFIG = {
+    classic: {
+        rows: 6,
+        cols: 3,
+        pieces: {
+            king: 0,
+            pit: 0,
+            rock: 2,
+            paper: 2,
+            scissors: 2,
+            lizard: 0,
+            spock: 0
+        }
+    },
+    rpsls: {
+        rows: 6,
+        cols: 5,
+        pieces: {
+            king: 0,
+            pit: 0,
+            rock: 2,
+            paper: 2,
+            scissors: 2,
+            lizard: 2,
+            spock: 2
+        }
+    }
+} as const;
+
+export const ONSLAUGHT_END_PIECE_COUNT = 2;
+
 export const RPSLS_WINS: Record<string, string[]> = {
     rock: ['scissors', 'lizard'],
     paper: ['rock', 'spock'],

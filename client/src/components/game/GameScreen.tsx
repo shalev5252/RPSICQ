@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useSocket } from '../../hooks/useSocket';
 import { useGameStore } from '../../store/gameStore';
 import type { PieceType, Position, PlayerPieceView } from '@rps/shared';
-import { SOCKET_EVENTS, BOARD_ROWS, BOARD_COLS, MOVEMENT_DIRECTIONS, GameVariant } from '@rps/shared';
+import { SOCKET_EVENTS, BOARD_COLS, MOVEMENT_DIRECTIONS, GameVariant } from '@rps/shared';
 import { Board } from '../setup/Board';
 import { TieBreakerModal } from './TieBreakerModal';
 import { TurnSkippedModal } from './TurnSkippedModal';
@@ -55,12 +55,14 @@ export const GameScreen: React.FC = () => {
 
         const moves: Position[] = [];
         const { row, col } = piece.position;
+        const rows = board.length;
+        const cols = board[0]?.length || BOARD_COLS;
 
         for (const dir of MOVEMENT_DIRECTIONS) {
             const newRow = row + dir.row;
             const newCol = col + dir.col;
 
-            if (newRow < 0 || newRow >= BOARD_ROWS || newCol < 0 || newCol >= BOARD_COLS) {
+            if (newRow < 0 || newRow >= rows || newCol < 0 || newCol >= cols) {
                 continue;
             }
 
@@ -207,6 +209,11 @@ export const GameScreen: React.FC = () => {
                 {gameVariant === 'clearday' && (
                     <div className="game-screen__clearday-badge" title={t('matchmaking.variant_clearday')}>
                         ☀️
+                    </div>
+                )}
+                {gameVariant === 'onslaught' && (
+                    <div className="game-screen__onslaught-badge" title={t('matchmaking.variant_onslaught')}>
+                        ⚔️
                     </div>
                 )}
                 <div className={`game-screen__turn-indicator ${isMyTurn ? 'game-screen__turn-indicator--my-turn' : 'game-screen__turn-indicator--opponent-turn'}`}>

@@ -5,6 +5,7 @@ import {
     Position,
     PieceType,
     BOARD_CONFIG,
+    ONSLAUGHT_CONFIG,
     RPSLS_WINS,
     MOVEMENT_DIRECTIONS
 } from '@rps/shared';
@@ -29,13 +30,19 @@ export class BoardEvaluator {
         weights: EvalWeights,
         bayesianState: BayesianState | undefined
     ): number {
-        const config = BOARD_CONFIG[gameState.gameMode];
+        const config = (gameState.gameVariant === 'onslaught')
+            ? ONSLAUGHT_CONFIG[gameState.gameMode]
+            : BOARD_CONFIG[gameState.gameMode];
         const maxRow = config.rows - 1;
         const opponentColor: PlayerColor = aiColor === 'red' ? 'blue' : 'red';
         const aiPlayer = gameState.players[aiColor];
         const opponentPlayer = gameState.players[opponentColor];
 
         if (!aiPlayer || !opponentPlayer) return 0;
+
+        if (gameState.gameVariant === 'onslaught') {
+            return this.evaluateOnslaught(gameState, aiColor, weights, bayesianState, config);
+        }
 
         // --- Terminal State Check ---
         const ownKing = aiPlayer.pieces.find(p => p.type === 'king');
@@ -115,6 +122,95 @@ export class BoardEvaluator {
                     Math.abs(op.position.col - ownKing.position.col);
                 if (dist === 1) {
                     score -= 50; // heavy flat penalty for adjacent enemy to king
+                }
+            }
+        }
+
+        return score;
+    }
+
+    private evaluateOnslaught(
+        gameState: GameState,
+        aiColor: PlayerColor,
+        weights: EvalWeights,
+        bayesianState: BayesianState | undefined,
+        config: { rows: number; cols: number }
+    ): number {
+        const opponentColor: PlayerColor = aiColor === 'red' ? 'blue' : 'red';
+        const aiPlayer = gameState.players[aiColor];
+        const opponentPlayer = gameState.players[opponentColor];
+        if (!aiPlayer || !opponentPlayer) return 0;
+
+        const aiPieces = aiPlayer.pieces;
+        const opPieces = opponentPlayer.pieces;
+
+        // Terminal States: Elimination
+        if (aiPieces.length === 0) return -10000;
+        if (opPieces.length === 0) return 10000;
+
+        // Terminal States: Showdown (1v1)
+        if (aiPieces.length === 1 && opPieces.length === 1) {
+            const myPiece = aiPieces[0];
+            const opPiece = opPieces[0];
+            const knownOpType = this.getKnownOrRevealedType(opPiece, bayesianState);
+
+            if (knownOpType) {
+                // Known outcome
+                if (RPSLS_WINS[myPiece.type]?.includes(knownOpType)) return 10000; // I win
+                if (RPSLS_WINS[knownOpType]?.includes(myPiece.type)) return -10000; // I lose
+                return 0; // Tie - leads to Tie Breaker (neutral for now, or slight penalty?)
+            } else {
+                // Unknown - calculate expected win probability
+                // This is effectively evaluateCombat but globally important
+                const beliefs = bayesianState?.trackedPieces.get(opPiece.id)?.beliefs;
+                if (beliefs) {
+                    let winProb = 0;
+                    let lossProb = 0;
+                    for (const [type, prob] of Object.entries(beliefs)) {
+                        if (RPSLS_WINS[myPiece.type]?.includes(type as PieceType)) winProb += prob;
+                        else if (RPSLS_WINS[type as PieceType]?.includes(myPiece.type)) lossProb += prob;
+                    }
+                    if (winProb > 0.8) return 9000;
+                    if (lossProb > 0.8) return -9000;
+                }
+            }
+        }
+
+        let score = 0;
+
+        // 1. Material Advantage (Primary Driver)
+        // High weight since elimination is the goal - heavily incentivize kills
+        score += (aiPieces.length - opPieces.length) * (weights.pieceAdvantage * 4.0);
+
+        // 2. Positional Factors
+        const maxRow = config.rows - 1;
+
+        for (const piece of aiPieces) {
+            // Forward Progress - aggressive advance
+            const forwardProgress = aiColor === 'red'
+                ? piece.position.row
+                : maxRow - piece.position.row;
+            score += forwardProgress * (weights.forwardProgress * 2.5);
+
+            // Center Control
+            const centerCol = (config.cols - 1) / 2;
+            const distFromCenterCol = Math.abs(piece.position.col - centerCol);
+            score += Math.max(0, 2 - distFromCenterCol) * weights.centerControl;
+
+            // Infiltration (Enemy Half) - strong reward for invading
+            const isRed = aiColor === 'red';
+            const isInEnemyHalf = isRed ? piece.position.row >= (config.rows / 2) : piece.position.row < (config.rows / 2);
+            if (isInEnemyHalf) {
+                score += weights.infiltration * 3.0;
+            }
+
+            // Threats - reduce fear significantly to encourage risks
+            for (const op of opPieces) {
+                const dist = Math.abs(op.position.row - piece.position.row) +
+                    Math.abs(op.position.col - piece.position.col);
+                if (dist === 1) {
+                    const threatScore = this.assessThreat(piece, op, bayesianState);
+                    score -= threatScore * (weights.threatPenalty * 0.4);
                 }
             }
         }
@@ -203,7 +299,11 @@ export class BoardEvaluator {
     ): Position[] {
         if (piece.type === 'king' || piece.type === 'pit') return [];
 
-        const config = BOARD_CONFIG[gameState.gameMode];
+
+
+        const config = (gameState.gameVariant === 'onslaught')
+            ? ONSLAUGHT_CONFIG[gameState.gameMode]
+            : BOARD_CONFIG[gameState.gameMode];
         const moves: Position[] = [];
 
         for (const dir of MOVEMENT_DIRECTIONS) {

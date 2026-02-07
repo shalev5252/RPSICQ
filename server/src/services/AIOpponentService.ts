@@ -6,6 +6,7 @@ import {
     PieceType,
     CombatElement,
     BOARD_CONFIG,
+    ONSLAUGHT_CONFIG,
     RPSLS_WINS,
     MOVEMENT_DIRECTIONS,
     AI_DELAY_MIN_MS,
@@ -228,7 +229,9 @@ export class AIOpponentService {
             aiLog(`Suboptimal path triggered (${(AI_SUBOPTIMAL_CHANCE * 100).toFixed(0)}% chance)`);
             const player = gameState.players[aiColor];
             if (player) {
-                const config = BOARD_CONFIG[gameState.gameMode];
+                const config = (gameState.gameVariant === 'onslaught')
+                    ? ONSLAUGHT_CONFIG[gameState.gameMode]
+                    : BOARD_CONFIG[gameState.gameMode];
 
                 // Collect ALL valid non-suicidal moves
                 const allSafeMoves: { from: Position; to: Position }[] = [];
@@ -263,7 +266,9 @@ export class AIOpponentService {
         const player = gameState.players[aiColor];
         if (!player) return null;
 
-        const config = BOARD_CONFIG[gameState.gameMode];
+        const config = (gameState.gameVariant === 'onslaught')
+            ? ONSLAUGHT_CONFIG[gameState.gameMode]
+            : BOARD_CONFIG[gameState.gameMode];
         const bayesianState = this.trackers.get(gameState.sessionId)?.getState(gameState.sessionId);
 
         // Collect all valid non-suicidal moves

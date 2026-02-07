@@ -26,6 +26,8 @@ export class MatchmakingService {
         this.queues.set('rpsls', []);
         this.queues.set('classic-clearday', []);
         this.queues.set('rpsls-clearday', []);
+        this.queues.set('classic-onslaught', []);
+        this.queues.set('rpsls-onslaught', []);
     }
 
     private getQueueKey(gameMode: GameMode, gameVariant: GameVariant): QueueKey {
@@ -145,10 +147,18 @@ export class MatchmakingService {
             sessionId,
             color: p1Role
         });
+        const p1Setup = this.gameService.getPlayerSetupView(socket1.id);
+        if (p1Setup) {
+            socket1.emit(SOCKET_EVENTS.SETUP_STATE, p1Setup);
+        }
 
         socket2.emit(SOCKET_EVENTS.GAME_FOUND, {
             sessionId,
             color: p2Role
         });
+        const p2Setup = this.gameService.getPlayerSetupView(socket2.id);
+        if (p2Setup) {
+            socket2.emit(SOCKET_EVENTS.SETUP_STATE, p2Setup);
+        }
     }
 }

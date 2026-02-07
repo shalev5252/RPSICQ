@@ -61,11 +61,11 @@ interface GameStore {
         phase: string;
         isMyTurn: boolean;
         winner?: PlayerColor | null;
-        winReason?: 'king_captured' | 'timeout' | 'disconnect' | 'draw' | 'forfeit';
+        winReason?: 'king_captured' | 'timeout' | 'disconnect' | 'draw' | 'forfeit' | 'elimination';
         combatPosition?: Position;
         combatPieceType?: PieceType;
     } | null;
-    setGameState: (state: { board: PlayerCellView[][]; currentTurn: PlayerColor | null; phase: string; isMyTurn: boolean; winner?: PlayerColor | null; winReason?: 'king_captured' | 'timeout' | 'disconnect' | 'draw' | 'forfeit'; combatPosition?: Position; combatPieceType?: PieceType } | null) => void;
+    setGameState: (state: { board: PlayerCellView[][]; currentTurn: PlayerColor | null; phase: string; isMyTurn: boolean; winner?: PlayerColor | null; winReason?: 'king_captured' | 'timeout' | 'disconnect' | 'draw' | 'forfeit' | 'elimination'; combatPosition?: Position; combatPieceType?: PieceType } | null) => void;
     // Rematch state
     rematchState: RematchState;
     setRematchState: (state: Partial<RematchState>) => void;
