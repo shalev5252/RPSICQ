@@ -20,6 +20,7 @@ import {
     EmoteId,
     EmoteReceivedPayload,
     GameOverPayload,
+    DrawOfferPayload,
 } from '@rps/shared';
 import { useSound } from '../context/SoundContext';
 
@@ -338,6 +339,20 @@ export function useSocket() {
             }, 2500);
         };
 
+        const onDrawOffered = (payload: DrawOfferPayload) => {
+            console.log(`🤝 Draw offered by: ${payload.from}`);
+            useGameStore.getState().setPendingDrawOffer(payload.from);
+        };
+
+        const onDrawDeclined = () => {
+            console.log(`❌ Draw offer was declined`);
+            useGameStore.getState().setDrawDeclined(true);
+            // Auto-clear notification after 3 seconds
+            setTimeout(() => {
+                useGameStore.getState().setDrawDeclined(false);
+            }, 3000);
+        };
+
         socket.on('connect', onConnect);
         socket.on('disconnect', onDisconnect);
         socket.on('connect_error', onConnectError);
@@ -358,6 +373,8 @@ export function useSocket() {
         socket.on(SOCKET_EVENTS.ROOM_ERROR, onRoomError);
         socket.on(SOCKET_EVENTS.ROOM_EXPIRED, onRoomExpired);
         socket.on(SOCKET_EVENTS.EMOTE_RECEIVED, onEmoteReceived);
+        socket.on(SOCKET_EVENTS.DRAW_OFFERED, onDrawOffered);
+        socket.on(SOCKET_EVENTS.DRAW_DECLINED, onDrawDeclined);
         socket.on(SOCKET_EVENTS.ERROR, onError);
 
         // Sync state immediately if socket is already connected (handles race condition on mount)
@@ -387,6 +404,8 @@ export function useSocket() {
             socket.off(SOCKET_EVENTS.ROOM_ERROR, onRoomError);
             socket.off(SOCKET_EVENTS.ROOM_EXPIRED, onRoomExpired);
             socket.off(SOCKET_EVENTS.EMOTE_RECEIVED, onEmoteReceived);
+            socket.off(SOCKET_EVENTS.DRAW_OFFERED, onDrawOffered);
+            socket.off(SOCKET_EVENTS.DRAW_DECLINED, onDrawDeclined);
             socket.off(SOCKET_EVENTS.ERROR, onError);
             if (revealTimerRef.current) clearTimeout(revealTimerRef.current);
             if (revealTimerRef.current) clearTimeout(revealTimerRef.current);
@@ -419,11 +438,26 @@ export function useSocket() {
         }, 3000);
     };
 
+    const offerDraw = () => {
+        const hasOffered = useGameStore.getState().hasOfferedDrawThisTurn;
+        if (hasOffered) return;
+
+        socketRef.current?.emit(SOCKET_EVENTS.OFFER_DRAW);
+        useGameStore.getState().setHasOfferedDrawThisTurn(true);
+    };
+
+    const respondToDraw = (accepted: boolean) => {
+        socketRef.current?.emit(SOCKET_EVENTS.RESPOND_DRAW, { accepted });
+        useGameStore.getState().setPendingDrawOffer(null);
+    };
+
     return {
         socket: socketRef.current,
         isConnected,
         joinQueue,
         leaveQueue,
         sendEmote,
+        offerDraw,
+        respondToDraw,
     };
 }

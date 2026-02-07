@@ -160,5 +160,9 @@ export const SOCKET_EVENTS = {
     SEND_EMOTE: 'send_emote',
     EMOTE_RECEIVED: 'emote_received',
     FORFEIT_GAME: 'forfeit_game',
+    OFFER_DRAW: 'offer_draw',
+    DRAW_OFFERED: 'draw_offered',
+    RESPOND_DRAW: 'respond_draw',
+    DRAW_DECLINED: 'draw_declined',
     ERROR: 'error',
 } as const;

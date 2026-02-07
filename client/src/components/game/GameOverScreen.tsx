@@ -16,6 +16,8 @@ export const GameOverScreen: React.FC = () => {
 
     const isSingleplayer = opponentType === 'ai';
     const winner = gameState.winner;
+    const winReason = gameState.winReason;
+    const isDraw = winReason === 'draw' || winReason === 'draw_offer';
     const isWinner = winner === myColor;
 
     const handleReturnHome = () => {
@@ -64,6 +66,7 @@ export const GameOverScreen: React.FC = () => {
                     ? t('game.game_over.msg_timeout_win', 'Opponent timed out.')
                     : t('game.game_over.msg_timeout_loss', 'Time ran out.');
             case 'draw':
+            case 'draw_offer':
                 return t('game.game_over.msg_draw', 'Game ended in a draw.');
             case 'elimination':
                 return isWinner
@@ -80,8 +83,8 @@ export const GameOverScreen: React.FC = () => {
     return (
         <div className="game-over-screen">
             <div className="game-over-screen__card">
-                <div className={`game-over-screen__result ${isWinner ? 'game-over-screen__result--victory' : 'game-over-screen__result--defeat'}`}>
-                    {isWinner ? t('game.game_over.victory') : t('game.game_over.defeat')}
+                <div className={`game-over-screen__result ${isDraw ? 'game-over-screen__result--draw' : isWinner ? 'game-over-screen__result--victory' : 'game-over-screen__result--defeat'}`}>
+                    {isDraw ? t('game.game_over.draw') : isWinner ? t('game.game_over.victory') : t('game.game_over.defeat')}
                 </div>
 
                 <div className="game-over-screen__message">

@@ -66,6 +66,26 @@
     background-clip: text;
 }
 
+.game-over-screen__result--draw {
+    background: linear-gradient(135deg, #ffd43b, #fab005);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: glow-yellow 2s ease-in-out infinite;
+}
+
+@keyframes glow-yellow {
+
+    0%,
+    100% {
+        filter: drop-shadow(0 0 20px rgba(250, 176, 5, 0.5));
+    }
+
+    50% {
+        filter: drop-shadow(0 0 40px rgba(250, 176, 5, 0.8));
+    }
+}
+
 @keyframes glow {
 
     0%,

@@ -1,0 +1,96 @@
+.draw-offer-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.draw-offer-modal__overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+}
+
+.draw-offer-modal__card {
+    position: relative;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 16px;
+    padding: 24px 32px;
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.draw-offer-modal__icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+}
+
+.draw-offer-modal__title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 8px;
+}
+
+.draw-offer-modal__subtitle {
+    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 20px;
+}
+
+.draw-offer-modal__buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.draw-offer-modal__button {
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    border: none;
+}
+
+.draw-offer-modal__button:hover {
+    transform: translateY(-2px);
+}
+
+.draw-offer-modal__button--accept {
+    background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+    color: #000;
+    box-shadow: 0 4px 12px rgba(74, 222, 128, 0.3);
+}
+
+.draw-offer-modal__button--accept:hover {
+    box-shadow: 0 6px 16px rgba(74, 222, 128, 0.4);
+}
+
+.draw-offer-modal__button--decline {
+    background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(248, 113, 113, 0.3);
+}
+
+.draw-offer-modal__button--decline:hover {
+    box-shadow: 0 6px 16px rgba(248, 113, 113, 0.4);
+}
