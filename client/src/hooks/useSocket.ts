@@ -36,6 +36,7 @@ export function useSocket() {
     const revealTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const resultTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const emoteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const drawDeclineTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
         const socket = socketRef.current;
@@ -131,6 +132,11 @@ export function useSocket() {
                     } else if (validPrevTurn) {
                         const sound = validPrevTurn === 'red' ? 'move1' : 'move2';
                         playSound(sound);
+                    }
+
+                    // Reset draw offer state on turn change
+                    if (turnChanged && payload.currentTurn === useGameStore.getState().myColor) {
+                        useGameStore.getState().setHasOfferedDrawThisTurn(false);
                     }
                 }
             }
@@ -347,9 +353,14 @@ export function useSocket() {
         const onDrawDeclined = () => {
             console.log(`❌ Draw offer was declined`);
             useGameStore.getState().setDrawDeclined(true);
+
+            // Clear any existing timer
+            if (drawDeclineTimerRef.current) clearTimeout(drawDeclineTimerRef.current);
+
             // Auto-clear notification after 3 seconds
-            setTimeout(() => {
+            drawDeclineTimerRef.current = setTimeout(() => {
                 useGameStore.getState().setDrawDeclined(false);
+                drawDeclineTimerRef.current = null;
             }, 3000);
         };
 
@@ -408,9 +419,9 @@ export function useSocket() {
             socket.off(SOCKET_EVENTS.DRAW_DECLINED, onDrawDeclined);
             socket.off(SOCKET_EVENTS.ERROR, onError);
             if (revealTimerRef.current) clearTimeout(revealTimerRef.current);
-            if (revealTimerRef.current) clearTimeout(revealTimerRef.current);
             if (resultTimerRef.current) clearTimeout(resultTimerRef.current);
             if (emoteTimerRef.current) clearTimeout(emoteTimerRef.current);
+            if (drawDeclineTimerRef.current) clearTimeout(drawDeclineTimerRef.current);
             // Do NOT disconnect base socket on unmount of hook, usually
         };
     }, [setConnectionStatus, playSound]);

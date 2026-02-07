@@ -695,6 +695,11 @@ export function setupSocketHandlers(io: Server): void {
         });
 
         socket.on(SOCKET_EVENTS.RESPOND_DRAW, (payload: DrawResponsePayload) => {
+            if (!payload || typeof payload.accepted !== 'boolean') {
+                socket.emit(SOCKET_EVENTS.ERROR, { code: 'INVALID_PAYLOAD', message: 'Invalid draw response payload' });
+                return;
+            }
+
             console.log(`🤝 Player ${socket.id} responding to draw: ${payload.accepted ? 'accepted' : 'declined'}`);
             const result = gameService.respondToDraw(socket.id, payload.accepted);
 

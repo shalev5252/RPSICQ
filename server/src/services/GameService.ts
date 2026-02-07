@@ -867,6 +867,7 @@ export class GameService {
         // Switch turn
         session.currentTurn = color === 'red' ? 'blue' : 'red';
         session.turnStartTime = Date.now();
+        this.resetDrawOffersForTurn(session.sessionId);
 
         console.log(`⏭️ ${color} turn skipped (no movable pieces)`);
         return { success: true };
@@ -1213,6 +1214,7 @@ export class GameService {
             // Switch turn
             session.currentTurn = color === 'red' ? 'blue' : 'red';
             session.turnStartTime = Date.now();
+            this.resetDrawOffersForTurn(session.sessionId);
 
             return { success: true, combat: true };
         }
@@ -1236,6 +1238,7 @@ export class GameService {
         // Switch turn
         session.currentTurn = color === 'red' ? 'blue' : 'red';
         session.turnStartTime = Date.now();
+        this.resetDrawOffersForTurn(session.sessionId);
 
         console.log(`♟️ ${color} moved ${piece.type} from (${from.row},${from.col}) to (${to.row},${to.col})`);
         return { success: true, combat: false };
@@ -1745,10 +1748,12 @@ export class GameService {
         session.currentTurn = null;
         session.turnStartTime = null;
         session.combatState = null;
-        session.winner = null;
         session.winReason = undefined;
         session.rematchRequests = undefined;
         session.aiReady = false;
+
+        // Reset draw offer state
+        this.resetDrawOffersForTurn(sessionId);
 
         // Re-initialize AI session tracking for rematch
         if (session.opponentType === 'ai') {

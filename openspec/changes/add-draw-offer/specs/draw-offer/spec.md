@@ -12,7 +12,7 @@ The system SHALL allow the current player to offer a draw during multiplayer gam
 #### Scenario: Draw offer accepted
 - **WHEN** an opponent receives a draw offer
 - **AND** the opponent clicks "Accept"
-- **THEN** the game ends immediately with result `draw`
+- **THEN** the game ends immediately with result `draw` (internal `winReason` is `draw_offer`)
 - **AND** both players see the game over screen with draw result
 
 #### Scenario: Draw offer declined
@@ -21,6 +21,13 @@ The system SHALL allow the current player to offer a draw during multiplayer gam
 - **THEN** the offering player is notified that draw was declined
 - **AND** the offering player cannot offer draw again until their next turn
 - **AND** normal gameplay continues
+
+#### Scenario: Draw offer auto-cancelled on turn change
+- **WHEN** a player offers a draw
+- **AND** the turn timer expires or the player ends their turn without the opponent responding
+- **THEN** the pending draw offer is automatically cancelled (via `resetDrawOffersForTurn`)
+- **AND** the opponent no longer sees the draw offer notification
+- **AND** the game continues with the next turn
 
 #### Scenario: Draw offer not available in singleplayer
 - **WHEN** the player is in a singleplayer game against AI

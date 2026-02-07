@@ -21,6 +21,15 @@
 - [x] 4.1 Add English translation keys for draw offer UI
 - [x] 4.2 Add Hebrew translation keys for draw offer UI
 
+## 6. Refinements & Fixes
+- [ ] 6.1 Fix client: Remove duplicate `clearTimeout` in `useSocket.ts`
+- [ ] 6.2 Fix client: Reset `hasOfferedDrawThisTurn` on turn change (in `useSocket.ts` or `gameStore.ts`)
+- [ ] 6.3 Fix client: Properly track and clear `drawDeclineTimerRef` in `useSocket.ts`
+- [ ] 6.4 Update spec: Clarify "Draw" vs "draw_offer" win reason
+- [ ] 6.5 Update spec: Add auto-cancellation scenario
+- [ ] 6.6 Fix server: Call `resetDrawOffersForTurn` in `skipTurn`, `makeMove`, `resetGameForRematch`
+- [ ] 6.7 Fix server: Validate payload in `RESPOND_DRAW` handler
+
 ## 5. Testing & Validation
 - [x] 5.1 Build verification passed
 - [ ] 5.2 Test draw offer flow in browser (offer → accept → game ends)
