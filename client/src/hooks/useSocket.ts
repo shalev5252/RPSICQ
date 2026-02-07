@@ -133,11 +133,11 @@ export function useSocket() {
                         const sound = validPrevTurn === 'red' ? 'move1' : 'move2';
                         playSound(sound);
                     }
+                }
 
-                    // Reset draw offer state on turn change
-                    if (turnChanged && payload.currentTurn === useGameStore.getState().myColor) {
-                        useGameStore.getState().setHasOfferedDrawThisTurn(false);
-                    }
+                // Reset draw offer state on turn change
+                if (turnChanged && payload.currentTurn === useGameStore.getState().myColor) {
+                    useGameStore.getState().setHasOfferedDrawThisTurn(false);
                 }
             }
 
