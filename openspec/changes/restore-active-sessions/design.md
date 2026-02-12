@@ -88,7 +88,7 @@ The key insight: **sessionId is already tied to playerId on the server**. When t
 | Scenario | Behavior |
 |----------|----------|
 | Session expired on server | `handleReconnect` returns null → clear localStorage, show homepage |
-| Opponent left during disconnect | `OPPONENT\\_DISCONNECTED` event → clear localStorage, show homepage |
+| Opponent left during disconnect | `OPPONENT_DISCONNECTED` event → clear localStorage, show homepage |
 | localStorage unavailable | Graceful fallback - works like current behavior (no restoration) |
 | Stale sessionId (> 5 min old) | Ignore stored session, show matchmaking screen |
 | User manually clicks "Leave" | Clear localStorage immediately |

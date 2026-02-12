@@ -1,10 +1,10 @@
 ## 1. Test Infrastructure Setup
-- [ ] 1.1 Install Vitest + `@vitest/coverage-v8` in root `devDependencies`
-- [ ] 1.2 Create `vitest.config.ts` for server workspace
-- [ ] 1.3 Add `test`, `test:unit`, `test:integration` npm scripts to `server/package.json` and root `package.json`
-- [ ] 1.4 Install Playwright + `@playwright/test` in root `devDependencies`
-- [ ] 1.5 Create `playwright.config.ts` at repo root; add `test:e2e` script
-- [ ] 1.6 Verify `npm run test:unit` runs successfully (zero tests, zero failures)
+- [x] 1.1 Install Vitest + `@vitest/coverage-v8` in root `devDependencies`
+- [x] 1.2 Create `vitest.config.ts` for server workspace
+- [x] 1.3 Add `test`, `test:unit`, `test:integration` npm scripts to `server/package.json` and root `package.json`  
+- [x] 1.4 Install Playwright + `@playwright/test` in root `devDependencies`
+- [x] 1.5 Create `playwright.config.ts` at repo root; add `test:e2e` script
+- [x] 1.6 Verify `npm run test:unit` runs successfully (zero tests, zero failures)
 
 ## 2. Server Unit Tests — Game Logic
 - [ ] 2.1 `GameService.createSession` — creates valid session with correct board dimensions for classic & RPSLS
@@ -47,5 +47,5 @@
 - [ ] 6.4 Game over screen: verify winner message, rematch button
 
 ## 7. CI Integration
-- [ ] 7.1 Update `.github/workflows/ci.yml` to run `test:unit` and `test:integration` after build
+- [x] 7.1 Add `test` job to `.github/workflows/ci.yml` that runs `npm run test:unit && npm run test:integration` after build
 - [ ] 7.2 Add Playwright install step and run `test:e2e` in CI

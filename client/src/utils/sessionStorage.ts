@@ -40,6 +40,22 @@ export function getActiveSession(): StoredSession | null {
         if (!stored) return null;
 
         const session: StoredSession = JSON.parse(stored);
+
+        // Validate parsed data shape
+        if (
+            typeof session !== 'object' ||
+            session === null ||
+            typeof session.sessionId !== 'string' ||
+            session.sessionId === '' ||
+            typeof session.timestamp !== 'number' ||
+            !Number.isFinite(session.timestamp) ||
+            typeof session.phase !== 'string'
+        ) {
+            console.warn('⚠️ Malformed session data in localStorage, clearing');
+            clearActiveSession();
+            return null;
+        }
+
         const age = Date.now() - session.timestamp;
 
         if (age > MAX_AGE_MS) {

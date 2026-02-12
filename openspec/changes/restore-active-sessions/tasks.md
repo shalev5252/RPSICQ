@@ -32,4 +32,4 @@
 
 ## Documentation
 
-- [ ] Update `openspec/specs/session-persistence/spec.md` with requirements and scenarios
+- [x] Update `openspec/specs/session-persistence/spec.md` with requirements and scenarios

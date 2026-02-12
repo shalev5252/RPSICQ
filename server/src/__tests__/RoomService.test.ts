@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { RoomService } from '../services/RoomService.js';
 import { GameService } from '../services/GameService.js';
 import { Server } from 'socket.io';

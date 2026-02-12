@@ -8,8 +8,8 @@ test.describe('RPS Battle E2E', () => {
     test('app loads and shows matchmaking screen', async ({ page }) => {
         await page.goto('/');
 
-        // Wait for React to render
-        await page.waitForLoadState('networkidle');
+        // Wait for DOM to load (networkidle can hang with Socket.IO)
+        await page.waitForLoadState('domcontentloaded');
 
         // Check that the page title or main heading appears
         await expect(page).toHaveTitle(/RPS Battle/i);
@@ -21,15 +21,15 @@ test.describe('RPS Battle E2E', () => {
 
     test('can navigate to singleplayer mode', async ({ page }) => {
         await page.goto('/');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
 
-        // Look for singleplayer/AI button
+        // Look for singleplayer/AI button and assert it's visible
         const singleplayerButton = page.getByRole('button', { name: /ai|singleplayer|vs computer/i });
-        if (await singleplayerButton.isVisible()) {
-            await singleplayerButton.click();
+        await expect(singleplayerButton).toBeVisible();
 
-            // Should transition to setup or game screen
-            await page.waitForTimeout(500);
-        }
+        await singleplayerButton.click();
+
+        // Should transition to setup or game screen
+        await page.waitForTimeout(500);
     });
 });

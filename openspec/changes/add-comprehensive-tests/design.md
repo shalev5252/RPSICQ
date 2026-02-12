@@ -30,12 +30,14 @@ RPS Battle is a monorepo (client / server / shared) with no existing test infras
 - Avoids mocking the entire Socket.IO layer which would reduce confidence
 
 ### Test location conventions
+
 | Layer | Location | Runner |
 |-------|----------|--------|
 | Server unit tests | `server/src/__tests__/` | Vitest |
 | Shared unit tests | `shared/src/__tests__/` | Vitest |
 | Socket.IO integration | `server/src/__tests__/integration/` | Vitest |
 | E2E browser tests | `e2e/` (root-level) | Playwright |
+
 
 ## Risks / Trade-offs
 

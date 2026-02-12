@@ -21,3 +21,11 @@ Unit tests SHALL cover `MatchmakingService` (queue add/remove/match/zombie clean
 #### Scenario: Matchmaking pairs two players
 - **WHEN** two players are added to the same queue
 - **THEN** a match is created and both are removed from the queue
+
+#### Scenario: RoomService create, join, and cancel flow
+- **WHEN** a player calls `createRoom` with a game mode
+- **THEN** a unique room code SHALL be generated and stored
+- **WHEN** a second player calls `joinRoom` with that room code
+- **THEN** both players SHALL be matched and the room SHALL be removed
+- **WHEN** the host calls `cancelRoom` before a join
+- **THEN** the room SHALL be removed and no match occurs
