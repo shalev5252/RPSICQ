@@ -10,6 +10,7 @@ import { SetupScreen } from './components/setup';
 import { GameScreen } from './components/game/GameScreen';
 import { GameOverScreen } from './components/game/GameOverScreen';
 import './App.css';
+import { getActiveSession } from './utils/sessionStorage';
 
 import { SoundProvider, useSound } from './context/SoundContext';
 import './i18n'; // Ensure i18n is initialized if not already in main, but duplicate is harmless or consistent with main
@@ -32,6 +33,16 @@ function AppContent() {
         window.addEventListener('click', handleInteraction, { once: true });
         return () => window.removeEventListener('click', handleInteraction);
     }, [playBGM]);
+
+    // Check for stored session on mount and attempt restoration
+    React.useEffect(() => {
+        const storedSession = getActiveSession();
+        if (storedSession) {
+            console.log('🔄 Attempting to restore session:', storedSession.sessionId);
+            // Set sessionId in store - the socket connection will trigger handleReconnect
+            useGameStore.getState().setSessionId(storedSession.sessionId);
+        }
+    }, []); // Run only on mount
 
     return (
         <div className="app">

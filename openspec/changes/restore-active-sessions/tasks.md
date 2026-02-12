@@ -2,33 +2,24 @@
 
 ## Client Implementation
 
-- [ ] Create `client/src/utils/sessionStorage.ts` utility module
-  - [ ] `setActiveSession(sessionId, phase)` - saves to localStorage
-  - [ ] `getActiveSession()` - retrieves and validates (age < 5 min)
-  - [ ] `clearActiveSession()` - removes from localStorage
-  - [ ] Add `rps_active_session` key constant
+- [x] Create `client/src/utils/sessionStorage.ts` utility module
+  - [x] `setActiveSession(sessionId, phase)` - saves to localStorage
+  - [x] `getActiveSession()` - retrieves and validates (age < 5 min)
+  - [x] `clearActiveSession()` - removes from localStorage
+  - [x] Add `rps_active_session` key constant
 
-- [ ] Update `client/src/store/gameStore.ts`
-  - [ ] Add `storedSessionId: string | null` state
-  - [ ] Add `isRestoringSession: boolean` state
-  - [ ] Add `setStoredSessionId(id)` action
-  - [ ] Add `setIsRestoringSession(value)` action
+- [x] Update `client/src/App.tsx`
+  - [x] On mount: check `getActiveSession()`
+  - [x] If session found: set `storedSessionId` in store
+  - [x] If session not found: clear any stale data
 
-- [ ] Update `client/src/App.tsx`
-  - [ ] On mount: check `getActiveSession()`
-  - [ ] If session found: set `storedSessionId` in store
-  - [ ] If session not found: clear any stale data
-
-- [ ] Update `client/src/hooks/useSocket.ts`
-  - [ ] On `GAME_FOUND`: call `setActiveSession(sessionId, 'setup')`
-  - [ ] On `GAME_START`: update session phase to 'playing'
-  - [ ] On `SESSION_RESTORED`: set `isRestoringSession = false`
-  - [ ] On `GAME_OVER`: call `clearActiveSession()`
-  - [ ] On `OPPONENT_DISCONNECTED`: call `clearActiveSession()`
-  - [ ] On manual `LEAVE_SESSION`: call `clearActiveSession()`
-
-- [ ] Update `client/src/hook s/useSocket.ts` handshake auth
-  - [ ] Pass `sessionId` (if exists) along with `playerId` in socket auth
+- [x] Update `client/src/hooks/useSocket.ts`
+  - [x] On `GAME_FOUND`: call `setActiveSession(sessionId, 'setup')`
+  - [x] On `GAME_START`: update session phase to 'playing'
+  - [x] On `SESSION_RESTORED`: set `isRestoringSession = false`
+  - [x] On `GAME_OVER`: call `clearActiveSession()`
+  - [x] On `OPPONENT_DISCONNECTED`: call `clearActiveSession()`
+  - [x] On manual `LEAVE_SESSION`: call `clearActiveSession()`
 
 ## Testing
 
