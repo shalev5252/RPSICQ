@@ -528,8 +528,8 @@ export class ExpectimaxSearch {
     ): number {
         // Check transposition table
         if (this.tt) {
-            const hash = this.tt.hash(gameState);
-            const cached = this.tt.get(hash, remainingDepth);
+            const { hash, checksum } = this.tt.computeHash(gameState);
+            const cached = this.tt.get(hash, remainingDepth, checksum);
             if (cached && cached.nodeType === 'chance') {
                 return cached.score;
             }
@@ -670,9 +670,10 @@ export class ExpectimaxSearch {
         }
 
         // Store in transposition table
+        // Store in transposition table
         if (this.tt) {
-            const hash = this.tt.hash(gameState);
-            this.tt.set(hash, remainingDepth, expectedValue, 'chance');
+            const { hash, checksum } = this.tt.computeHash(gameState);
+            this.tt.set(hash, checksum, remainingDepth, expectedValue, 'chance');
         }
 
         return expectedValue;
@@ -693,8 +694,8 @@ export class ExpectimaxSearch {
     ): number {
         // Check transposition table
         if (this.tt) {
-            const hash = this.tt.hash(gameState);
-            const cached = this.tt.get(hash, remainingDepth);
+            const { hash, checksum } = this.tt.computeHash(gameState);
+            const cached = this.tt.get(hash, remainingDepth, checksum);
             if (cached && cached.nodeType === 'max') {
                 return cached.score;
             }
@@ -727,8 +728,8 @@ export class ExpectimaxSearch {
 
         // Store in transposition table
         if (this.tt) {
-            const hash = this.tt.hash(gameState);
-            this.tt.set(hash, remainingDepth, bestScore, 'max');
+            const { hash, checksum } = this.tt.computeHash(gameState);
+            this.tt.set(hash, checksum, remainingDepth, bestScore, 'max');
         }
 
         return bestScore;
@@ -825,8 +826,8 @@ export class ExpectimaxSearch {
                     if (cellToThreat <= 1) {
                         // This cell is between King and threat
                         const existingPiece = gameState.board[cell.row][cell.col].piece;
-                        if (!existingPiece || existingPiece.owner !== aiColor) {
-                            interposeCells.push(cell);
+                        if (!existingPiece) {
+                            interposeCells.push({ row: cell.row, col: cell.col });
                         }
                     }
                 }

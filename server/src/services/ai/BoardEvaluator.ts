@@ -86,10 +86,26 @@ export class BoardEvaluator {
                 }
             }
         } else {
-            // Fallback: count opponent's visible combat pieces
+            // Fallback: Assume uniform distribution if no Bayesian state tracking is available
+            // This prevents leaking hidden piece types
+            let unknownCombatPieces = 0;
+            const combatTypes = Object.keys(RPSLS_WINS);
+
             for (const p of opponentPlayer.pieces) {
                 if (p.type === 'king' || p.type === 'pit') continue;
-                opTypeCounts[p.type] = (opTypeCounts[p.type] || 0) + 1;
+
+                if (p.isRevealed) {
+                    opTypeCounts[p.type] = (opTypeCounts[p.type] || 0) + 1;
+                } else {
+                    unknownCombatPieces++;
+                }
+            }
+
+            if (unknownCombatPieces > 0) {
+                const probPerType = unknownCombatPieces / combatTypes.length;
+                for (const type of combatTypes) {
+                    opTypeCounts[type] = (opTypeCounts[type] || 0) + probPerType;
+                }
             }
         }
 
@@ -226,7 +242,7 @@ export class BoardEvaluator {
 
                 // Is this piece near the King's column? (within ±1)
                 const colDist = Math.abs(op.position.col - kingCol);
-                if (colDist > 2) continue;
+                if (colDist > 1) continue;
 
                 // How close is it to the AI's back row?
                 const distToBackRow = Math.abs(op.position.row - backRow);
