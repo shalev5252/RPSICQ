@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useGameStore } from '../../store/gameStore';
 import { socket } from '../../socket';
 import { SOCKET_EVENTS } from '@rps/shared';
+import { clearActiveSession } from '../../utils/sessionStorage';
 import './GameOverScreen.css';
 
 export const GameOverScreen: React.FC = () => {
@@ -23,6 +24,8 @@ export const GameOverScreen: React.FC = () => {
     const handleReturnHome = () => {
         // Notify server so it can clean up the session
         socket.emit(SOCKET_EVENTS.LEAVE_SESSION);
+        // Clear stored session from localStorage
+        clearActiveSession();
         // Reset game state — sets gamePhase to 'waiting', which unmounts this screen
         useGameStore.getState().reset();
     };
@@ -102,6 +105,7 @@ export const GameOverScreen: React.FC = () => {
                         className="game-over-screen__button game-over-screen__button--primary"
                         onClick={handlePlayAgain}
                         disabled={rematchState.hasRequested}
+                        data-testid="rematch-button"
                     >
                         {getRematchButtonText()}
                     </button>

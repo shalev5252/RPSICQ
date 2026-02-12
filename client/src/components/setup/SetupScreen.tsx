@@ -352,6 +352,7 @@ export const SetupScreen: React.FC = () => {
                         className="setup-screen__btn setup-screen__btn--shuffle"
                         onClick={handleShuffle}
                         disabled={!canShuffle}
+                        data-testid="shuffle-button"
                     >
                         {t('setup.shuffle')}
                     </button>
@@ -359,6 +360,7 @@ export const SetupScreen: React.FC = () => {
                         className={`setup-screen__btn ${setupState.isReady ? 'setup-screen__btn--waiting' : 'setup-screen__btn--confirm'}`}
                         onClick={handleConfirm}
                         disabled={!canConfirm}
+                        data-testid="confirm-setup-button"
                     >
                         {setupState.isReady ? t('setup.waiting') : t('setup.lets_start')}
                     </button>

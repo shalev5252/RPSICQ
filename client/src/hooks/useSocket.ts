@@ -23,6 +23,7 @@ import {
     DrawOfferPayload,
 } from '@rps/shared';
 import { useSound } from '../context/SoundContext';
+import { setActiveSession, clearActiveSession } from '../utils/sessionStorage';
 
 export function useSocket() {
     const socketRef = useRef<Socket>(socketInstance); // Use singleton
@@ -70,12 +71,21 @@ export function useSocket() {
             useGameStore.getState().setRoomError(null);
             useGameStore.getState().setIsCreatingRoom(false);
             useGameStore.getState().setIsJoiningRoom(false);
+            // Persist session to localStorage
+            if (payload.sessionId) {
+                setActiveSession(payload.sessionId, 'setup');
+            }
         };
 
         const onGameStart = (payload: GameStartPayload) => {
             console.log('🚀 Game started:', payload);
             // Transition to playing phase
             useGameStore.getState().setGamePhase('playing');
+            // Update session phase to playing
+            const sessionId = useGameStore.getState().sessionId;
+            if (sessionId) {
+                setActiveSession(sessionId, 'playing');
+            }
             // Set initial game state
             const myColor = useGameStore.getState().myColor;
             if (payload.gameState && myColor) {
@@ -230,6 +240,8 @@ export function useSocket() {
                 winner: payload.winner,
                 winReason: payload.reason
             });
+            // Clear stored session on game end
+            clearActiveSession();
         };
 
         const onRematchRequested = () => {
@@ -308,6 +320,8 @@ export function useSocket() {
             if (phase === 'setup' || phase === 'playing' || phase === 'combat' || phase === 'tie_breaker' || phase === 'finished') {
                 useGameStore.getState().resetForMatchmaking();
             }
+            // Clear stored session when opponent leaves permanently
+            clearActiveSession();
         };
 
         const onRoomCreated = (payload: RoomCreatedPayload) => {

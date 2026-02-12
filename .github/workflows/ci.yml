@@ -76,3 +76,28 @@ jobs:
 
       - name: Type Check Client
         run: npm run build --workspace=@rps/client
+
+  # Phase 3: Tests
+  test:
+    needs: [server-validation, shared-validation]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Shared
+        run: npm run build --workspace=@rps/shared
+
+      - name: Run Unit Tests
+        run: npm run test:unit
+
+      - name: Run Integration Tests
+        run: npm run test:integration

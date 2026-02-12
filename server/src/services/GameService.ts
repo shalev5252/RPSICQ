@@ -36,7 +36,7 @@ export class GameService {
     private playerIdToSocketId: Map<string, string> = new Map(); // playerId -> socketId
     private socketIdToPlayerId: Map<string, string> = new Map(); // socketId -> playerId
     private disconnectTimers: Map<string, NodeJS.Timeout> = new Map(); // playerId -> timeout
-    private readonly RECONNECT_GRACE_PERIOD = 30000; // 30 seconds
+    private readonly RECONNECT_GRACE_PERIOD = 60000; // 60 seconds (1 minute)
     public readonly aiService = new AIOpponentService();
 
     public isAIPlayer(socketId: string): boolean {
@@ -1836,7 +1836,7 @@ export class GameService {
         const opponent = session.players.red?.socketId === socketId ? session.players.blue : session.players.red;
         const opponentId = opponent?.socketId;
 
-        console.log(`⏳ Starting 30s reconnection grace period for player ${playerId}`);
+        console.log(`⏳ Starting 60s reconnection grace period for player ${playerId}`);
 
         // Start the grace period timer
         const timer = setTimeout(() => {
