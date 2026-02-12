@@ -14,6 +14,10 @@
         "dev:server": "npm run dev --workspace=@rps/server",
         "build": "npm run build --workspace=@rps/shared && npm run build --workspace=@rps/client && npm run build --workspace=@rps/server",
         "lint": "eslint . --ext .ts,.tsx",
+        "test": "npm run test:unit && npm run test:integration",
+        "test:unit": "npm run test:unit --workspace=@rps/server && npm run test --workspace=@rps/shared",
+        "test:integration": "npm run test:integration --workspace=@rps/server",
+        "test:e2e": "npx playwright test",
         "install:all": "npm install"
     },
     "keywords": [
@@ -28,8 +32,11 @@
         "node": ">=18.0.0"
     },
     "devDependencies": {
+        "@playwright/test": "^1.58.2",
         "@typescript-eslint/eslint-plugin": "^8.53.1",
         "@typescript-eslint/parser": "^8.53.1",
-        "eslint": "^8.57.1"
+        "@vitest/coverage-v8": "^4.0.18",
+        "eslint": "^8.57.1",
+        "vitest": "^4.0.18"
     }
 }

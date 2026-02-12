@@ -102,6 +102,7 @@ export const GameOverScreen: React.FC = () => {
                         className="game-over-screen__button game-over-screen__button--primary"
                         onClick={handlePlayAgain}
                         disabled={rematchState.hasRequested}
+                        data-testid="rematch-button"
                     >
                         {getRematchButtonText()}
                     </button>
