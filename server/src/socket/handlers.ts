@@ -48,59 +48,63 @@ export function setupSocketHandlers(io: Server): void {
         }
 
         gameService.aiService.scheduleAction(() => {
-            const freshSession = gameService.getSession(sessionId);
-            if (!freshSession || freshSession.phase !== 'playing' || freshSession.currentTurn !== aiColor) return;
+            try {
+                const freshSession = gameService.getSession(sessionId);
+                if (!freshSession || freshSession.phase !== 'playing' || freshSession.currentTurn !== aiColor) return;
 
-            const move = gameService.aiService.selectMove(freshSession, aiColor);
-            if (!move) return;
+                const move = gameService.aiService.selectMove(freshSession, aiColor);
+                if (!move) return;
 
-            const result = gameService.makeMove(aiSocketId, move.from, move.to);
-            if (!result.success) {
-                console.error(`🤖 AI move failed: ${result.error}`);
-                return;
-            }
-
-            // Record combat outcomes for AI inference
-            const afterSession = gameService.getSession(sessionId);
-            if (!afterSession) return;
-
-            // Send updated game state to human player
-            const humanView = gameService.getPlayerGameView(humanSocket.id);
-            if (humanView) {
-                humanSocket.emit(SOCKET_EVENTS.GAME_STATE, humanView);
-            }
-
-            // Check game-ending conditions
-            if (afterSession.phase === 'finished') {
-                humanSocket.emit(SOCKET_EVENTS.GAME_OVER, {
-                    winner: afterSession.winner,
-                    reason: afterSession.winReason || 'king_captured'
-                });
-            } else if (afterSession.phase === 'tie_breaker') {
-                // AI needs to submit tie-breaker choice
-                scheduleAITieBreaker(sessionId, humanSocket);
-            } else if (afterSession.phase === 'playing') {
-                // Check for draw
-                if (gameService.checkDraw(sessionId)) {
-                    gameService.setDraw(sessionId);
-                    humanSocket.emit(SOCKET_EVENTS.GAME_OVER, {
-                        winner: null,
-                        reason: 'draw'
-                    });
+                const result = gameService.makeMove(aiSocketId, move.from, move.to);
+                if (!result.success) {
+                    console.error(`🤖 AI move failed: ${result.error}`);
                     return;
                 }
 
-                // Check if human has no movable pieces
-                if (!gameService.hasMovablePieces(humanSocket.id)) {
-                    humanSocket.emit(SOCKET_EVENTS.TURN_SKIPPED, { reason: 'no_movable_pieces' });
-                    gameService.skipTurn(humanSocket.id);
-                    const updatedView = gameService.getPlayerGameView(humanSocket.id);
-                    if (updatedView) {
-                        humanSocket.emit(SOCKET_EVENTS.GAME_STATE, updatedView);
-                    }
-                    // Now it's AI's turn again
-                    scheduleAIMove(sessionId, humanSocket);
+                // Record combat outcomes for AI inference
+                const afterSession = gameService.getSession(sessionId);
+                if (!afterSession) return;
+
+                // Send updated game state to human player
+                const humanView = gameService.getPlayerGameView(humanSocket.id);
+                if (humanView) {
+                    humanSocket.emit(SOCKET_EVENTS.GAME_STATE, humanView);
                 }
+
+                // Check game-ending conditions
+                if (afterSession.phase === 'finished') {
+                    humanSocket.emit(SOCKET_EVENTS.GAME_OVER, {
+                        winner: afterSession.winner,
+                        reason: afterSession.winReason || 'king_captured'
+                    });
+                } else if (afterSession.phase === 'tie_breaker') {
+                    // AI needs to submit tie-breaker choice
+                    scheduleAITieBreaker(sessionId, humanSocket);
+                } else if (afterSession.phase === 'playing') {
+                    // Check for draw
+                    if (gameService.checkDraw(sessionId)) {
+                        gameService.setDraw(sessionId);
+                        humanSocket.emit(SOCKET_EVENTS.GAME_OVER, {
+                            winner: null,
+                            reason: 'draw'
+                        });
+                        return;
+                    }
+
+                    // Check if human has no movable pieces
+                    if (!gameService.hasMovablePieces(humanSocket.id)) {
+                        humanSocket.emit(SOCKET_EVENTS.TURN_SKIPPED, { reason: 'no_movable_pieces' });
+                        gameService.skipTurn(humanSocket.id);
+                        const updatedView = gameService.getPlayerGameView(humanSocket.id);
+                        if (updatedView) {
+                            humanSocket.emit(SOCKET_EVENTS.GAME_STATE, updatedView);
+                        }
+                        // Now it's AI's turn again
+                        scheduleAIMove(sessionId, humanSocket);
+                    }
+                }
+            } catch (err) {
+                console.error(`🤖 AI move crashed:`, err);
             }
         });
     }
@@ -111,54 +115,58 @@ export function setupSocketHandlers(io: Server): void {
         if (!aiSocketId) return;
 
         gameService.aiService.scheduleAction(() => {
-            const tbResult = gameService.performAITieBreakerChoice(sessionId);
-            if (!tbResult.success || !tbResult.choice) return;
+            try {
+                const tbResult = gameService.performAITieBreakerChoice(sessionId);
+                if (!tbResult.success || !tbResult.choice) return;
 
-            const submitResult = gameService.submitTieBreakerChoice(aiSocketId, tbResult.choice);
-            if (!submitResult.success) return;
+                const submitResult = gameService.submitTieBreakerChoice(aiSocketId, tbResult.choice);
+                if (!submitResult.success) return;
 
-            // Send reveal to human player using choices from the result
-            if ((submitResult.bothChosen || submitResult.isTieAgain) && submitResult.attackerChoice && submitResult.defenderChoice) {
-                const afterSession = gameService.getSession(sessionId);
-                const humanPlayer = afterSession?.players.red?.socketId === humanSocket.id
-                    ? afterSession?.players.red
-                    : afterSession?.players.blue;
+                // Send reveal to human player using choices from the result
+                if ((submitResult.bothChosen || submitResult.isTieAgain) && submitResult.attackerChoice && submitResult.defenderChoice) {
+                    const afterSession = gameService.getSession(sessionId);
+                    const humanPlayer = afterSession?.players.red?.socketId === humanSocket.id
+                        ? afterSession?.players.red
+                        : afterSession?.players.blue;
 
-                if (humanPlayer) {
-                    // Use owner info from result if available
-                    const isAttacker = submitResult.attackerOwner
-                        ? humanPlayer.color === submitResult.attackerOwner
-                        : humanPlayer.pieces.some(p => p.id === submitResult.attackerId);
+                    if (humanPlayer) {
+                        // Use owner info from result if available
+                        const isAttacker = submitResult.attackerOwner
+                            ? humanPlayer.color === submitResult.attackerOwner
+                            : humanPlayer.pieces.some(p => p.id === submitResult.attackerId);
 
-                    humanSocket.emit(SOCKET_EVENTS.TIE_BREAKER_REVEAL, {
-                        playerChoice: isAttacker ? submitResult.attackerChoice : submitResult.defenderChoice,
-                        opponentChoice: isAttacker ? submitResult.defenderChoice : submitResult.attackerChoice,
-                    });
-                }
-            }
-
-            if (submitResult.bothChosen) {
-                const afterSession = gameService.getSession(sessionId);
-                if (!afterSession) return;
-
-                const humanView = gameService.getPlayerGameView(humanSocket.id);
-                if (humanView) {
-                    humanSocket.emit(SOCKET_EVENTS.GAME_STATE, humanView);
+                        humanSocket.emit(SOCKET_EVENTS.TIE_BREAKER_REVEAL, {
+                            playerChoice: isAttacker ? submitResult.attackerChoice : submitResult.defenderChoice,
+                            opponentChoice: isAttacker ? submitResult.defenderChoice : submitResult.attackerChoice,
+                        });
+                    }
                 }
 
-                if (afterSession.phase === 'finished') {
-                    humanSocket.emit(SOCKET_EVENTS.GAME_OVER, {
-                        winner: afterSession.winner,
-                        reason: afterSession.winReason || 'king_captured'
-                    });
-                } else if (afterSession.phase === 'playing') {
-                    // After tie-breaker resolved, check if it's AI's turn
-                    scheduleAIMove(sessionId, humanSocket);
+                if (submitResult.bothChosen) {
+                    const afterSession = gameService.getSession(sessionId);
+                    if (!afterSession) return;
+
+                    const humanView = gameService.getPlayerGameView(humanSocket.id);
+                    if (humanView) {
+                        humanSocket.emit(SOCKET_EVENTS.GAME_STATE, humanView);
+                    }
+
+                    if (afterSession.phase === 'finished') {
+                        humanSocket.emit(SOCKET_EVENTS.GAME_OVER, {
+                            winner: afterSession.winner,
+                            reason: afterSession.winReason || 'king_captured'
+                        });
+                    } else if (afterSession.phase === 'playing') {
+                        // After tie-breaker resolved, check if it's AI's turn
+                        scheduleAIMove(sessionId, humanSocket);
+                    }
+                } else if (submitResult.isTieAgain) {
+                    // Notify human to choose again
+                    humanSocket.emit(SOCKET_EVENTS.TIE_BREAKER_RETRY);
+                    // AI will choose again after human chooses
                 }
-            } else if (submitResult.isTieAgain) {
-                // Notify human to choose again
-                humanSocket.emit(SOCKET_EVENTS.TIE_BREAKER_RETRY);
-                // AI will choose again after human chooses
+            } catch (err) {
+                console.error(`🤖 AI tie-breaker crashed:`, err);
             }
         });
     }

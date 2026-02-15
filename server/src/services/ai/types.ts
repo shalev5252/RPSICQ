@@ -40,6 +40,10 @@ export interface EvalWeights {
     informationGain: number;     // bonus for moves that reveal info
     combatReward: number;        // expected value weight for combat encounters
     threatPenalty: number;       // penalty for being adjacent to enemies
+    kingExposure: number;        // penalty for open lanes to AI's King
+    probeDetection: number;      // penalty for enemy pieces advancing toward back row
+    kingDangerMultiplier: number; // scale factor for king-safety when threats within radius 2
+    compositionAdvantage: number; // bonus/penalty based on type matchup coverage
 }
 
 /** Configuration for expectimax search */

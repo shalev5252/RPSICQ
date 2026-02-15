@@ -10,6 +10,7 @@ import { BayesianState, EvalWeights, ScoredMove, GamePhase } from './types.js';
 import { BoardEvaluator } from './BoardEvaluator.js';
 import { BayesianTracker } from './BayesianTracker.js';
 import { PhaseDetector } from './PhaseDetector.js';
+import { getTranspositionTable, TranspositionTable } from './TranspositionTable.js';
 
 // Debug logging - only active in development
 const DEBUG_AI = process.env.NODE_ENV !== 'production' && process.env.DEBUG_AI === 'true';
@@ -23,15 +24,18 @@ function aiLog(...args: unknown[]): void {
 /**
  * Expectimax search with:
  * - MAX nodes for AI turns
- * - CHANCE nodes for opponent turns (weighted by simple opponent model)
+ * - CHANCE nodes for opponent turns (mini-evaluation + softmax opponent model)
  * - Bayesian beliefs for combat probability weighting
+ * - Zobrist transposition table for position caching
  * - Star-1 pruning at chance nodes
- * - Depth 2 default, depth 3 in endgame with few pieces
+ * - Dynamic depth based on piece count
  */
 export class ExpectimaxSearch {
     private evaluator: BoardEvaluator;
     private phaseDetector: PhaseDetector;
+    private tt: TranspositionTable | null = null;
     private readonly MAX_SCORE = 10000;
+    private readonly OPPONENT_MODEL_TEMPERATURE = 30;
 
     constructor() {
         this.evaluator = new BoardEvaluator();
@@ -84,6 +88,13 @@ export class ExpectimaxSearch {
         if (gameState.gameVariant === 'onslaught') {
             depth = Math.min(depth + 1, 6);
         }
+
+        // Initialize/clear transposition table for this search
+        const config = gameState.gameVariant === 'onslaught'
+            ? { rows: gameState.board.length, cols: gameState.board[0]?.length ?? 0 }
+            : { rows: gameState.board.length, cols: gameState.board[0]?.length ?? 0 };
+        this.tt = getTranspositionTable(config.rows, config.cols);
+        this.tt.clear();
 
         aiLog(`Search depth: ${depth}, Total pieces: ${totalPieces}`);
 
@@ -503,8 +514,8 @@ export class ExpectimaxSearch {
 
     /**
      * CHANCE node: Evaluate expected value of opponent's possible responses.
-     * Uses a simple opponent model (captures and king-approach weighted higher).
-     * Applies Star-1 pruning.
+     * Uses mini-evaluation from opponent's perspective + softmax weighting
+     * to model a rational opponent. Applies Star-1 pruning (top 10 moves).
      */
     private chanceNode(
         gameState: GameState,
@@ -515,12 +526,20 @@ export class ExpectimaxSearch {
         bayesianState: BayesianState | undefined,
         phase: GamePhase
     ): number {
+        // Check transposition table
+        if (this.tt) {
+            const { hash, checksum } = this.tt.computeHash(gameState);
+            const cached = this.tt.get(hash, remainingDepth, checksum);
+            if (cached && cached.nodeType === 'chance') {
+                return cached.score;
+            }
+        }
+
         const opponentPlayer = gameState.players[opponentColor];
         if (!opponentPlayer) return this.evaluator.evaluate(gameState, aiColor, weights, bayesianState);
 
-        // Generate opponent moves with weights
-        const opponentMoves: { piece: Piece; to: Position; weight: number }[] = [];
-        let totalWeight = 0;
+        // Generate opponent moves with mini-evaluation scoring
+        const opponentMoves: { piece: Piece; to: Position; evalScore: number }[] = [];
 
         for (const piece of opponentPlayer.pieces) {
             // Skip King/Pit in opponent model for standard mode
@@ -528,47 +547,78 @@ export class ExpectimaxSearch {
 
             const validMoves = this.evaluator.getValidMoves(piece, opponentColor, gameState);
             for (const to of validMoves) {
-                let moveWeight = 1; // base weight
-
                 const targetCell = gameState.board[to.row][to.col];
 
-                // Captures are weighted higher in the opponent model
-                if (targetCell.piece && targetCell.piece.owner !== opponentColor) {
-                    moveWeight = 20;
-                    // Attacking AI's king is very likely
-                    if (targetCell.piece.type === 'king') {
-                        moveWeight = 1000;
+                // Hard-coded: attacking AI King is always top priority for opponent
+                if (targetCell.piece && targetCell.piece.owner !== opponentColor && targetCell.piece.type === 'king') {
+                    opponentMoves.push({ piece, to, evalScore: 10000 });
+                    continue;
+                }
+
+                // Mini-evaluation: simulate move and evaluate from opponent's perspective
+                const oldPos = { ...piece.position };
+                const oldCellPiece = gameState.board[to.row][to.col].piece;
+                const fromCell = gameState.board[oldPos.row][oldPos.col];
+
+                // Handle capture for simulation
+                let capturedPiece: Piece | null = null;
+                let capturedIndex = -1;
+                let capturedPlayer: { pieces: Piece[] } | null = null;
+
+                if (oldCellPiece && oldCellPiece.owner !== opponentColor) {
+                    capturedPiece = oldCellPiece;
+                    capturedPlayer = gameState.players[aiColor];
+                    if (capturedPlayer) {
+                        capturedIndex = capturedPlayer.pieces.indexOf(capturedPiece);
+                        if (capturedIndex >= 0) {
+                            capturedPlayer.pieces.splice(capturedIndex, 1);
+                        }
                     }
                 }
 
-                // Forward progression is slightly more likely
-                const forwardDir = opponentColor === 'red' ? 1 : -1;
-                if ((to.row - piece.position.row) * forwardDir > 0) {
-                    moveWeight *= 2;
+                // Apply move
+                fromCell.piece = null;
+                piece.position = { row: to.row, col: to.col };
+                gameState.board[to.row][to.col].piece = piece;
+
+                // Evaluate from OPPONENT's perspective (negate AI's eval)
+                const opponentEval = -this.evaluator.evaluate(gameState, aiColor, weights, bayesianState);
+
+                // Undo move
+                piece.position = oldPos;
+                gameState.board[to.row][to.col].piece = oldCellPiece;
+                fromCell.piece = piece;
+
+                if (capturedPiece && capturedPlayer && capturedIndex >= 0) {
+                    capturedPlayer.pieces.splice(capturedIndex, 0, capturedPiece);
                 }
 
-                opponentMoves.push({ piece, to, weight: moveWeight });
-                totalWeight += moveWeight;
+                opponentMoves.push({ piece, to, evalScore: opponentEval });
             }
         }
 
-        if (opponentMoves.length === 0 || totalWeight === 0) {
+        if (opponentMoves.length === 0) {
             return this.evaluator.evaluate(gameState, aiColor, weights, bayesianState);
         }
 
-        // Limit the number of moves to evaluate for performance
-        // Sort by weight descending and take top N
-        opponentMoves.sort((a, b) => b.weight - a.weight);
+        // Sort by evaluation score descending and take top N (Star-1 pruning)
+        opponentMoves.sort((a, b) => b.evalScore - a.evalScore);
         const maxMoves = Math.min(opponentMoves.length, 10);
         const evaluatedMoves = opponentMoves.slice(0, maxMoves);
 
-        // Recalculate total weight for the subset
-        const subsetTotalWeight = evaluatedMoves.reduce((sum, m) => sum + m.weight, 0);
+        // Convert scores to probabilities using softmax
+        // Subtract max for numerical stability
+        const maxEval = evaluatedMoves[0].evalScore;
+        const expScores = evaluatedMoves.map(m =>
+            Math.exp((m.evalScore - maxEval) / this.OPPONENT_MODEL_TEMPERATURE)
+        );
+        const expSum = expScores.reduce((sum, e) => sum + e, 0);
 
         let expectedValue = 0;
 
-        for (const move of evaluatedMoves) {
-            const normalizedWeight = move.weight / subsetTotalWeight;
+        for (let i = 0; i < evaluatedMoves.length; i++) {
+            const move = evaluatedMoves[i];
+            const normalizedWeight = expScores[i] / expSum;
 
             // Simulate opponent move
             const oldPos = { ...move.piece.position };
@@ -581,7 +631,6 @@ export class ExpectimaxSearch {
             let capturedPlayer: { pieces: Piece[] } | null = null;
 
             if (oldCellPiece && oldCellPiece.owner !== opponentColor) {
-                // Opponent captures our piece (simplified: opponent wins for this simulation)
                 capturedPiece = oldCellPiece;
                 capturedPlayer = gameState.players[aiColor];
                 if (capturedPlayer) {
@@ -620,11 +669,19 @@ export class ExpectimaxSearch {
             }
         }
 
+        // Store in transposition table
+        // Store in transposition table
+        if (this.tt) {
+            const { hash, checksum } = this.tt.computeHash(gameState);
+            this.tt.set(hash, checksum, remainingDepth, expectedValue, 'chance');
+        }
+
         return expectedValue;
     }
 
     /**
      * MAX node: AI's turn - find the move that maximizes the score.
+     * Uses transposition table for position caching.
      */
     private maxNode(
         gameState: GameState,
@@ -635,6 +692,15 @@ export class ExpectimaxSearch {
         bayesianState: BayesianState | undefined,
         phase: GamePhase
     ): number {
+        // Check transposition table
+        if (this.tt) {
+            const { hash, checksum } = this.tt.computeHash(gameState);
+            const cached = this.tt.get(hash, remainingDepth, checksum);
+            if (cached && cached.nodeType === 'max') {
+                return cached.score;
+            }
+        }
+
         const aiPlayer = gameState.players[aiColor];
         if (!aiPlayer) return -this.MAX_SCORE;
 
@@ -660,6 +726,12 @@ export class ExpectimaxSearch {
             return this.evaluator.evaluate(gameState, aiColor, weights, bayesianState);
         }
 
+        // Store in transposition table
+        if (this.tt) {
+            const { hash, checksum } = this.tt.computeHash(gameState);
+            this.tt.set(hash, checksum, remainingDepth, bestScore, 'max');
+        }
+
         return bestScore;
     }
 
@@ -669,7 +741,8 @@ export class ExpectimaxSearch {
 
     /**
      * Check if the AI's king is in immediate danger and return an emergency move.
-     * Priority: capture the threat (only if we can win or have good odds) > let normal search handle
+     * Priority: P1: capture adjacent threat > P2: interpose vs dist-2 threat > P3: normal search
+     * Expanded to detect threats at distance ≤ 2.
      */
     private checkKingEmergency(
         gameState: GameState,
@@ -685,42 +758,46 @@ export class ExpectimaxSearch {
         if (!ownKing) return null;
 
         const opponentPieces = gameState.players[opponentColor]?.pieces || [];
-        const threats: Piece[] = [];
+        const adjacentThreats: Piece[] = [];    // dist === 1
+        const nearbyThreats: Piece[] = [];      // dist === 2
 
         for (const op of opponentPieces) {
             const dist = Math.abs(op.position.row - ownKing.position.row) +
                 Math.abs(op.position.col - ownKing.position.col);
-            if (dist === 1) {
+
+            if (dist <= 2) {
                 // Check if this piece could beat king
                 const knownType = this.getKnownType(op, bayesianState);
                 // King loses to everything except pit (where king wouldn't move anyway)
                 // and ties with king. Unknown threats are treated as threats.
                 if (!knownType || (knownType !== 'king' && knownType !== 'pit')) {
-                    threats.push(op);
+                    if (dist === 1) {
+                        adjacentThreats.push(op);
+                    } else {
+                        nearbyThreats.push(op);
+                    }
                 }
             }
         }
 
-        if (threats.length === 0) return null;
+        if (adjacentThreats.length === 0 && nearbyThreats.length === 0) return null;
 
-        // Priority 1: Capture threats with non-king pieces - but ONLY if we can actually win
+        // P1: Capture adjacent threats with non-king pieces (only if we can win)
         let bestCapture: { from: Position; to: Position; score: number } | null = null;
         for (const piece of aiPlayer.pieces) {
             if (piece.type === 'king' || piece.type === 'pit') continue;
 
             const validMoves = this.evaluator.getValidMoves(piece, aiColor, gameState);
             for (const to of validMoves) {
-                const threat = threats.find(t => t.position.row === to.row && t.position.col === to.col);
+                const threat = adjacentThreats.find(t => t.position.row === to.row && t.position.col === to.col);
                 if (threat) {
                     // Check if this would be a suicidal attack against a KNOWN piece
                     const knownThreatType = this.getConfirmedDefenderType(threat, bayesianState);
                     if (knownThreatType && this.wouldLoseCombat(piece.type, knownThreatType)) {
-                        // Skip this - it's a guaranteed loss
                         continue;
                     }
 
                     const combatScore = this.evaluator.evaluateCombat(piece, threat, bayesianState, weights);
-                    // Only consider captures with positive expected value
                     if (combatScore > 0 && (!bestCapture || combatScore > bestCapture.score)) {
                         bestCapture = { from: { ...piece.position }, to, score: combatScore };
                     }
@@ -730,7 +807,57 @@ export class ExpectimaxSearch {
 
         if (bestCapture) return bestCapture;
 
-        // No good capture available - return null and let normal search handle it
+        // P2: Interpose a piece between King and dist-2 threats
+        if (nearbyThreats.length > 0) {
+            let bestInterpose: { from: Position; to: Position; score: number } | null = null;
+
+            for (const threat of nearbyThreats) {
+                // Find cells that are between the King and this threat (on the approach path)
+                // For dist-2 threats, the interpose cell is at dist-1 from King, dist-1 from threat
+                const interposeCells: Position[] = [];
+
+                // Check all cells adjacent to King
+                for (const dir of [{ row: -1, col: 0 }, { row: 1, col: 0 }, { row: 0, col: -1 }, { row: 0, col: 1 }]) {
+                    const cell = { row: ownKing.position.row + dir.row, col: ownKing.position.col + dir.col };
+                    if (cell.row < 0 || cell.row >= gameState.board.length || cell.col < 0 || cell.col >= gameState.board[0].length) continue;
+
+                    // Is this cell on the path toward the threat?
+                    const cellToThreat = Math.abs(cell.row - threat.position.row) + Math.abs(cell.col - threat.position.col);
+                    if (cellToThreat <= 1) {
+                        // This cell is between King and threat
+                        const existingPiece = gameState.board[cell.row][cell.col].piece;
+                        if (!existingPiece) {
+                            interposeCells.push({ row: cell.row, col: cell.col });
+                        }
+                    }
+                }
+
+                // Find AI pieces that can move to an interpose cell
+                for (const piece of aiPlayer.pieces) {
+                    if (piece.type === 'king' || piece.type === 'pit') continue;
+
+                    const validMoves = this.evaluator.getValidMoves(piece, aiColor, gameState);
+                    for (const to of validMoves) {
+                        const isInterpose = interposeCells.some(c => c.row === to.row && c.col === to.col);
+                        if (isInterpose) {
+                            // Score: prefer pieces that are already nearby and not valuable offensively
+                            const distFromPiece = Math.abs(piece.position.row - to.row) + Math.abs(piece.position.col - to.col);
+                            const interposeScore = 100 - distFromPiece * 10; // closer pieces preferred
+                            if (!bestInterpose || interposeScore > bestInterpose.score) {
+                                bestInterpose = { from: { ...piece.position }, to, score: interposeScore };
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (bestInterpose) {
+                aiLog(`EMERGENCY: Interposing piece to block approaching threat.`);
+                return bestInterpose;
+            }
+        }
+
+        // P3: No good capture or interpose available - return null and let normal search handle it
         // The search will factor in king safety and find the best overall move
         return null;
     }

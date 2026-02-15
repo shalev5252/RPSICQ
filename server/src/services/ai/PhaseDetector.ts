@@ -80,6 +80,10 @@ export class PhaseDetector {
                     infiltration: 20,      // strong incentive to cross midline
                     informationGain: 3,    // small bonus, don't sacrifice pieces for info
                     combatReward: 1,       // combat scores are already large (40/-30)
+                    kingExposure: 15,      // high: punish open lanes to King early
+                    probeDetection: 12,    // high: detect scouting toward back row
+                    kingDangerMultiplier: 2.0,
+                    compositionAdvantage: 3, // low: full composition, balanced
                     threatPenalty: 15      // increased: avoid threats more
                 };
 
@@ -93,6 +97,10 @@ export class PhaseDetector {
                     infiltration: 25,      // keep pushing
                     informationGain: 2,
                     combatReward: 1,
+                    kingExposure: 8,       // moderate: still relevant
+                    probeDetection: 6,     // moderate: mixed offense/defense
+                    kingDangerMultiplier: 2.5,
+                    compositionAdvantage: 8, // moderate: types start to matter
                     threatPenalty: 20      // increased: avoid risky positions
                 };
 
@@ -106,6 +114,10 @@ export class PhaseDetector {
                     infiltration: 15,
                     informationGain: 1,
                     combatReward: 1,
+                    kingExposure: 3,       // low: lanes naturally open
+                    probeDetection: 2,     // low: few pieces scouting
+                    kingDangerMultiplier: 3.0, // high: every threat is critical
+                    compositionAdvantage: 15, // high: remaining types define the matchup
                     threatPenalty: 25      // increased: can't afford losses in endgame
                 };
         }
