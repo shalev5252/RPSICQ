@@ -220,10 +220,14 @@ describe('ThirdEyeGameService', () => {
             // Advance to 20s total
             now += 15000;
             vi.advanceTimersByTime(15000);
-            // Either onTimeout was called, or onTick detected remaining=0 and cleared
-            // Both are valid: the round timer has completed
-            const totalCallbacks = onTick.mock.calls.length + onTimeout.mock.calls.length;
-            expect(totalCallbacks).toBeGreaterThanOrEqual(5);
+            expect(onTimeout).toHaveBeenCalled();
+
+            // Ensure decreasing ticks were logged
+            const calls = onTick.mock.calls.map(call => call[0]);
+            expect(calls.length).toBeGreaterThan(0);
+            for (let i = 0; i < calls.length - 1; i++) {
+                expect(calls[i]).toBeGreaterThanOrEqual(calls[i + 1]);
+            }
         });
     });
 

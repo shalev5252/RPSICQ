@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useSocket } from './useSocket';
 import { SOCKET_EVENTS } from '@rps/shared';
 import type { TttCell, TttMark, TttStartPayload, TttGameOverPayload } from '@rps/shared';
@@ -11,6 +11,7 @@ interface TttGameHookResult {
     winningLine: number[] | null;
     isGameStarted: boolean;
     rematchRequested: boolean;
+    requestRematch: () => void;
 }
 
 export function useTttGame(): TttGameHookResult {
@@ -22,6 +23,12 @@ export function useTttGame(): TttGameHookResult {
     const [winningLine, setWinningLine] = useState<number[] | null>(null);
     const [isGameStarted, setIsGameStarted] = useState(false);
     const [rematchRequested, setRematchRequested] = useState(false);
+
+    const requestRematch = useCallback(() => {
+        if (!socket) return;
+        setRematchRequested(true);
+        socket.emit(SOCKET_EVENTS.TTT_REMATCH);
+    }, [socket]);
 
     useEffect(() => {
         if (!socket) return;
@@ -44,7 +51,7 @@ export function useTttGame(): TttGameHookResult {
         const handleGameOver = (data: TttGameOverPayload) => {
             setBoard(data.board);
             setWinningLine(data.winningLine);
-            setWinner(data.winner as TttMark | 'draw' | 'disconnect');
+            setWinner(data.winner);
         };
 
         const handleRematchRequested = () => {
@@ -72,5 +79,6 @@ export function useTttGame(): TttGameHookResult {
         winningLine,
         isGameStarted,
         rematchRequested,
+        requestRematch,
     };
 }

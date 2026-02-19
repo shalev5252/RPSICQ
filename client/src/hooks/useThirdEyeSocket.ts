@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useSocket } from './useSocket';
 import { SOCKET_EVENTS } from '@rps/shared';
 import type {
@@ -95,7 +95,7 @@ export function useThirdEyeGame(): ThirdEyeHookResult {
 
         const handleGameOver = (data: ThirdEyeGameOverPayload) => {
             setGameOver(true);
-            setMatchWinner(data.winner as PlayerColor | 'disconnect');
+            setMatchWinner(data.winner);
             setFinalScores(data.finalScores);
         };
 
@@ -135,11 +135,11 @@ export function useThirdEyeGame(): ThirdEyeHookResult {
         };
     }, [socket]);
 
-    const requestRematch = () => {
+    const requestRematch = useCallback(() => {
         if (!socket) return;
         setRematchRequested(true);
         socket.emit(SOCKET_EVENTS.TE_REMATCH);
-    };
+    }, [socket]);
 
     return {
         isStarted,

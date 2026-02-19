@@ -24,9 +24,12 @@ export const TttFlow: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     }, []);
 
     const handleBackToModeSelect = useCallback(() => {
+        setScreen('mode-select');
+    }, []);
+
+    const handleBackToPortal = useCallback(() => {
         onBack();
     }, [onBack]);
-
 
     switch (screen) {
         case 'mode-select':
@@ -36,9 +39,9 @@ export const TttFlow: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             return <TttDifficultySelection onSelect={handleDifficultySelect} onBack={handleBackToModeSelect} />;
 
         case 'playing-online':
-            return <TttGameScreen mode="online" onBack={handleBackToModeSelect} />;
+            return <TttGameScreen mode="online" onBack={handleBackToPortal} />;
 
         case 'playing-ai':
-            return <TttGameScreen mode="ai" difficulty={difficulty} onBack={handleBackToModeSelect} />;
+            return <TttGameScreen mode="ai" difficulty={difficulty} onBack={handleBackToPortal} />;
     }
 };

@@ -49,11 +49,11 @@ export const ThirdEyeGameScreen: React.FC<ThirdEyeGameScreenProps> = ({ onBack }
         if (!socket || hasSubmitted) return;
         const num = parseInt(inputValue, 10);
         if (isNaN(num)) {
-            setInputError(t('thirdEye.invalid_number', 'Enter a valid number'));
+            setInputError(t('third_eye.invalid_number', 'Enter a valid number'));
             return;
         }
         if (num < rangeMin || num > rangeMax) {
-            setInputError(t('thirdEye.out_of_range', 'Number must be between {{min}} and {{max}}', { min: rangeMin, max: rangeMax }));
+            setInputError(t('third_eye.out_of_range', 'Number must be between {{min}} and {{max}}', { min: rangeMin, max: rangeMax }));
             return;
         }
         setInputError('');
@@ -78,7 +78,7 @@ export const ThirdEyeGameScreen: React.FC<ThirdEyeGameScreenProps> = ({ onBack }
             <div className="te-screen">
                 <div className="te-screen__waiting">
                     <div className="te-screen__spinner" />
-                    <p>{t('thirdEye.waiting', 'Waiting for opponent...')}</p>
+                    <p>{t('third_eye.waiting', 'Waiting for opponent...')}</p>
                     <button className="te-btn te-btn--secondary" onClick={onBack}>
                         {t('common.cancel', 'Cancel')}
                     </button>
@@ -98,15 +98,15 @@ export const ThirdEyeGameScreen: React.FC<ThirdEyeGameScreenProps> = ({ onBack }
                         isWin ? 'te-game-over__title--win' : 'te-game-over__title--lose'
                         }`}>
                         {matchWinner === 'disconnect'
-                            ? t('thirdEye.opponent_disconnected', 'Opponent disconnected')
+                            ? t('third_eye.opponent_disconnected', 'Opponent disconnected')
                             : isWin
-                                ? t('thirdEye.you_win', 'You Win! 🎉')
-                                : t('thirdEye.you_lose', 'You Lose!')}
+                                ? t('third_eye.you_win', 'You Win! 🎉')
+                                : t('third_eye.you_lose', 'You Lose!')}
                     </h2>
 
                     {finalScores && (
                         <div className="te-score-final">
-                            <span className="te-score-final__label">{t('thirdEye.final_score', 'Final Score')}</span>
+                            <span className="te-score-final__label">{t('third_eye.final_score', 'Final Score')}</span>
                             <span className="te-score-final__value">
                                 {myColor ? finalScores[myColor] : finalScores.red} — {myColor ? finalScores[opponentColor] : finalScores.blue}
                             </span>
@@ -120,11 +120,11 @@ export const ThirdEyeGameScreen: React.FC<ThirdEyeGameScreenProps> = ({ onBack }
                             disabled={rematchRequested}
                         >
                             {rematchRequested
-                                ? t('thirdEye.rematch_waiting', 'Waiting...')
-                                : t('thirdEye.rematch', 'Rematch')}
+                                ? t('third_eye.rematch_waiting', 'Waiting...')
+                                : t('third_eye.rematch', 'Rematch')}
                         </button>
                         <button className="te-btn te-btn--secondary" onClick={onBack}>
-                            ← {t('thirdEye.back', 'Back to menu')}
+                            ← {t('third_eye.back', 'Back to menu')}
                         </button>
                     </div>
                 </div>
@@ -137,39 +137,39 @@ export const ThirdEyeGameScreen: React.FC<ThirdEyeGameScreenProps> = ({ onBack }
         return (
             <div className="te-screen">
                 <div className="te-scoreboard">
-                    <span className="te-scoreboard__label">{t('thirdEye.you', 'You')}</span>
+                    <span className="te-scoreboard__label">{t('third_eye.you', 'You')}</span>
                     <span className="te-scoreboard__score te-scoreboard__score--mine">{myScore}</span>
                     <span className="te-scoreboard__divider">—</span>
                     <span className="te-scoreboard__score te-scoreboard__score--opponent">{opponentScore}</span>
-                    <span className="te-scoreboard__label">{t('thirdEye.opponent', 'Opponent')}</span>
+                    <span className="te-scoreboard__label">{t('third_eye.opponent', 'Opponent')}</span>
                 </div>
 
                 <div className="te-result-overlay">
                     <div className="te-result-overlay__lucky">
-                        <span className="te-result-overlay__label">{t('thirdEye.lucky_number', 'Lucky Number')}</span>
+                        <span className="te-result-overlay__label">{t('third_eye.lucky_number', 'Lucky Number')}</span>
                         <span className="te-result-overlay__number">{roundResult.luckyNumber}</span>
                     </div>
 
                     <div className="te-result-overlay__picks">
                         <div className="te-result-overlay__pick">
-                            <span className="te-result-overlay__player">{t('thirdEye.you', 'You')}</span>
+                            <span className="te-result-overlay__player">{t('third_eye.you', 'You')}</span>
                             <span className="te-result-overlay__value">
-                                {myColor && roundResult.picks[myColor] !== null ? roundResult.picks[myColor] : t('thirdEye.timeout', '⏰ Timeout')}
+                                {myColor && roundResult.picks[myColor] !== null ? roundResult.picks[myColor] : t('third_eye.timeout', '⏰ Timeout')}
                             </span>
                             {myColor && roundResult.distances[myColor] !== null && (
                                 <span className="te-result-overlay__dist">
-                                    {t('thirdEye.distance', 'Distance')}: {roundResult.distances[myColor]}
+                                    {t('third_eye.distance', 'Distance')}: {roundResult.distances[myColor]}
                                 </span>
                             )}
                         </div>
                         <div className="te-result-overlay__pick">
-                            <span className="te-result-overlay__player">{t('thirdEye.opponent', 'Opponent')}</span>
+                            <span className="te-result-overlay__player">{t('third_eye.opponent', 'Opponent')}</span>
                             <span className="te-result-overlay__value">
-                                {roundResult.picks[opponentColor] !== null ? roundResult.picks[opponentColor] : t('thirdEye.timeout', '⏰ Timeout')}
+                                {roundResult.picks[opponentColor] !== null ? roundResult.picks[opponentColor] : t('third_eye.timeout', '⏰ Timeout')}
                             </span>
                             {roundResult.distances[opponentColor] !== null && (
                                 <span className="te-result-overlay__dist">
-                                    {t('thirdEye.distance', 'Distance')}: {roundResult.distances[opponentColor]}
+                                    {t('third_eye.distance', 'Distance')}: {roundResult.distances[opponentColor]}
                                 </span>
                             )}
                         </div>
@@ -179,10 +179,10 @@ export const ThirdEyeGameScreen: React.FC<ThirdEyeGameScreenProps> = ({ onBack }
                         roundResult.roundWinner === myColor ? 'te-result-overlay__winner--you' : 'te-result-overlay__winner--opponent'
                         }`}>
                         {roundResult.roundWinner === 'tie'
-                            ? t('thirdEye.round_tie', '🤝 Tie!')
+                            ? t('third_eye.round_tie', '🤝 Tie!')
                             : roundResult.roundWinner === myColor
-                                ? t('thirdEye.round_you_win', '🎯 You scored!')
-                                : t('thirdEye.round_opponent_wins', 'Opponent scored!')}
+                                ? t('third_eye.round_you_win', '🎯 You scored!')
+                                : t('third_eye.round_opponent_wins', 'Opponent scored!')}
                     </div>
                 </div>
             </div>
@@ -193,15 +193,15 @@ export const ThirdEyeGameScreen: React.FC<ThirdEyeGameScreenProps> = ({ onBack }
     return (
         <div className="te-screen">
             <div className="te-scoreboard">
-                <span className="te-scoreboard__label">{t('thirdEye.you', 'You')}</span>
+                <span className="te-scoreboard__label">{t('third_eye.you', 'You')}</span>
                 <span className="te-scoreboard__score te-scoreboard__score--mine">{myScore}</span>
                 <span className="te-scoreboard__divider">—</span>
                 <span className="te-scoreboard__score te-scoreboard__score--opponent">{opponentScore}</span>
-                <span className="te-scoreboard__label">{t('thirdEye.opponent', 'Opponent')}</span>
+                <span className="te-scoreboard__label">{t('third_eye.opponent', 'Opponent')}</span>
             </div>
 
             <div className="te-round-info">
-                <span className="te-round-info__round">{t('thirdEye.round', 'Round')} {roundNumber}</span>
+                <span className="te-round-info__round">{t('third_eye.round', 'Round')} {roundNumber}</span>
                 <div className={`te-timer ${timerUrgent ? 'te-timer--urgent' : ''}`}>
                     <span className="te-timer__value">{timerSeconds}</span>
                     <span className="te-timer__label">s</span>
@@ -209,7 +209,7 @@ export const ThirdEyeGameScreen: React.FC<ThirdEyeGameScreenProps> = ({ onBack }
             </div>
 
             <div className="te-range">
-                <span className="te-range__label">{t('thirdEye.pick_between', 'Pick a number between')}</span>
+                <span className="te-range__label">{t('third_eye.pick_between', 'Pick a number between')}</span>
                 <div className="te-range__values">
                     <span className="te-range__min">{rangeMin}</span>
                     <span className="te-range__dash">—</span>
@@ -221,9 +221,9 @@ export const ThirdEyeGameScreen: React.FC<ThirdEyeGameScreenProps> = ({ onBack }
                 <div className="te-submitted">
                     <span className="te-submitted__icon">✅</span>
                     <span className="te-submitted__text">
-                        {t('thirdEye.submitted', 'You picked')} <strong>{pickConfirmed}</strong>
+                        {t('third_eye.submitted', 'You picked')} <strong>{pickConfirmed}</strong>
                     </span>
-                    <span className="te-submitted__waiting">{t('thirdEye.waiting_opponent', 'Waiting for opponent...')}</span>
+                    <span className="te-submitted__waiting">{t('third_eye.waiting_opponent', 'Waiting for opponent...')}</span>
                 </div>
             ) : (
                 <div className="te-input-area">
@@ -240,7 +240,7 @@ export const ThirdEyeGameScreen: React.FC<ThirdEyeGameScreenProps> = ({ onBack }
                     />
                     {inputError && <span className="te-input-area__error">{inputError}</span>}
                     <button className="te-btn te-btn--primary" onClick={handleSubmit}>
-                        {t('thirdEye.submit', 'Submit')} 🔮
+                        {t('third_eye.submit', 'Submit')} 🔮
                     </button>
                 </div>
             )}

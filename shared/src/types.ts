@@ -234,7 +234,7 @@ export interface TttMovePayload {
 }
 
 export interface TttGameOverPayload {
-    winner: TttMark | 'draw';
+    winner: TttMark | 'draw' | 'disconnect';
     winningLine: number[] | null;
     board: TttCell[];
 }
@@ -295,7 +295,7 @@ export interface ThirdEyeRoundResultPayload {
 }
 
 export interface ThirdEyeGameOverPayload {
-    winner: PlayerColor;
+    winner: PlayerColor | 'disconnect';
     finalScores: ThirdEyeScores;
 }
 

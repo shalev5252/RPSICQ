@@ -67,7 +67,16 @@ export class GameService {
         return null;
     }
 
-    public createSession(id: string, player1Id: string, player1Color: PlayerColor, player2Id: string, player2Color: PlayerColor, gameMode: RpsGameMode = 'classic', gameVariant: GameVariant = 'standard'): GameState {
+    private isRpsGameMode(mode: string): mode is RpsGameMode {
+        return ['classic', 'rpsls', 'ultimate'].includes(mode);
+    }
+
+    public createSession(id: string, player1Id: string, player1Color: PlayerColor, player2Id: string, player2Color: PlayerColor, gameMode: GameMode = 'classic', gameVariant: GameVariant = 'standard'): GameState {
+        // Validate game mode for RPS
+        if (!this.isRpsGameMode(gameMode)) {
+            throw new Error(`Invalid RPS game mode: ${gameMode}`);
+        }
+
         const config = gameVariant === 'onslaught' ? ONSLAUGHT_CONFIG[gameMode] : BOARD_CONFIG[gameMode];
         const initialBoard: Cell[][] = Array(config.rows).fill(null).map((_, row) =>
             Array(config.cols).fill(null).map((_, col) => ({
@@ -130,9 +139,14 @@ export class GameService {
     public createSingleplayerSession(
         humanSocketId: string,
         humanPlayerId: string,
-        gameMode: RpsGameMode = 'classic',
+        gameMode: GameMode = 'classic',
         gameVariant: GameVariant = 'standard'
     ): GameState {
+        // Validate game mode for RPS
+        if (!this.isRpsGameMode(gameMode)) {
+            throw new Error(`Invalid RPS game mode: ${gameMode}`);
+        }
+
         const sessionId = uuidv4();
         const config = gameVariant === 'onslaught' ? ONSLAUGHT_CONFIG[gameMode] : BOARD_CONFIG[gameMode];
         const initialBoard: Cell[][] = Array(config.rows).fill(null).map((_, row) =>
@@ -204,7 +218,12 @@ export class GameService {
 
     private initializeOnslaughtGame(session: GameState): void {
         const gameMode = session.gameMode;
-        const config = ONSLAUGHT_CONFIG[gameMode as RpsGameMode]; // We know it's onslaught here
+        if (!this.isRpsGameMode(gameMode)) {
+            console.error(`Invalid game mode for Onslaught: ${gameMode}`);
+            return;
+        }
+
+        const config = ONSLAUGHT_CONFIG[gameMode];
 
         // Setup for both players
         const players = [session.players.red, session.players.blue];
@@ -323,13 +342,15 @@ export class GameService {
         }
 
         // Verify it's a valid RPS mode
-        if (!(gameMode in BOARD_CONFIG)) return { success: false, error: 'Invalid game mode for RPS' };
+        if (!this.isRpsGameMode(gameMode) || !(gameMode in BOARD_CONFIG)) {
+            return { success: false, error: 'Invalid game mode for RPS' };
+        }
 
         // Validate positions are in player's rows
-        if (!this.isValidSetupPosition(kingPosition, color, gameMode as RpsGameMode)) {
+        if (!this.isValidSetupPosition(kingPosition, color, gameMode)) {
             return { success: false, error: 'King position not in your rows' };
         }
-        if (!this.isValidSetupPosition(pitPosition, color, gameMode as RpsGameMode)) {
+        if (!this.isValidSetupPosition(pitPosition, color, gameMode)) {
             return { success: false, error: 'Pit position not in your rows' };
         }
 
@@ -406,8 +427,10 @@ export class GameService {
 
         const gameMode = session.gameMode;
         // Verify it's a valid RPS mode
-        if (!(gameMode in BOARD_CONFIG)) return { success: false, error: 'Invalid game mode for RPS' };
-        const config = BOARD_CONFIG[gameMode as RpsGameMode];
+        if (!this.isRpsGameMode(gameMode) || !(gameMode in BOARD_CONFIG)) {
+            return { success: false, error: 'Invalid game mode for RPS' };
+        }
+        const config = BOARD_CONFIG[gameMode];
 
         const color = this.getPlayerColor(socketId);
         if (!color) return { success: false, error: 'Player not found' };
@@ -421,7 +444,7 @@ export class GameService {
 
         // Use Onslaught config if applicable
         const effectiveConfig = session.gameVariant === 'onslaught'
-            ? ONSLAUGHT_CONFIG[gameMode as RpsGameMode]
+            ? ONSLAUGHT_CONFIG[gameMode]
             : config;
 
         const setupState = this.setupStates.get(socketId);
@@ -782,10 +805,12 @@ export class GameService {
         if (!session || session.phase !== 'playing') return [];
 
         const gameMode = session.gameMode;
-        if (!(gameMode in BOARD_CONFIG)) return [];
+        if (!this.isRpsGameMode(gameMode) || !(gameMode in BOARD_CONFIG)) {
+            return [];
+        }
         const config = session.gameVariant === 'onslaught'
-            ? ONSLAUGHT_CONFIG[gameMode as RpsGameMode]
-            : BOARD_CONFIG[gameMode as RpsGameMode];
+            ? ONSLAUGHT_CONFIG[gameMode]
+            : BOARD_CONFIG[gameMode];
         const color = this.getPlayerColor(socketId);
         if (!color) return [];
 

@@ -61,6 +61,11 @@ function AppContent() {
                     alt="RPS Battle Logo"
                     className={`header-logo${activeGame !== null ? ' header-logo--clickable' : ''}`}
                     onClick={activeGame !== null ? resetToPortal : undefined}
+                    onKeyDown={(e) => {
+                        if (activeGame !== null && (e.key === 'Enter' || e.key === ' ')) {
+                            resetToPortal();
+                        }
+                    }}
                     role={activeGame !== null ? 'button' : undefined}
                     tabIndex={activeGame !== null ? 0 : undefined}
                 />
@@ -107,11 +112,11 @@ function AppContent() {
                         )}
 
                         {/* Tic Tac Toe flow */}
-                        {activeGame === 'ttt' && <TttFlow onBack={() => resetToPortal()} />}
+                        {activeGame === 'ttt' && <TttFlow onBack={resetToPortal} />}
 
                         {/* Third Eye flow */}
                         {activeGame === 'third-eye' && (
-                            <ThirdEyeFlow onBack={() => resetToPortal()} />
+                            <ThirdEyeFlow onBack={resetToPortal} />
                         )}
                     </>
                 )}
