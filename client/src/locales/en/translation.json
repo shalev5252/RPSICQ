@@ -212,5 +212,30 @@
             "title": "The Third Eye",
             "desc": "Guess the lucky number — first to 3 wins"
         }
+    },
+    "ttt": {
+        "title": "Tic Tac Toe",
+        "choose_mode": "Choose your game mode",
+        "play_online": "Play Online",
+        "play_online_desc": "Challenge a random opponent",
+        "play_vs_computer": "Play vs Computer",
+        "play_vs_computer_desc": "Test your skills against AI",
+        "ultimate": "Ultimate",
+        "select_difficulty": "Select Difficulty",
+        "difficulty_easy": "Easy",
+        "difficulty_medium": "Medium",
+        "difficulty_hard": "Hard",
+        "your_turn": "Your turn",
+        "opponent_turn": "Opponent's turn",
+        "you_are": "You are",
+        "waiting_for_opponent": "Waiting for opponent...",
+        "starting": "Starting game...",
+        "you_win": "You Win! 🎉",
+        "you_lose": "You Lose!",
+        "draw": "It's a Draw!",
+        "opponent_disconnected": "Opponent disconnected",
+        "rematch": "Rematch",
+        "rematch_waiting": "Waiting for opponent...",
+        "back_to_menu": "Back to menu"
     }
 }

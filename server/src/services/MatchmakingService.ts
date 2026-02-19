@@ -2,6 +2,7 @@ import { Socket, Server } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
 import { PlayerRole, SOCKET_EVENTS, GameMode, GameVariant } from '@rps/shared';
 import { GameService } from './GameService.js';
+import { tttService } from '../socket/tttHandlers.js';
 
 // Queue key combines mode and variant
 type QueueKey = `${GameMode}` | `${GameMode}-${GameVariant}`;
@@ -140,12 +141,23 @@ export class MatchmakingService {
 
         // Route to the correct game service based on game mode
         if (gameMode === 'ttt-classic') {
-            // TODO: Create TTT session via TttGameService (task 4)
+            const tttSession = tttService.createSession(sessionId, socket1.id, p1Role, socket2.id, p2Role);
+            const { state } = tttSession;
             console.log(`🎮 TTT match created: ${sessionId}`);
             socket1.join(sessionId);
             socket2.join(sessionId);
-            socket1.emit(SOCKET_EVENTS.GAME_FOUND, { sessionId, color: p1Role });
-            socket2.emit(SOCKET_EVENTS.GAME_FOUND, { sessionId, color: p2Role });
+            socket1.emit(SOCKET_EVENTS.TTT_GAME_START, {
+                sessionId: state.sessionId,
+                mark: state.playerMarks[p1Role],
+                board: state.board,
+                currentTurn: state.currentTurn,
+            });
+            socket2.emit(SOCKET_EVENTS.TTT_GAME_START, {
+                sessionId: state.sessionId,
+                mark: state.playerMarks[p2Role],
+                board: state.board,
+                currentTurn: state.currentTurn,
+            });
             return;
         }
 

@@ -18,27 +18,27 @@
 - [ ] 3.3 Ensure session creation routes to the correct game service based on queue key
 
 ## 4. Tic Tac Toe — Server
-- [ ] 4.1 Create `TttGameService` with board state, turn management, win/draw detection
-- [ ] 4.2 Create `tttHandlers.ts` with socket event handlers (`TTT_MOVE`, `TTT_REMATCH`)
-- [ ] 4.3 Implement win-check logic (rows, columns, diagonals)
-- [ ] 4.4 Implement turn timer (optional, reuse RPS pattern if desired)
+- [x] 4.1 Create `TttGameService` with board state, turn management, win/draw detection
+- [x] 4.2 Create `tttHandlers.ts` with socket event handlers (`TTT_MOVE`, `TTT_REMATCH`)
+- [x] 4.3 Implement win-check logic (rows, columns, diagonals)
+- [x] 4.4 Implement turn timer (optional, reuse RPS pattern if desired)
 
 ## 5. Tic Tac Toe — AI
-- [ ] 5.1 Create `TttAI` service with Minimax + alpha-beta pruning
-- [ ] 5.2 Implement Easy mode (random moves)
-- [ ] 5.3 Implement Medium mode (Minimax depth-3, 30% suboptimal moves)
-- [ ] 5.4 Implement Hard mode (full Minimax, optimal play)
-- [ ] 5.5 Unit tests for AI (verify Hard never loses, Easy sometimes loses)
+- [x] 5.1 Create `TttAI` service with Minimax + alpha-beta pruning
+- [x] 5.2 Implement Easy mode (random moves)
+- [x] 5.3 Implement Medium mode (Minimax depth-3, 30% suboptimal moves)
+- [x] 5.4 Implement Hard mode (full Minimax, optimal play)
+- [x] 5.5 Unit tests for AI (verify Hard never loses, Easy sometimes loses)
 
 ## 6. Tic Tac Toe — Client
-- [ ] 6.1 Create `TttModeSelection` component (Play Online / Play vs Computer / Ultimate Coming Soon)
-- [ ] 6.2 Create `TttDifficultySelection` component (Easy / Medium / Hard)
-- [ ] 6.3 Create `TttBoard` component (3×3 grid, mark placement, winning line highlight)
-- [ ] 6.4 Create `TttGameScreen` wrapper (board + turn indicator + status)
-- [ ] 6.5 Integrate with `useSocket` for online mode
-- [ ] 6.6 Create local game loop for vs-AI mode (no socket needed)
-- [ ] 6.7 Create `TttGameOverScreen` with rematch support
-- [ ] 6.8 Style with animations (mark placement, winning line glow)
+- [x] 6.1 Create `TttModeSelection` component (Play Online / Play vs Computer / Ultimate Coming Soon)
+- [x] 6.2 Create `TttDifficultySelection` component (Easy / Medium / Hard)
+- [x] 6.3 Create `TttBoard` component (3×3 grid, mark placement, winning line highlight)
+- [x] 6.4 Create `TttGameScreen` wrapper (board + turn indicator + status)
+- [x] 6.5 Integrate with `useSocket` for online mode
+- [x] 6.6 Create local game loop for vs-AI mode (no socket needed)
+- [x] 6.7 Create `TttGameOverScreen` with rematch support
+- [x] 6.8 Style with animations (mark placement, winning line glow)
 
 ## 7. The Third Eye — Server
 - [ ] 7.1 Create `ThirdEyeGameService` with range generation, lucky number, round management, scoring

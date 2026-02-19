@@ -1,0 +1,89 @@
+.ttt-game-over {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 2rem;
+    animation: ttt-fade-in 0.4s ease;
+}
+
+@keyframes ttt-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.ttt-game-over__result {
+    font-size: 2rem;
+    font-weight: 700;
+    text-align: center;
+    margin: 0;
+}
+
+.ttt-game-over__result--win {
+    color: #4ade80;
+    text-shadow: 0 0 20px rgba(74, 222, 128, 0.3);
+}
+
+.ttt-game-over__result--lose {
+    color: #f87171;
+}
+
+.ttt-game-over__result--draw {
+    color: #facc15;
+}
+
+.ttt-game-over__board {
+    opacity: 0.85;
+    pointer-events: none;
+}
+
+.ttt-game-over__actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    width: 100%;
+    max-width: 300px;
+}
+
+.ttt-game-over__btn {
+    padding: 0.8rem 1.5rem;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.ttt-game-over__btn--rematch {
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    color: #fff;
+}
+
+.ttt-game-over__btn--rematch:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.3);
+}
+
+.ttt-game-over__btn--waiting {
+    opacity: 0.7;
+    cursor: wait;
+}
+
+.ttt-game-over__btn--back {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-secondary, #aaa);
+}
+
+.ttt-game-over__btn--back:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+}

@@ -10,6 +10,7 @@ import { MatchmakingScreen } from './components/MatchmakingScreen';
 import { SetupScreen } from './components/setup';
 import { GameScreen } from './components/game/GameScreen';
 import { GameOverScreen } from './components/game/GameOverScreen';
+import { TttFlow } from './components/ttt/TttFlow';
 import './App.css';
 import { getActiveSession, clearActiveSession } from './utils/sessionStorage';
 
@@ -108,13 +109,8 @@ function AppContent() {
                             </>
                         )}
 
-                        {/* TODO: TTT and Third Eye game flows will be added in tasks 4-8 */}
-                        {activeGame === 'ttt' && (
-                            <>
-                                {gamePhase === 'waiting' && <MatchmakingScreen />}
-                                {/* TTT-specific screens will be added later */}
-                            </>
-                        )}
+                        {/* Tic Tac Toe flow */}
+                        {activeGame === 'ttt' && <TttFlow />}
 
                         {activeGame === 'third-eye' && (
                             <>
