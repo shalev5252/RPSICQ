@@ -52,26 +52,22 @@ function AppContent() {
         }
     }, []); // Run only on mount
 
-    // Determine if we should show the back-to-portal button
-    const showBackButton = activeGame !== null && (gamePhase === 'waiting');
 
     return (
         <div className="app">
             <header className="app-header">
-                <img src="/rps_logo.png" alt="RPS Battle Logo" className="header-logo" />
+                <img
+                    src="/rps_logo.png"
+                    alt="RPS Battle Logo"
+                    className={`header-logo${activeGame !== null ? ' header-logo--clickable' : ''}`}
+                    onClick={activeGame !== null ? resetToPortal : undefined}
+                    role={activeGame !== null ? 'button' : undefined}
+                    tabIndex={activeGame !== null ? 0 : undefined}
+                />
 
                 <div className="header-title-section">
                     <h1>{t('app.title')}</h1>
                 </div>
-
-                {showBackButton && (
-                    <button
-                        className="back-to-portal-button"
-                        onClick={resetToPortal}
-                    >
-                        ← {t('portal.backToPortal')}
-                    </button>
-                )}
 
                 <button
                     className="settings-button"

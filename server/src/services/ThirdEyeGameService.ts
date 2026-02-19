@@ -1,8 +1,6 @@
-import { v4 as uuidv4 } from 'uuid';
 import type { PlayerColor, ThirdEyeScores } from '@rps/shared';
 
 const TIMER_DURATION_MS = 20_000;
-const ROUND_RESULT_DELAY_MS = 3_000; // Show results for 3s before next round
 const WIN_SCORE = 3;
 
 interface PlayerPick {

@@ -28,7 +28,7 @@ export class TttGameService {
         socket1Id: string,
         socket1Color: PlayerColor,
         socket2Id: string,
-        socket2Color: PlayerColor,
+        _socket2Color: PlayerColor,
     ): TttSession {
         // Randomly assign X/O based on color
         const redMark: TttMark = Math.random() < 0.5 ? 'X' : 'O';

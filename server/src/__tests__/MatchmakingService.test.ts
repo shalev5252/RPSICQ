@@ -1,11 +1,26 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
 import { MatchmakingService } from '../services/MatchmakingService.js';
 import { GameService } from '../services/GameService.js';
 import { Server } from 'socket.io';
 
+interface MockSocket {
+    id: string;
+    connected: boolean;
+    join: Mock;
+    emit: Mock;
+}
+
+// Helper interface for our mock
+interface MockServer {
+    sockets: {
+        sockets: Map<string, MockSocket>;
+    };
+    __addSocket: (id: string) => MockSocket;
+}
+
 /** Create a minimal mock of the socket.io Server */
-function createMockIO(): Server {
-    const connectedSockets = new Map<string, { id: string; connected: boolean; join: ReturnType<typeof vi.fn>; emit: ReturnType<typeof vi.fn> }>();
+function createMockIO(): MockServer {
+    const connectedSockets = new Map<string, MockSocket>();
 
     const mockSocket = (id: string) => ({
         id,
@@ -18,10 +33,10 @@ function createMockIO(): Server {
         sockets: {
             sockets: connectedSockets,
         },
-    } as unknown as Server;
+    } as unknown as MockServer;
 
     // Helper to register sockets
-    (io as any).__addSocket = (id: string) => {
+    io.__addSocket = (id: string) => {
         const s = mockSocket(id);
         connectedSockets.set(id, s);
         return s;
@@ -33,12 +48,12 @@ function createMockIO(): Server {
 describe('MatchmakingService', () => {
     let ms: MatchmakingService;
     let gs: GameService;
-    let io: Server & { __addSocket: (id: string) => any };
+    let io: MockServer;
 
     beforeEach(() => {
         gs = new GameService();
-        io = createMockIO() as any;
-        ms = new MatchmakingService(io, gs);
+        io = createMockIO();
+        ms = new MatchmakingService(io as unknown as Server, gs);
     });
 
     it('adds a player to the queue and queue size increases', () => {
