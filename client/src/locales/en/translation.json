@@ -190,5 +190,27 @@
         "devil": "Devil",
         "pray": "Pray/Hope",
         "angel": "Angel"
+    },
+    "portal": {
+        "title": "Game Arcade",
+        "subtitle": "Choose a game to play",
+        "comingSoon": "Coming Soon",
+        "backToPortal": "Back to Games",
+        "rps": {
+            "title": "RPS Battle",
+            "desc": "Strategic board game with Rock, Paper & Scissors"
+        },
+        "ttt": {
+            "title": "Tic Tac Toe",
+            "desc": "Classic 3×3 — play online or vs AI"
+        },
+        "tttUltimate": {
+            "title": "Ultimate Tic Tac Toe",
+            "desc": "9 boards, 1 epic game"
+        },
+        "thirdEye": {
+            "title": "The Third Eye",
+            "desc": "Guess the lucky number — first to 3 wins"
+        }
     }
 }

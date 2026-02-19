@@ -7,6 +7,7 @@ import {
     CombatElement,
     BOARD_CONFIG,
     ONSLAUGHT_CONFIG,
+    RpsGameMode,
     RPSLS_WINS,
     MOVEMENT_DIRECTIONS,
     AI_DELAY_MIN_MS,
@@ -99,7 +100,7 @@ export class AIOpponentService {
         kingPosition: Position;
         pitPosition: Position;
     } {
-        const config = BOARD_CONFIG[gameMode];
+        const config = BOARD_CONFIG[gameMode as RpsGameMode];
         const setupRows = aiColor === 'red' ? RED_SETUP_ROWS : BLUE_SETUP_ROWS;
         // Back row = row farthest from the opponent
         const backRow = aiColor === 'red' ? setupRows[0] : setupRows[setupRows.length - 1];
@@ -230,8 +231,8 @@ export class AIOpponentService {
             const player = gameState.players[aiColor];
             if (player) {
                 const config = (gameState.gameVariant === 'onslaught')
-                    ? ONSLAUGHT_CONFIG[gameState.gameMode]
-                    : BOARD_CONFIG[gameState.gameMode];
+                    ? ONSLAUGHT_CONFIG[gameState.gameMode as RpsGameMode]
+                    : BOARD_CONFIG[gameState.gameMode as RpsGameMode];
 
                 // Collect ALL valid non-suicidal moves
                 const allSafeMoves: { from: Position; to: Position }[] = [];
@@ -267,8 +268,8 @@ export class AIOpponentService {
         if (!player) return null;
 
         const config = (gameState.gameVariant === 'onslaught')
-            ? ONSLAUGHT_CONFIG[gameState.gameMode]
-            : BOARD_CONFIG[gameState.gameMode];
+            ? ONSLAUGHT_CONFIG[gameState.gameMode as RpsGameMode]
+            : BOARD_CONFIG[gameState.gameMode as RpsGameMode];
         const bayesianState = this.trackers.get(gameState.sessionId)?.getState(gameState.sessionId);
 
         // Collect all valid non-suicidal moves

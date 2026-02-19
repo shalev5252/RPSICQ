@@ -5,6 +5,7 @@ import { useGameSession } from './hooks/useGameSession';
 import { useGameStore } from './store/gameStore';
 import { useTranslation } from 'react-i18next';
 import { SettingsWindow } from './components/SettingsWindow';
+import { GamePortal } from './components/GamePortal';
 import { MatchmakingScreen } from './components/MatchmakingScreen';
 import { SetupScreen } from './components/setup';
 import { GameScreen } from './components/game/GameScreen';
@@ -18,7 +19,9 @@ import './i18n'; // Ensure i18n is initialized if not already in main, but dupli
 function AppContent() {
     const { socket, isConnected } = useSocket();
     useGameSession(socket); // Handle global game events
+    const activeGame = useGameStore(state => state.activeGame);
     const gamePhase = useGameStore(state => state.gamePhase);
+    const resetToPortal = useGameStore(state => state.resetToPortal);
     const { playBGM } = useSound();
     const { t } = useTranslation();
     const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
@@ -47,6 +50,9 @@ function AppContent() {
         }
     }, []); // Run only on mount
 
+    // Determine if we should show the back-to-portal button
+    const showBackButton = activeGame !== null && (gamePhase === 'waiting');
+
     return (
         <div className="app">
             <header className="app-header">
@@ -55,6 +61,15 @@ function AppContent() {
                 <div className="header-title-section">
                     <h1>{t('app.title')}</h1>
                 </div>
+
+                {showBackButton && (
+                    <button
+                        className="back-to-portal-button"
+                        onClick={resetToPortal}
+                    >
+                        ← {t('portal.backToPortal')}
+                    </button>
+                )}
 
                 <button
                     className="settings-button"
@@ -80,10 +95,33 @@ function AppContent() {
                     </div>
                 ) : (
                     <>
-                        {gamePhase === 'waiting' && <MatchmakingScreen />}
-                        {gamePhase === 'setup' && <SetupScreen />}
-                        {(gamePhase === 'playing' || gamePhase === 'tie_breaker') && <GameScreen />}
-                        {gamePhase === 'finished' && <GameOverScreen />}
+                        {/* Portal — no game selected */}
+                        {activeGame === null && <GamePortal />}
+
+                        {/* RPS Battle flow (existing) */}
+                        {activeGame === 'rps' && (
+                            <>
+                                {gamePhase === 'waiting' && <MatchmakingScreen />}
+                                {gamePhase === 'setup' && <SetupScreen />}
+                                {(gamePhase === 'playing' || gamePhase === 'tie_breaker') && <GameScreen />}
+                                {gamePhase === 'finished' && <GameOverScreen />}
+                            </>
+                        )}
+
+                        {/* TODO: TTT and Third Eye game flows will be added in tasks 4-8 */}
+                        {activeGame === 'ttt' && (
+                            <>
+                                {gamePhase === 'waiting' && <MatchmakingScreen />}
+                                {/* TTT-specific screens will be added later */}
+                            </>
+                        )}
+
+                        {activeGame === 'third-eye' && (
+                            <>
+                                {gamePhase === 'waiting' && <MatchmakingScreen />}
+                                {/* Third Eye screens will be added later */}
+                            </>
+                        )}
                     </>
                 )}
             </main>

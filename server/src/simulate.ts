@@ -12,6 +12,7 @@ import { GameService } from './services/GameService.js';
 import {
     BOARD_CONFIG,
     GameMode,
+    RpsGameMode,
     GameState,
     PlayerColor,
     Piece,
@@ -44,7 +45,7 @@ function greedySelectMove(
     socketId: string,
     gameService: GameService
 ): { from: Position; to: Position } | null {
-    const config = BOARD_CONFIG[gameState.gameMode];
+    const config = BOARD_CONFIG[gameState.gameMode as RpsGameMode];
     const player = gameState.players[color];
     if (!player) return null;
 
@@ -216,7 +217,7 @@ function simulateGame(
     const session = gameService.createSingleplayerSession(humanSocketId, humanPlayerId, gameMode);
     const sessionId = session.sessionId;
 
-    const config = BOARD_CONFIG[gameMode];
+    const config = BOARD_CONFIG[gameMode as RpsGameMode];
     const humanSetupRows = [0, 1];
 
     // Human setup: strategic king placement (back row center, pit front row)

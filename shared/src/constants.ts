@@ -1,6 +1,7 @@
 // ============================================================
 // Game Constants for RPS Battle
 // ============================================================
+import type { RpsGameMode } from './types.js';
 
 export const BOARD_ROWS = 6;
 export const BOARD_COLS = 7;
@@ -18,7 +19,7 @@ export const PIECES_PER_PLAYER = {
 
 export const TOTAL_PIECES_PER_PLAYER = 14;
 
-export const BOARD_CONFIG = {
+export const BOARD_CONFIG: Record<RpsGameMode, { readonly rows: number; readonly cols: number; readonly pieces: Record<string, number> }> = {
     classic: {
         rows: 6,
         cols: 7,
@@ -45,9 +46,9 @@ export const BOARD_CONFIG = {
             spock: 2
         }
     }
-} as const;
+};
 
-export const ONSLAUGHT_CONFIG = {
+export const ONSLAUGHT_CONFIG: Record<RpsGameMode, { readonly rows: number; readonly cols: number; readonly pieces: Record<string, number> }> = {
     classic: {
         rows: 6,
         cols: 3,
@@ -74,7 +75,7 @@ export const ONSLAUGHT_CONFIG = {
             spock: 2
         }
     }
-} as const;
+};
 
 export const ONSLAUGHT_END_PIECE_COUNT = 2;
 
@@ -165,4 +166,23 @@ export const SOCKET_EVENTS = {
     RESPOND_DRAW: 'respond_draw',
     DRAW_DECLINED: 'draw_declined',
     ERROR: 'error',
+    // --- Tic Tac Toe events ---
+    TTT_GAME_START: 'ttt_game_start',
+    TTT_MOVE: 'ttt_move',
+    TTT_STATE: 'ttt_state',
+    TTT_GAME_OVER: 'ttt_game_over',
+    TTT_REMATCH: 'ttt_rematch',
+    TTT_REMATCH_REQUESTED: 'ttt_rematch_requested',
+    TTT_REMATCH_ACCEPTED: 'ttt_rematch_accepted',
+    TTT_START_SINGLEPLAYER: 'ttt_start_singleplayer',
+    // --- The Third Eye events ---
+    TE_ROUND_START: 'te_round_start',
+    TE_PICK_NUMBER: 'te_pick_number',
+    TE_PICK_CONFIRMED: 'te_pick_confirmed',
+    TE_TIMER: 'te_timer',
+    TE_ROUND_RESULT: 'te_round_result',
+    TE_GAME_OVER: 'te_game_over',
+    TE_REMATCH: 'te_rematch',
+    TE_REMATCH_REQUESTED: 'te_rematch_requested',
+    TE_REMATCH_ACCEPTED: 'te_rematch_accepted',
 } as const;

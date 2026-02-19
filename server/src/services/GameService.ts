@@ -17,6 +17,7 @@ import {
     CombatElement,
     BOARD_CONFIG,
     ONSLAUGHT_CONFIG,
+    RpsGameMode,
     RPSLS_WINS,
     AI_ID_PREFIX,
     AI_SOCKET_PREFIX
@@ -67,7 +68,7 @@ export class GameService {
     }
 
     public createSession(id: string, player1Id: string, player1Color: PlayerColor, player2Id: string, player2Color: PlayerColor, gameMode: GameMode = 'classic', gameVariant: GameVariant = 'standard'): GameState {
-        const config = gameVariant === 'onslaught' ? ONSLAUGHT_CONFIG[gameMode] : BOARD_CONFIG[gameMode];
+        const config = gameVariant === 'onslaught' ? ONSLAUGHT_CONFIG[gameMode as RpsGameMode] : BOARD_CONFIG[gameMode as RpsGameMode];
         const initialBoard: Cell[][] = Array(config.rows).fill(null).map((_, row) =>
             Array(config.cols).fill(null).map((_, col) => ({
                 row,
@@ -133,7 +134,7 @@ export class GameService {
         gameVariant: GameVariant = 'standard'
     ): GameState {
         const sessionId = uuidv4();
-        const config = gameVariant === 'onslaught' ? ONSLAUGHT_CONFIG[gameMode] : BOARD_CONFIG[gameMode];
+        const config = gameVariant === 'onslaught' ? ONSLAUGHT_CONFIG[gameMode as RpsGameMode] : BOARD_CONFIG[gameMode as RpsGameMode];
         const initialBoard: Cell[][] = Array(config.rows).fill(null).map((_, row) =>
             Array(config.cols).fill(null).map((_, col) => ({
                 row,
@@ -203,7 +204,7 @@ export class GameService {
 
     private initializeOnslaughtGame(session: GameState): void {
         const gameMode = session.gameMode;
-        const config = ONSLAUGHT_CONFIG[gameMode]; // We know it's onslaught here
+        const config = ONSLAUGHT_CONFIG[gameMode as RpsGameMode]; // We know it's onslaught here
 
         // Setup for both players
         const players = [session.players.red, session.players.blue];
@@ -284,7 +285,7 @@ export class GameService {
     }
 
     private isValidSetupPosition(position: Position, color: PlayerColor, gameMode: GameMode): boolean {
-        const config = BOARD_CONFIG[gameMode];
+        const config = BOARD_CONFIG[gameMode as RpsGameMode];
         const validRows = this.getSetupRows(color);
         return validRows.includes(position.row) &&
             position.col >= 0 &&
@@ -401,7 +402,7 @@ export class GameService {
         if (!session) return { success: false, error: 'Session not found' };
 
         const gameMode = session.gameMode;
-        const config = BOARD_CONFIG[gameMode];
+        const config = BOARD_CONFIG[gameMode as RpsGameMode];
 
         const color = this.getPlayerColor(socketId);
         if (!color) return { success: false, error: 'Player not found' };
@@ -415,7 +416,7 @@ export class GameService {
 
         // Use Onslaught config if applicable
         const effectiveConfig = session.gameVariant === 'onslaught'
-            ? ONSLAUGHT_CONFIG[gameMode]
+            ? ONSLAUGHT_CONFIG[gameMode as RpsGameMode]
             : config;
 
         const setupState = this.setupStates.get(socketId);
@@ -777,8 +778,8 @@ export class GameService {
 
         const gameMode = session.gameMode;
         const config = session.gameVariant === 'onslaught'
-            ? ONSLAUGHT_CONFIG[gameMode]
-            : BOARD_CONFIG[gameMode];
+            ? ONSLAUGHT_CONFIG[gameMode as RpsGameMode]
+            : BOARD_CONFIG[gameMode as RpsGameMode];
         const color = this.getPlayerColor(socketId);
         if (!color) return [];
 
@@ -1714,8 +1715,8 @@ export class GameService {
         if (!session) return { success: false, error: 'Session not found' };
 
         const config = session.gameVariant === 'onslaught'
-            ? ONSLAUGHT_CONFIG[session.gameMode]
-            : BOARD_CONFIG[session.gameMode];
+            ? ONSLAUGHT_CONFIG[session.gameMode as RpsGameMode]
+            : BOARD_CONFIG[session.gameMode as RpsGameMode];
 
         // Reset board to empty using mode-specific dimensions
         session.board = Array(config.rows).fill(null).map((_, row) =>

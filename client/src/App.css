@@ -93,6 +93,23 @@ body {
     color: var(--color-danger);
 }
 
+.back-to-portal-button {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: var(--color-text);
+    font-size: 0.82rem;
+    font-weight: 500;
+    padding: 0.35rem 0.75rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.back-to-portal-button:hover {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 210, 0, 0.4);
+}
+
 .app-main {
     flex: 1;
     display: flex;

@@ -4,7 +4,8 @@ import {
     Position,
     GameState,
     GameMode,
-    BOARD_CONFIG
+    BOARD_CONFIG,
+    RpsGameMode
 } from '@rps/shared';
 import { BayesianState, TrackedPiece, PieceBeliefs } from './types.js';
 
@@ -21,7 +22,7 @@ export class BayesianTracker {
      * Called when the game transitions to the playing phase.
      */
     public initialize(sessionId: string, aiColor: PlayerColor, gameMode: GameMode, gameState: GameState): void {
-        const config = BOARD_CONFIG[gameMode];
+        const config = BOARD_CONFIG[gameMode as RpsGameMode];
         const opponentColor: PlayerColor = aiColor === 'red' ? 'blue' : 'red';
         const opponentPlayer = gameState.players[opponentColor];
         if (!opponentPlayer) return;
