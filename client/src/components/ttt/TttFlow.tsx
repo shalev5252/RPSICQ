@@ -6,7 +6,7 @@ import { TttGameScreen } from './TttGameScreen';
 
 type TttScreen = 'mode-select' | 'difficulty-select' | 'playing-online' | 'playing-ai';
 
-export const TttFlow: React.FC = () => {
+export const TttFlow: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [screen, setScreen] = useState<TttScreen>('mode-select');
     const [difficulty, setDifficulty] = useState<TttDifficulty>('easy');
 
@@ -24,8 +24,8 @@ export const TttFlow: React.FC = () => {
     }, []);
 
     const handleBackToModeSelect = useCallback(() => {
-        setScreen('mode-select');
-    }, []);
+        onBack();
+    }, [onBack]);
 
 
     switch (screen) {

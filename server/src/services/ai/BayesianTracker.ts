@@ -21,8 +21,8 @@ export class BayesianTracker {
      * Initialize tracking for a new game session.
      * Called when the game transitions to the playing phase.
      */
-    public initialize(sessionId: string, aiColor: PlayerColor, gameMode: GameMode, gameState: GameState): void {
-        const config = BOARD_CONFIG[gameMode as RpsGameMode];
+    public initialize(sessionId: string, aiColor: PlayerColor, gameMode: RpsGameMode, gameState: GameState): void {
+        const config = BOARD_CONFIG[gameMode];
         const opponentColor: PlayerColor = aiColor === 'red' ? 'blue' : 'red';
         const opponentPlayer = gameState.players[opponentColor];
         if (!opponentPlayer) return;

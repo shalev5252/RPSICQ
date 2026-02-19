@@ -36,6 +36,7 @@ interface ThirdEyeHookResult {
     // Rematch
     rematchRequested: boolean;
     opponentRequestedRematch: boolean;
+    requestRematch: () => void;
 }
 
 export function useThirdEyeGame(): ThirdEyeHookResult {
@@ -134,6 +135,12 @@ export function useThirdEyeGame(): ThirdEyeHookResult {
         };
     }, [socket]);
 
+    const requestRematch = () => {
+        if (!socket) return;
+        setRematchRequested(true);
+        socket.emit(SOCKET_EVENTS.TE_REMATCH);
+    };
+
     return {
         isStarted,
         myColor,
@@ -151,5 +158,6 @@ export function useThirdEyeGame(): ThirdEyeHookResult {
         finalScores,
         rematchRequested,
         opponentRequestedRematch,
+        requestRematch,
     };
 }

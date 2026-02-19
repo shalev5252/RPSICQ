@@ -32,7 +32,11 @@ export class ThirdEyeGameService {
     // Session lifecycle
     // ---------------------------------------------------------------
 
-    public createSession(sessionId: string, redSocketId: string, blueSocketId: string): ThirdEyeSession {
+    public createSession(sessionId: string, socket1Id: string, socket2Id: string, p1Role: PlayerColor, p2Role: PlayerColor): ThirdEyeSession {
+        // Map sockets to roles
+        const redSocketId = p1Role === 'red' ? socket1Id : socket2Id;
+        const blueSocketId = p1Role === 'blue' ? socket1Id : socket2Id;
+
         const session: ThirdEyeSession = {
             sessionId,
             sockets: { red: redSocketId, blue: blueSocketId },
@@ -251,7 +255,7 @@ export class ThirdEyeGameService {
             const remaining = Math.max(0, endTime - Date.now());
             onTick(remaining);
             if (remaining <= 0) {
-                this.clearTimers(session);
+                // Do NOT clear timers here; wait for onTimeout logic or manual resolve
             }
         }, 1000);
 

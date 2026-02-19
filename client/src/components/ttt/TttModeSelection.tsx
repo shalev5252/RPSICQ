@@ -31,7 +31,7 @@ export const TttModeSelection: React.FC<TttModeSelectionProps> = ({ onPlayOnline
                 <button className="ttt-mode-card ttt-mode-card--disabled" disabled>
                     <span className="ttt-mode-card__icon">🏆</span>
                     <span className="ttt-mode-card__label">{t('ttt.ultimate', 'Ultimate')}</span>
-                    <span className="ttt-mode-card__badge">{t('portal.comingSoon', 'Coming Soon')}</span>
+                    <span className="ttt-mode-card__badge">{t('portal.coming_soon', 'Coming Soon')}</span>
                 </button>
             </div>
         </div>

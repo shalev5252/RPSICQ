@@ -67,8 +67,8 @@ export class GameService {
         return null;
     }
 
-    public createSession(id: string, player1Id: string, player1Color: PlayerColor, player2Id: string, player2Color: PlayerColor, gameMode: GameMode = 'classic', gameVariant: GameVariant = 'standard'): GameState {
-        const config = gameVariant === 'onslaught' ? ONSLAUGHT_CONFIG[gameMode as RpsGameMode] : BOARD_CONFIG[gameMode as RpsGameMode];
+    public createSession(id: string, player1Id: string, player1Color: PlayerColor, player2Id: string, player2Color: PlayerColor, gameMode: RpsGameMode = 'classic', gameVariant: GameVariant = 'standard'): GameState {
+        const config = gameVariant === 'onslaught' ? ONSLAUGHT_CONFIG[gameMode] : BOARD_CONFIG[gameMode];
         const initialBoard: Cell[][] = Array(config.rows).fill(null).map((_, row) =>
             Array(config.cols).fill(null).map((_, col) => ({
                 row,
@@ -130,11 +130,11 @@ export class GameService {
     public createSingleplayerSession(
         humanSocketId: string,
         humanPlayerId: string,
-        gameMode: GameMode = 'classic',
+        gameMode: RpsGameMode = 'classic',
         gameVariant: GameVariant = 'standard'
     ): GameState {
         const sessionId = uuidv4();
-        const config = gameVariant === 'onslaught' ? ONSLAUGHT_CONFIG[gameMode as RpsGameMode] : BOARD_CONFIG[gameMode as RpsGameMode];
+        const config = gameVariant === 'onslaught' ? ONSLAUGHT_CONFIG[gameMode] : BOARD_CONFIG[gameMode];
         const initialBoard: Cell[][] = Array(config.rows).fill(null).map((_, row) =>
             Array(config.cols).fill(null).map((_, col) => ({
                 row,
@@ -284,8 +284,8 @@ export class GameService {
         return color === 'red' ? RED_SETUP_ROWS : BLUE_SETUP_ROWS;
     }
 
-    private isValidSetupPosition(position: Position, color: PlayerColor, gameMode: GameMode): boolean {
-        const config = BOARD_CONFIG[gameMode as RpsGameMode];
+    private isValidSetupPosition(position: Position, color: PlayerColor, gameMode: RpsGameMode): boolean {
+        const config = BOARD_CONFIG[gameMode];
         const validRows = this.getSetupRows(color);
         return validRows.includes(position.row) &&
             position.col >= 0 &&
@@ -322,11 +322,14 @@ export class GameService {
             return { success: false, error: 'Cannot reposition after shuffling' };
         }
 
+        // Verify it's a valid RPS mode
+        if (!(gameMode in BOARD_CONFIG)) return { success: false, error: 'Invalid game mode for RPS' };
+
         // Validate positions are in player's rows
-        if (!this.isValidSetupPosition(kingPosition, color, gameMode)) {
+        if (!this.isValidSetupPosition(kingPosition, color, gameMode as RpsGameMode)) {
             return { success: false, error: 'King position not in your rows' };
         }
-        if (!this.isValidSetupPosition(pitPosition, color, gameMode)) {
+        if (!this.isValidSetupPosition(pitPosition, color, gameMode as RpsGameMode)) {
             return { success: false, error: 'Pit position not in your rows' };
         }
 
@@ -402,6 +405,8 @@ export class GameService {
         if (!session) return { success: false, error: 'Session not found' };
 
         const gameMode = session.gameMode;
+        // Verify it's a valid RPS mode
+        if (!(gameMode in BOARD_CONFIG)) return { success: false, error: 'Invalid game mode for RPS' };
         const config = BOARD_CONFIG[gameMode as RpsGameMode];
 
         const color = this.getPlayerColor(socketId);
@@ -777,6 +782,7 @@ export class GameService {
         if (!session || session.phase !== 'playing') return [];
 
         const gameMode = session.gameMode;
+        if (!(gameMode in BOARD_CONFIG)) return [];
         const config = session.gameVariant === 'onslaught'
             ? ONSLAUGHT_CONFIG[gameMode as RpsGameMode]
             : BOARD_CONFIG[gameMode as RpsGameMode];
@@ -1714,9 +1720,12 @@ export class GameService {
         const session = this.sessions.get(sessionId);
         if (!session) return { success: false, error: 'Session not found' };
 
+        const gameMode = session.gameMode;
+        if (!(gameMode in BOARD_CONFIG)) return { success: false, error: 'Invalid game mode' };
+
         const config = session.gameVariant === 'onslaught'
-            ? ONSLAUGHT_CONFIG[session.gameMode as RpsGameMode]
-            : BOARD_CONFIG[session.gameMode as RpsGameMode];
+            ? ONSLAUGHT_CONFIG[gameMode as RpsGameMode]
+            : BOARD_CONFIG[gameMode as RpsGameMode];
 
         // Reset board to empty using mode-specific dimensions
         session.board = Array(config.rows).fill(null).map((_, row) =>

@@ -163,7 +163,7 @@ export class MatchmakingService {
         }
 
         if (gameMode === 'third-eye') {
-            thirdEyeService.createSession(sessionId, socket1.id, socket2.id);
+            thirdEyeService.createSession(sessionId, socket1.id, socket2.id, p1Role, p2Role);
             console.log(`🔮 Third Eye match created: ${sessionId}`);
             socket1.join(sessionId);
             socket2.join(sessionId);

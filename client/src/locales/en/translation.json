@@ -194,8 +194,8 @@
     "portal": {
         "title": "Game Arcade",
         "subtitle": "Choose a game to play",
-        "comingSoon": "Coming Soon",
-        "backToPortal": "Back to Games",
+        "coming_soon": "Coming Soon",
+        "back_to_portal": "Back to Games",
         "rps": {
             "title": "RPS Battle",
             "desc": "Strategic board game with Rock, Paper & Scissors"
@@ -204,11 +204,11 @@
             "title": "Tic Tac Toe",
             "desc": "Classic 3×3 — play online or vs AI"
         },
-        "tttUltimate": {
+        "ttt_ultimate": {
             "title": "Ultimate Tic Tac Toe",
             "desc": "9 boards, 1 epic game"
         },
-        "thirdEye": {
+        "third_eye": {
             "title": "The Third Eye",
             "desc": "Guess the lucky number — first to 3 wins"
         }

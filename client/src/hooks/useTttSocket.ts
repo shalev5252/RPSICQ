@@ -48,8 +48,7 @@ export function useTttGame(): TttGameHookResult {
         };
 
         const handleRematchRequested = () => {
-            // Opponent requested rematch — we could show a notification
-            // For now just note it
+            setRematchRequested(true);
         };
 
         socket.on(SOCKET_EVENTS.TTT_GAME_START, handleGameStart);

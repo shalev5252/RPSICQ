@@ -28,15 +28,15 @@ const GAMES: GameCardInfo[] = [
     {
         id: 'ttt-ultimate',
         icon: '🧩',
-        titleKey: 'portal.tttUltimate.title',
-        descKey: 'portal.tttUltimate.desc',
+        titleKey: 'portal.ttt_ultimate.title',
+        descKey: 'portal.ttt_ultimate.desc',
         comingSoon: true,
     },
     {
         id: 'third-eye',
         icon: '🔮',
-        titleKey: 'portal.thirdEye.title',
-        descKey: 'portal.thirdEye.desc',
+        titleKey: 'portal.third_eye.title',
+        descKey: 'portal.third_eye.desc',
     },
 ];
 
@@ -67,7 +67,7 @@ export const GamePortal: React.FC = () => {
                         <h3 className="portal-card__title">{t(game.titleKey)}</h3>
                         <p className="portal-card__desc">{t(game.descKey)}</p>
                         {game.comingSoon && (
-                            <span className="portal-card__badge">{t('portal.comingSoon')}</span>
+                            <span className="portal-card__badge">{t('portal.coming_soon')}</span>
                         )}
                     </button>
                 ))}

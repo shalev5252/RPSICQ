@@ -14,7 +14,7 @@ describe('ThirdEyeGameService', () => {
 
     describe('createSession', () => {
         it('creates a session with initial scores 0-0', () => {
-            const session = svc.createSession('s1', 'sock-r', 'sock-b');
+            const session = svc.createSession('s1', 'sock-r', 'sock-b', 'red', 'blue');
             expect(session.sessionId).toBe('s1');
             expect(session.scores).toEqual({ red: 0, blue: 0 });
             expect(session.roundNumber).toBe(0);
@@ -22,7 +22,7 @@ describe('ThirdEyeGameService', () => {
         });
 
         it('maps sockets to colors', () => {
-            svc.createSession('s1', 'sock-r', 'sock-b');
+            svc.createSession('s1', 'sock-r', 'sock-b', 'red', 'blue');
             expect(svc.getPlayerColor('sock-r')).toBe('red');
             expect(svc.getPlayerColor('sock-b')).toBe('blue');
         });
@@ -30,7 +30,7 @@ describe('ThirdEyeGameService', () => {
 
     describe('startRound', () => {
         it('generates range with max - min >= 100', () => {
-            svc.createSession('s1', 'sock-r', 'sock-b');
+            svc.createSession('s1', 'sock-r', 'sock-b', 'red', 'blue');
             const round = svc.startRound('s1');
 
             expect(round).not.toBeNull();
@@ -39,7 +39,7 @@ describe('ThirdEyeGameService', () => {
         });
 
         it('increments round number', () => {
-            svc.createSession('s1', 'sock-r', 'sock-b');
+            svc.createSession('s1', 'sock-r', 'sock-b', 'red', 'blue');
             svc.startRound('s1');
             // Resolve so roundActive becomes false, allowing next round
             svc.resolveRound('s1');
@@ -50,7 +50,7 @@ describe('ThirdEyeGameService', () => {
         it('generates lucky number within range', () => {
             for (let i = 0; i < 20; i++) {
                 const sid = `s-${i}`;
-                svc.createSession(sid, `r${i}`, `b${i}`);
+                svc.createSession(sid, `r${i}`, `b${i}`, 'red', 'blue');
                 svc.startRound(sid);
                 const session = svc.getSession(sid)!;
                 expect(session.luckyNumber).toBeGreaterThanOrEqual(session.rangeMin);
@@ -61,7 +61,7 @@ describe('ThirdEyeGameService', () => {
 
     describe('submitPick', () => {
         it('accepts a valid pick', () => {
-            svc.createSession('s1', 'sock-r', 'sock-b');
+            svc.createSession('s1', 'sock-r', 'sock-b', 'red', 'blue');
             svc.startRound('s1');
             const session = svc.getSession('s1')!;
 
@@ -71,7 +71,7 @@ describe('ThirdEyeGameService', () => {
         });
 
         it('reports bothSubmitted when both pick', () => {
-            svc.createSession('s1', 'sock-r', 'sock-b');
+            svc.createSession('s1', 'sock-r', 'sock-b', 'red', 'blue');
             svc.startRound('s1');
             const session = svc.getSession('s1')!;
 
@@ -82,7 +82,7 @@ describe('ThirdEyeGameService', () => {
         });
 
         it('rejects out-of-range pick', () => {
-            svc.createSession('s1', 'sock-r', 'sock-b');
+            svc.createSession('s1', 'sock-r', 'sock-b', 'red', 'blue');
             svc.startRound('s1');
             const session = svc.getSession('s1')!;
 
@@ -91,7 +91,7 @@ describe('ThirdEyeGameService', () => {
         });
 
         it('rejects duplicate submission', () => {
-            svc.createSession('s1', 'sock-r', 'sock-b');
+            svc.createSession('s1', 'sock-r', 'sock-b', 'red', 'blue');
             svc.startRound('s1');
             const session = svc.getSession('s1')!;
 
@@ -101,7 +101,7 @@ describe('ThirdEyeGameService', () => {
         });
 
         it('rejects non-integer pick', () => {
-            svc.createSession('s1', 'sock-r', 'sock-b');
+            svc.createSession('s1', 'sock-r', 'sock-b', 'red', 'blue');
             svc.startRound('s1');
             const session = svc.getSession('s1')!;
 
@@ -112,14 +112,18 @@ describe('ThirdEyeGameService', () => {
 
     describe('resolveRound', () => {
         it('closer pick wins', () => {
-            svc.createSession('s1', 'sock-r', 'sock-b');
+            svc.createSession('s1', 'sock-r', 'sock-b', 'red', 'blue');
             svc.startRound('s1');
             const session = svc.getSession('s1')!;
             const lucky = session.luckyNumber;
 
             // Red picks exactly lucky, blue picks further away
+            const bluePick = lucky === session.rangeMax
+                ? Math.max(session.rangeMin ?? 0, lucky - 10)
+                : Math.min(lucky + 10, session.rangeMax);
+
             svc.submitPick('s1', 'sock-r', lucky);
-            svc.submitPick('s1', 'sock-b', Math.min(lucky + 10, session.rangeMax));
+            svc.submitPick('s1', 'sock-b', bluePick);
 
             const result = svc.resolveRound('s1');
             expect(result).not.toBeNull();
@@ -131,7 +135,7 @@ describe('ThirdEyeGameService', () => {
         });
 
         it('equal distance is a tie', () => {
-            svc.createSession('s1', 'sock-r', 'sock-b');
+            svc.createSession('s1', 'sock-r', 'sock-b', 'red', 'blue');
             svc.startRound('s1');
             const session = svc.getSession('s1')!;
             const lucky = session.luckyNumber;
@@ -147,7 +151,7 @@ describe('ThirdEyeGameService', () => {
         });
 
         it('timeout player loses to submitted player', () => {
-            svc.createSession('s1', 'sock-r', 'sock-b');
+            svc.createSession('s1', 'sock-r', 'sock-b', 'red', 'blue');
             svc.startRound('s1');
             const session = svc.getSession('s1')!;
 
@@ -161,7 +165,7 @@ describe('ThirdEyeGameService', () => {
         });
 
         it('both timeout = tie', () => {
-            svc.createSession('s1', 'sock-r', 'sock-b');
+            svc.createSession('s1', 'sock-r', 'sock-b', 'red', 'blue');
             svc.startRound('s1');
             // Nobody submits
 
@@ -172,7 +176,7 @@ describe('ThirdEyeGameService', () => {
 
     describe('scoring and match victory', () => {
         it('first to 3 points wins the match', () => {
-            svc.createSession('s1', 'sock-r', 'sock-b');
+            svc.createSession('s1', 'sock-r', 'sock-b', 'red', 'blue');
 
             for (let i = 0; i < 3; i++) {
                 svc.startRound('s1');
@@ -197,7 +201,7 @@ describe('ThirdEyeGameService', () => {
             let now = 1000;
             vi.spyOn(Date, 'now').mockImplementation(() => now);
 
-            svc.createSession('s1', 'sock-r', 'sock-b');
+            svc.createSession('s1', 'sock-r', 'sock-b', 'red', 'blue');
             svc.startRound('s1');
 
             const onTick = vi.fn();
@@ -225,7 +229,7 @@ describe('ThirdEyeGameService', () => {
 
     describe('rematch', () => {
         it('resets scores when both request rematch', () => {
-            svc.createSession('s1', 'sock-r', 'sock-b');
+            svc.createSession('s1', 'sock-r', 'sock-b', 'red', 'blue');
             // Simulate a finished match
             const session = svc.getSession('s1')!;
             session.scores = { red: 3, blue: 1 };
@@ -244,7 +248,7 @@ describe('ThirdEyeGameService', () => {
 
     describe('disconnect', () => {
         it('returns opponent socket on disconnect', () => {
-            svc.createSession('s1', 'sock-r', 'sock-b');
+            svc.createSession('s1', 'sock-r', 'sock-b', 'red', 'blue');
             const result = svc.handleDisconnect('sock-r');
             expect(result).not.toBeNull();
             expect(result!.opponentSocketId).toBe('sock-b');

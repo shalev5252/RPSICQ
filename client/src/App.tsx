@@ -107,7 +107,7 @@ function AppContent() {
                         )}
 
                         {/* Tic Tac Toe flow */}
-                        {activeGame === 'ttt' && <TttFlow />}
+                        {activeGame === 'ttt' && <TttFlow onBack={() => resetToPortal()} />}
 
                         {/* Third Eye flow */}
                         {activeGame === 'third-eye' && (
