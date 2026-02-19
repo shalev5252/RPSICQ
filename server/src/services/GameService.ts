@@ -68,7 +68,7 @@ export class GameService {
     }
 
     private isRpsGameMode(mode: string): mode is RpsGameMode {
-        return ['classic', 'rpsls', 'ultimate'].includes(mode);
+        return ['classic', 'rpsls'].includes(mode);
     }
 
     public createSession(id: string, player1Id: string, player1Color: PlayerColor, player2Id: string, player2Color: PlayerColor, gameMode: GameMode = 'classic', gameVariant: GameVariant = 'standard'): GameState {

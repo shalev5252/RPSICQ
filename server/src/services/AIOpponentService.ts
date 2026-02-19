@@ -68,8 +68,14 @@ export class AIOpponentService {
         const aiColor = this.sessionColors.get(sessionId);
         if (!aiColor) return;
 
+        const gameMode = gameState.gameMode;
+        // Verify it's a valid RPS mode (Third Eye etc don't use Bayesian tracker)
+        if (gameMode !== 'classic' && gameMode !== 'rpsls') {
+            return;
+        }
+
         const tracker = new BayesianTracker();
-        tracker.initialize(sessionId, aiColor, gameState.gameMode, gameState);
+        tracker.initialize(sessionId, aiColor, gameMode, gameState);
         this.trackers.set(sessionId, tracker);
     }
 

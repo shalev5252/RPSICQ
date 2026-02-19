@@ -3,7 +3,6 @@ import {
     PlayerColor,
     Position,
     GameState,
-    GameMode,
     BOARD_CONFIG,
     RpsGameMode
 } from '@rps/shared';
