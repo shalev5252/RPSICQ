@@ -237,5 +237,31 @@
         "rematch": "Rematch",
         "rematch_waiting": "Waiting for opponent...",
         "back_to_menu": "Back to menu"
+    },
+    "thirdEye": {
+        "title": "The Third Eye",
+        "waiting": "Waiting for opponent...",
+        "round": "Round",
+        "pick_between": "Pick a number between",
+        "invalid_number": "Enter a valid number",
+        "out_of_range": "Number must be between {{min}} and {{max}}",
+        "submit": "Submit",
+        "submitted": "You picked",
+        "waiting_opponent": "Waiting for opponent...",
+        "lucky_number": "Lucky Number",
+        "you": "You",
+        "opponent": "Opponent",
+        "distance": "Distance",
+        "timeout": "⏰ Timeout",
+        "round_tie": "🤝 Tie!",
+        "round_you_win": "🎯 You scored!",
+        "round_opponent_wins": "Opponent scored!",
+        "final_score": "Final Score",
+        "you_win": "You Win! 🎉",
+        "you_lose": "You Lose!",
+        "opponent_disconnected": "Opponent disconnected",
+        "rematch": "Rematch",
+        "rematch_waiting": "Waiting...",
+        "back": "Back to menu"
     }
 }

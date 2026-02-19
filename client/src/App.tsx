@@ -11,6 +11,7 @@ import { SetupScreen } from './components/setup';
 import { GameScreen } from './components/game/GameScreen';
 import { GameOverScreen } from './components/game/GameOverScreen';
 import { TttFlow } from './components/ttt/TttFlow';
+import { ThirdEyeFlow } from './components/third-eye/ThirdEyeFlow';
 import './App.css';
 import { getActiveSession, clearActiveSession } from './utils/sessionStorage';
 
@@ -112,11 +113,9 @@ function AppContent() {
                         {/* Tic Tac Toe flow */}
                         {activeGame === 'ttt' && <TttFlow />}
 
+                        {/* Third Eye flow */}
                         {activeGame === 'third-eye' && (
-                            <>
-                                {gamePhase === 'waiting' && <MatchmakingScreen />}
-                                {/* Third Eye screens will be added later */}
-                            </>
+                            <ThirdEyeFlow onBack={() => resetToPortal()} />
                         )}
                     </>
                 )}

@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { PlayerRole, SOCKET_EVENTS, GameMode, GameVariant } from '@rps/shared';
 import { GameService } from './GameService.js';
 import { tttService } from '../socket/tttHandlers.js';
+import { thirdEyeService, startRound as startThirdEyeRound } from '../socket/thirdEyeHandlers.js';
 
 // Queue key combines mode and variant
 type QueueKey = `${GameMode}` | `${GameMode}-${GameVariant}`;
@@ -162,12 +163,15 @@ export class MatchmakingService {
         }
 
         if (gameMode === 'third-eye') {
-            // TODO: Create Third Eye session via ThirdEyeGameService (task 7)
+            thirdEyeService.createSession(sessionId, socket1.id, socket2.id);
             console.log(`🔮 Third Eye match created: ${sessionId}`);
             socket1.join(sessionId);
             socket2.join(sessionId);
+            // Tell each player their color so they know which score is theirs
             socket1.emit(SOCKET_EVENTS.GAME_FOUND, { sessionId, color: p1Role });
             socket2.emit(SOCKET_EVENTS.GAME_FOUND, { sessionId, color: p2Role });
+            // Start the first round automatically
+            startThirdEyeRound(this.io, sessionId);
             return;
         }
 
