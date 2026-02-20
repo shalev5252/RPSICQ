@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { PlayerColor, GamePhase, PlayerGameView, PlayerCellView, Position, GameMode, GameVariant, OpponentType, PieceType, CombatElement, EmoteId } from '@rps/shared';
+import type { PlayerColor, GamePhase, PlayerGameView, PlayerCellView, Position, GameMode, GameVariant, OpponentType, PieceType, CombatElement, EmoteId, GameType } from '@rps/shared';
 
 interface SetupState {
     board: PlayerCellView[][];
@@ -32,6 +32,10 @@ interface TieBreakerState {
 interface GameStore {
     connectionStatus: 'connecting' | 'connected' | 'disconnected';
     setConnectionStatus: (status: 'connecting' | 'connected' | 'disconnected') => void;
+    // Portal state
+    activeGame: GameType | null;
+    setActiveGame: (game: GameType | null) => void;
+    resetToPortal: () => void;
     playerId: string | null;
     myColor: PlayerColor | null;
     setPlayerInfo: (playerId: string, color: PlayerColor) => void;
@@ -136,6 +140,7 @@ const initialTieBreakerState: TieBreakerState = {
 
 const initialState = {
     connectionStatus: 'connecting' as const,
+    activeGame: null as GameType | null,
     playerId: null,
     myColor: null,
     gameMode: 'classic' as GameMode,
@@ -166,6 +171,29 @@ const initialState = {
 export const useGameStore = create<GameStore>((set) => ({
     ...initialState,
     setConnectionStatus: (status) => set({ connectionStatus: status }),
+    setActiveGame: (game) => set({ activeGame: game }),
+    resetToPortal: () => set({
+        activeGame: null,
+        gamePhase: 'waiting' as GamePhase,
+        sessionId: null,
+        isSearching: false,
+        gameView: null,
+        gameState: null,
+        setupState: initialSetupState,
+        rematchState: initialRematchState,
+        tieBreakerState: initialTieBreakerState,
+        showTurnSkipped: false,
+        opponentReconnecting: false,
+        roomCode: null,
+        roomError: null,
+        isCreatingRoom: false,
+        isJoiningRoom: false,
+        receivedEmote: null,
+        emoteCooldown: false,
+        pendingDrawOffer: null,
+        hasOfferedDrawThisTurn: false,
+        drawDeclined: false,
+    }),
     setPlayerInfo: (playerId, color) => set({ playerId, myColor: color }),
     setGameMode: (mode) => set({ gameMode: mode }),
     setGameVariant: (variant) => set({ gameVariant: variant }),

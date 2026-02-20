@@ -2,6 +2,8 @@ import { Socket, Server } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
 import { PlayerRole, SOCKET_EVENTS, GameMode, GameVariant } from '@rps/shared';
 import { GameService } from './GameService.js';
+import { tttService } from '../socket/tttHandlers.js';
+import { thirdEyeService, startRound as startThirdEyeRound } from '../socket/thirdEyeHandlers.js';
 
 // Queue key combines mode and variant
 type QueueKey = `${GameMode}` | `${GameMode}-${GameVariant}`;
@@ -28,6 +30,9 @@ export class MatchmakingService {
         this.queues.set('rpsls-clearday', []);
         this.queues.set('classic-onslaught', []);
         this.queues.set('rpsls-onslaught', []);
+        // New game queues (no variants)
+        this.queues.set('ttt-classic', []);
+        this.queues.set('third-eye', []);
     }
 
     private getQueueKey(gameMode: GameMode, gameVariant: GameVariant): QueueKey {
@@ -135,6 +140,42 @@ export class MatchmakingService {
         const variantSuffix = gameVariant !== 'standard' ? ` [${gameVariant}]` : '';
         console.log(`⚔️ Match found! Session: ${sessionId} | ${socket1.id} (${p1Role}) vs ${socket2.id} (${p2Role}) [Mode: ${gameMode}${variantSuffix}]`);
 
+        // Route to the correct game service based on game mode
+        if (gameMode === 'ttt-classic') {
+            const tttSession = tttService.createSession(sessionId, socket1.id, p1Role, socket2.id, p2Role);
+            const { state } = tttSession;
+            console.log(`🎮 TTT match created: ${sessionId}`);
+            socket1.join(sessionId);
+            socket2.join(sessionId);
+            socket1.emit(SOCKET_EVENTS.TTT_GAME_START, {
+                sessionId: state.sessionId,
+                mark: state.playerMarks[p1Role],
+                board: state.board,
+                currentTurn: state.currentTurn,
+            });
+            socket2.emit(SOCKET_EVENTS.TTT_GAME_START, {
+                sessionId: state.sessionId,
+                mark: state.playerMarks[p2Role],
+                board: state.board,
+                currentTurn: state.currentTurn,
+            });
+            return;
+        }
+
+        if (gameMode === 'third-eye') {
+            thirdEyeService.createSession(sessionId, socket1.id, socket2.id, p1Role, p2Role);
+            console.log(`🔮 Third Eye match created: ${sessionId}`);
+            socket1.join(sessionId);
+            socket2.join(sessionId);
+            // Tell each player their color so they know which score is theirs
+            socket1.emit(SOCKET_EVENTS.GAME_FOUND, { sessionId, color: p1Role });
+            socket2.emit(SOCKET_EVENTS.GAME_FOUND, { sessionId, color: p2Role });
+            // Start the first round automatically
+            startThirdEyeRound(this.io, sessionId);
+            return;
+        }
+
+        // RPS Battle (existing flow)
         // Create and store the session
         this.gameService.createSession(sessionId, socket1.id, p1Role, socket2.id, p2Role, gameMode, gameVariant);
 

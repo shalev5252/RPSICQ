@@ -4,6 +4,7 @@ import { useSocket } from '../../hooks/useSocket';
 import { useGameStore } from '../../store/gameStore';
 import type { PieceType, Position, PlayerCellView, PlayerPieceView } from '@rps/shared';
 import { SOCKET_EVENTS, RED_SETUP_ROWS, BLUE_SETUP_ROWS, BOARD_CONFIG, ONSLAUGHT_CONFIG } from '@rps/shared';
+import type { RpsGameMode } from '@rps/shared';
 import { Board } from './Board';
 import { PieceTray } from './PieceTray';
 import { RulesModal } from '../game/RulesModal';
@@ -35,10 +36,10 @@ export const SetupScreen: React.FC = () => {
     }, [socket]);
 
     const validDropRows = myColor === 'red' ? RED_SETUP_ROWS : BLUE_SETUP_ROWS;
-    const activeRows = BOARD_CONFIG[gameMode].rows;
+    const activeRows = BOARD_CONFIG[gameMode as RpsGameMode].rows;
     const activeCols = gameVariant === 'onslaught'
-        ? ONSLAUGHT_CONFIG[gameMode].cols
-        : BOARD_CONFIG[gameMode].cols;
+        ? ONSLAUGHT_CONFIG[gameMode as RpsGameMode].cols
+        : BOARD_CONFIG[gameMode as RpsGameMode].cols;
 
     // Convert rows to Position array for Board component
     // Valid cells are shown if dragging OR if a piece is selected

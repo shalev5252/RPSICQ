@@ -4,6 +4,8 @@ import { SOCKET_EVENTS, JoinQueuePayload, StartSingleplayerPayload, PlaceKingPit
 import { MatchmakingService } from '../services/MatchmakingService.js';
 import { GameService } from '../services/GameService.js';
 import { RoomService } from '../services/RoomService.js';
+import { setupTttHandlers } from './tttHandlers.js';
+import { setupThirdEyeHandlers } from './thirdEyeHandlers.js';
 
 export function setupSocketHandlers(io: Server): void {
     const gameService = new GameService();
@@ -173,6 +175,10 @@ export function setupSocketHandlers(io: Server): void {
 
     io.on('connection', (socket: Socket) => {
         console.log(`✅ Client connected: ${socket.id}`);
+
+        // Register per-game handlers
+        setupTttHandlers(io, socket);
+        setupThirdEyeHandlers(io, socket);
 
         // Get the persistent player ID from auth
         const playerId = socket.handshake.auth?.playerId as string | undefined;

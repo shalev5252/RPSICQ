@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import type { PieceType, PlayerColor, GameMode } from '@rps/shared';
+import type { PieceType, PlayerColor, GameMode, RpsGameMode } from '@rps/shared';
 import { BOARD_CONFIG } from '@rps/shared';
 import { Piece, PIECE_ICONS } from './Piece';
 import './PieceTray.css';
@@ -43,7 +43,7 @@ export const PieceTray: React.FC<PieceTrayProps> = ({
         }
     };
 
-    const config = BOARD_CONFIG[gameMode];
+    const config = BOARD_CONFIG[gameMode as RpsGameMode];
 
     // List of pawn types to show counts for
     const pawnTypes = Object.entries(config.pieces).filter(([type]) => type !== 'king' && type !== 'pit');
@@ -56,10 +56,10 @@ export const PieceTray: React.FC<PieceTrayProps> = ({
                 <div className="piece-tray__composition">
                     <p className="piece-tray__subtitle">{t('setup.piece_tray.auto_deployed')}</p>
                     <div className="piece-tray__counts">
-                        {pawnTypes.filter(([_, count]) => count > 0).map(([type, count]) => (
+                        {pawnTypes.filter(([_, count]) => (count as number) > 0).map(([type, count]) => (
                             <div key={type} className="piece-tray__count-item">
                                 <span className="piece-tray__count-icon">{PIECE_ICONS[type as PieceType]}</span>
-                                <span className="piece-tray__count-text">x {count} {t(`pieces.${type}`)}</span>
+                                <span className="piece-tray__count-text">x {count as number} {t(`pieces.${type}`)}</span>
                             </div>
                         ))}
                     </div>
@@ -102,10 +102,10 @@ export const PieceTray: React.FC<PieceTrayProps> = ({
             <div className="piece-tray__composition">
                 <p className="piece-tray__subtitle">{t('setup.piece_tray.auto_deployed')}</p>
                 <div className="piece-tray__counts">
-                    {pawnTypes.filter(([_, count]) => count > 0).map(([type, count]) => (
+                    {pawnTypes.filter(([_, count]) => (count as number) > 0).map(([type, count]) => (
                         <div key={type} className="piece-tray__count-item">
                             <span className="piece-tray__count-icon">{PIECE_ICONS[type as PieceType]}</span>
-                            <span className="piece-tray__count-text">x {count}</span>
+                            <span className="piece-tray__count-text">x {count as number}</span>
                         </div>
                     ))}
                 </div>

@@ -1,0 +1,73 @@
+.ttt-difficulty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem;
+    gap: 1.5rem;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.ttt-difficulty__title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--text-primary, #fff);
+}
+
+.ttt-difficulty__cards {
+    display: flex;
+    gap: 1rem;
+    width: 100%;
+}
+
+.ttt-difficulty-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1.5rem 1rem;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: #fff;
+    font-family: inherit;
+}
+
+.ttt-difficulty-card:hover {
+    border-color: var(--accent, rgba(100, 200, 255, 0.4));
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.ttt-difficulty-card__icon {
+    font-size: 2.5rem;
+}
+
+.ttt-difficulty-card__label {
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.ttt-difficulty__back {
+    margin-top: 0.5rem;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-secondary, #aaa);
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-family: inherit;
+    transition: all 0.2s ease;
+}
+
+.ttt-difficulty__back:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+}

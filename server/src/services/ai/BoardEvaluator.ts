@@ -6,6 +6,7 @@ import {
     PieceType,
     BOARD_CONFIG,
     ONSLAUGHT_CONFIG,
+    RpsGameMode,
     RPSLS_WINS,
     MOVEMENT_DIRECTIONS
 } from '@rps/shared';
@@ -31,8 +32,8 @@ export class BoardEvaluator {
         bayesianState: BayesianState | undefined
     ): number {
         const config = (gameState.gameVariant === 'onslaught')
-            ? ONSLAUGHT_CONFIG[gameState.gameMode]
-            : BOARD_CONFIG[gameState.gameMode];
+            ? ONSLAUGHT_CONFIG[gameState.gameMode as RpsGameMode]
+            : BOARD_CONFIG[gameState.gameMode as RpsGameMode];
         const maxRow = config.rows - 1;
         const opponentColor: PlayerColor = aiColor === 'red' ? 'blue' : 'red';
         const aiPlayer = gameState.players[aiColor];
@@ -487,8 +488,8 @@ export class BoardEvaluator {
 
 
         const config = (gameState.gameVariant === 'onslaught')
-            ? ONSLAUGHT_CONFIG[gameState.gameMode]
-            : BOARD_CONFIG[gameState.gameMode];
+            ? ONSLAUGHT_CONFIG[gameState.gameMode as RpsGameMode]
+            : BOARD_CONFIG[gameState.gameMode as RpsGameMode];
         const moves: Position[] = [];
 
         for (const dir of MOVEMENT_DIRECTIONS) {

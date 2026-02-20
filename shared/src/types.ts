@@ -4,7 +4,8 @@
 
 export type PlayerColor = 'red' | 'blue';
 export type PlayerRole = PlayerColor;
-export type GameMode = 'classic' | 'rpsls';
+export type GameMode = 'classic' | 'rpsls' | 'ttt-classic' | 'third-eye';
+export type RpsGameMode = 'classic' | 'rpsls';  // Subset used by RPS board configs
 export type GameVariant = 'standard' | 'clearday' | 'onslaught';
 export type PieceType = 'king' | 'pit' | 'rock' | 'paper' | 'scissors' | 'lizard' | 'spock';
 export type CombatElement = 'rock' | 'paper' | 'scissors' | 'lizard' | 'spock';
@@ -200,4 +201,104 @@ export interface DrawOfferPayload {
 
 export interface DrawResponsePayload {
     accepted: boolean;
+}
+
+// ============================================================
+// Game Type — identifies which game is active
+// ============================================================
+
+export type GameType = 'rps' | 'ttt' | 'third-eye';
+
+// ============================================================
+// Tic Tac Toe Types
+// ============================================================
+
+export type TttMark = 'X' | 'O';
+export type TttCell = TttMark | null;
+export type TttDifficulty = 'easy' | 'medium' | 'hard';
+
+export interface TttGameState {
+    sessionId: string;
+    board: TttCell[];          // 9 cells, row-major (index = row*3 + col)
+    currentTurn: TttMark;
+    winner: TttMark | 'draw' | null;
+    winningLine: number[] | null;  // indices of the winning 3 cells
+    playerMarks: {
+        red: TttMark;
+        blue: TttMark;
+    };
+}
+
+export interface TttMovePayload {
+    cellIndex: number;  // 0-8
+}
+
+export interface TttGameOverPayload {
+    winner: TttMark | 'draw' | 'disconnect';
+    winningLine: number[] | null;
+    board: TttCell[];
+}
+
+export interface TttStartPayload {
+    sessionId: string;
+    mark: TttMark;
+    board: TttCell[];
+    currentTurn: TttMark;
+}
+
+// Single-player TTT
+export interface TttStartSingleplayerPayload {
+    playerId: string;
+    difficulty: TttDifficulty;
+}
+
+// ============================================================
+// The Third Eye Types
+// ============================================================
+
+export interface ThirdEyeRoundState {
+    roundNumber: number;
+    rangeMin: number;
+    rangeMax: number;
+    timeRemainingMs: number;
+    hasSubmitted: boolean;
+}
+
+export interface ThirdEyeScores {
+    red: number;
+    blue: number;
+}
+
+export interface ThirdEyeRoundStartPayload {
+    roundNumber: number;
+    rangeMin: number;
+    rangeMax: number;
+    timerDurationMs: number;  // 20000
+}
+
+export interface ThirdEyePickPayload {
+    number: number;
+}
+
+export interface ThirdEyeRoundResultPayload {
+    luckyNumber: number;
+    picks: {
+        red: number | null;   // null = timed out
+        blue: number | null;
+    };
+    distances: {
+        red: number | null;
+        blue: number | null;
+    };
+    roundWinner: PlayerColor | 'tie';
+    scores: ThirdEyeScores;
+}
+
+export interface ThirdEyeGameOverPayload {
+    winner: PlayerColor | 'disconnect';
+    finalScores: ThirdEyeScores;
+}
+
+export interface ThirdEyeTimerPayload {
+    timeRemainingMs: number;
 }

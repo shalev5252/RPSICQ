@@ -5,10 +5,13 @@ import { useGameSession } from './hooks/useGameSession';
 import { useGameStore } from './store/gameStore';
 import { useTranslation } from 'react-i18next';
 import { SettingsWindow } from './components/SettingsWindow';
+import { GamePortal } from './components/GamePortal';
 import { MatchmakingScreen } from './components/MatchmakingScreen';
 import { SetupScreen } from './components/setup';
 import { GameScreen } from './components/game/GameScreen';
 import { GameOverScreen } from './components/game/GameOverScreen';
+import { TttFlow } from './components/ttt/TttFlow';
+import { ThirdEyeFlow } from './components/third-eye/ThirdEyeFlow';
 import './App.css';
 import { getActiveSession, clearActiveSession } from './utils/sessionStorage';
 
@@ -18,7 +21,9 @@ import './i18n'; // Ensure i18n is initialized if not already in main, but dupli
 function AppContent() {
     const { socket, isConnected } = useSocket();
     useGameSession(socket); // Handle global game events
+    const activeGame = useGameStore(state => state.activeGame);
     const gamePhase = useGameStore(state => state.gamePhase);
+    const resetToPortal = useGameStore(state => state.resetToPortal);
     const { playBGM } = useSound();
     const { t } = useTranslation();
     const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
@@ -47,10 +52,23 @@ function AppContent() {
         }
     }, []); // Run only on mount
 
+
     return (
         <div className="app">
             <header className="app-header">
-                <img src="/rps_logo.png" alt="RPS Battle Logo" className="header-logo" />
+                <img
+                    src="/rps_logo.png"
+                    alt="RPS Battle Logo"
+                    className={`header-logo${activeGame !== null ? ' header-logo--clickable' : ''}`}
+                    onClick={activeGame !== null ? resetToPortal : undefined}
+                    onKeyDown={(e) => {
+                        if (activeGame !== null && (e.key === 'Enter' || e.key === ' ')) {
+                            resetToPortal();
+                        }
+                    }}
+                    role={activeGame !== null ? 'button' : undefined}
+                    tabIndex={activeGame !== null ? 0 : undefined}
+                />
 
                 <div className="header-title-section">
                     <h1>{t('app.title')}</h1>
@@ -80,10 +98,26 @@ function AppContent() {
                     </div>
                 ) : (
                     <>
-                        {gamePhase === 'waiting' && <MatchmakingScreen />}
-                        {gamePhase === 'setup' && <SetupScreen />}
-                        {(gamePhase === 'playing' || gamePhase === 'tie_breaker') && <GameScreen />}
-                        {gamePhase === 'finished' && <GameOverScreen />}
+                        {/* Portal — no game selected */}
+                        {activeGame === null && <GamePortal />}
+
+                        {/* RPS Battle flow (existing) */}
+                        {activeGame === 'rps' && (
+                            <>
+                                {gamePhase === 'waiting' && <MatchmakingScreen />}
+                                {gamePhase === 'setup' && <SetupScreen />}
+                                {(gamePhase === 'playing' || gamePhase === 'tie_breaker') && <GameScreen />}
+                                {gamePhase === 'finished' && <GameOverScreen />}
+                            </>
+                        )}
+
+                        {/* Tic Tac Toe flow */}
+                        {activeGame === 'ttt' && <TttFlow onBack={resetToPortal} />}
+
+                        {/* Third Eye flow */}
+                        {activeGame === 'third-eye' && (
+                            <ThirdEyeFlow onBack={resetToPortal} />
+                        )}
                     </>
                 )}
             </main>

@@ -190,5 +190,51 @@
         "devil": "Devil",
         "pray": "Pray/Hope",
         "angel": "Angel"
+    },
+    "portal": {
+        "title": "Game Arcade",
+        "subtitle": "Choose a game to play",
+        "coming_soon": "Coming Soon",
+        "back_to_portal": "Back to Games",
+        "rps": {
+            "title": "RPS Battle",
+            "desc": "Strategic board game with Rock, Paper & Scissors"
+        },
+        "ttt": {
+            "title": "Tic Tac Toe",
+            "desc": "Classic 3×3 — play online or vs AI"
+        },
+        "ttt_ultimate": {
+            "title": "Ultimate Tic Tac Toe",
+            "desc": "9 boards, 1 epic game"
+        },
+        "third_eye": {
+            "title": "The Third Eye",
+            "desc": "Guess the lucky number — first to 3 wins",
+            "waiting": "Waiting for opponent...",
+            "round": "Round",
+            "pick_between": "Pick a number between",
+            "invalid_number": "Enter a valid number",
+            "out_of_range": "Number must be between {{min}} and {{max}}",
+            "submit": "Submit",
+            "submitted": "You picked",
+            "lucky_number": "Lucky Number",
+            "you": "You",
+            "opponent": "Opponent",
+            "distance": "Distance",
+            "timeout": "⏰ Timeout",
+            "round_tie": "🤝 Tie!",
+            "round_you_win": "🎯 You scored!",
+            "round_opponent_wins": "Opponent scored!",
+            "final_score": "Final Score",
+            "you_win": "You Win! 🎉",
+            "you_lose": "You Lose!",
+            "opponent_disconnected": "Opponent disconnected",
+            "rematch": "Rematch",
+            "rematch_waiting": "Waiting...",
+            "rematch_accept": "Accept Rematch",
+            "opponent_wants_rematch": "Opponent wants a rematch!",
+            "back": "Back to menu"
+        }
     }
 }

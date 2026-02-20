@@ -1,0 +1,104 @@
+.ttt-game-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 2rem;
+}
+
+.ttt-game-screen__status {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.ttt-game-screen__turn-indicator {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--text-secondary, #aaa);
+    padding: 0.5rem 1.5rem;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    transition: all 0.3s ease;
+}
+
+.ttt-game-screen__turn-indicator--my-turn {
+    color: #4ade80;
+    background: rgba(74, 222, 128, 0.1);
+    animation: ttt-turn-glow 2s ease infinite;
+}
+
+@keyframes ttt-turn-glow {
+
+    0%,
+    100% {
+        box-shadow: 0 0 8px rgba(74, 222, 128, 0.1);
+    }
+
+    50% {
+        box-shadow: 0 0 16px rgba(74, 222, 128, 0.25);
+    }
+}
+
+.ttt-game-screen__mark-info {
+    font-size: 0.9rem;
+    color: var(--text-secondary, #aaa);
+}
+
+.ttt-mark {
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.ttt-mark--X {
+    color: #60a5fa;
+}
+
+.ttt-mark--O {
+    color: #f472b6;
+}
+
+.ttt-game-screen__waiting {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 3rem;
+    color: var(--text-secondary, #aaa);
+    font-size: 1.1rem;
+}
+
+.ttt-game-screen__spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-top-color: #60a5fa;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.ttt-game-screen__cancel,
+.ttt-game-screen__back-btn {
+    padding: 0.5rem 1.2rem;
+    border: none;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-secondary, #aaa);
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-family: inherit;
+    transition: all 0.2s ease;
+}
+
+.ttt-game-screen__cancel:hover,
+.ttt-game-screen__back-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+}

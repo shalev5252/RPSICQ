@@ -1,0 +1,458 @@
+.te-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 2rem;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+/* --- Scoreboard --- */
+.te-scoreboard {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.8rem 2rem;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(10px);
+}
+
+.te-scoreboard__score {
+    font-size: 2rem;
+    font-weight: 800;
+    font-family: Inter, monospace;
+}
+
+.te-scoreboard__score--mine {
+    color: #4ade80;
+}
+
+.te-scoreboard__score--opponent {
+    color: #f87171;
+}
+
+.te-scoreboard__label {
+    font-size: 0.75rem;
+    color: var(--text-secondary, #888);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.te-scoreboard__divider {
+    font-size: 1.5rem;
+    color: var(--text-secondary, #888);
+}
+
+/* --- Round info + timer --- */
+.te-round-info {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.te-round-info__round {
+    font-size: 1rem;
+    color: var(--text-secondary, #aaa);
+    font-weight: 600;
+}
+
+.te-timer {
+    display: flex;
+    align-items: baseline;
+    gap: 0.15rem;
+    padding: 0.4rem 1rem;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.06);
+    transition: all 0.3s ease;
+}
+
+.te-timer__value {
+    font-size: 1.8rem;
+    font-weight: 800;
+    font-family: Inter, monospace;
+    color: #fff;
+    min-width: 2ch;
+    text-align: center;
+}
+
+.te-timer__label {
+    font-size: 0.9rem;
+    color: var(--text-secondary, #888);
+}
+
+.te-timer--urgent {
+    background: rgba(248, 113, 113, 0.15);
+    animation: te-pulse 0.5s ease infinite alternate;
+}
+
+.te-timer--urgent .te-timer__value {
+    color: #f87171;
+}
+
+@keyframes te-pulse {
+    from {
+        transform: scale(1);
+    }
+
+    to {
+        transform: scale(1.05);
+    }
+}
+
+/* --- Range display --- */
+.te-range {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.te-range__label {
+    font-size: 0.9rem;
+    color: var(--text-secondary, #aaa);
+}
+
+.te-range__values {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    font-size: 2rem;
+    font-weight: 800;
+    font-family: Inter, monospace;
+}
+
+.te-range__min,
+.te-range__max {
+    color: #c084fc;
+    padding: 0.3rem 1rem;
+    border-radius: 10px;
+    background: rgba(192, 132, 252, 0.1);
+}
+
+.te-range__dash {
+    color: var(--text-secondary, #666);
+}
+
+/* --- Input area --- */
+.te-input-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.8rem;
+    width: 100%;
+    max-width: 300px;
+}
+
+.te-input-area__input {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+    font-size: 1.5rem;
+    font-weight: 700;
+    font-family: Inter, monospace;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.te-input-area__input:focus {
+    border-color: rgba(192, 132, 252, 0.5);
+}
+
+.te-input-area__input::placeholder {
+    color: rgba(255, 255, 255, 0.2);
+    font-weight: 400;
+}
+
+/* Remove spinner from number input */
+.te-input-area__input::-webkit-outer-spin-button,
+.te-input-area__input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.te-input-area__input[type=number] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+.te-input-area__error {
+    color: #f87171;
+    font-size: 0.85rem;
+}
+
+/* --- Buttons --- */
+.te-btn {
+    padding: 0.7rem 2rem;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+    max-width: 300px;
+}
+
+.te-btn--primary {
+    background: linear-gradient(135deg, #8b5cf6, #c084fc);
+    color: #fff;
+}
+
+.te-btn--primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(139, 92, 246, 0.3);
+}
+
+.te-btn--primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.te-btn--secondary {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-secondary, #aaa);
+}
+
+.te-btn--secondary:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+}
+
+/* --- Submitted state --- */
+.te-submitted {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1.5rem;
+    border-radius: 16px;
+    background: rgba(74, 222, 128, 0.08);
+    animation: te-fade-in 0.3s ease;
+}
+
+.te-submitted__icon {
+    font-size: 2rem;
+}
+
+.te-submitted__text {
+    font-size: 1.1rem;
+    color: #fff;
+}
+
+.te-submitted__waiting {
+    font-size: 0.85rem;
+    color: var(--text-secondary, #aaa);
+}
+
+/* --- Result overlay --- */
+.te-result-overlay {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 2rem;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(10px);
+    animation: te-fade-in 0.4s ease;
+    width: 100%;
+}
+
+.te-result-overlay__lucky {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.te-result-overlay__label {
+    font-size: 0.85rem;
+    color: var(--text-secondary, #aaa);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.te-result-overlay__number {
+    font-size: 3rem;
+    font-weight: 900;
+    font-family: Inter, monospace;
+    color: #fbbf24;
+    text-shadow: 0 0 20px rgba(251, 191, 36, 0.3);
+    animation: te-number-reveal 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes te-number-reveal {
+    from {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.te-result-overlay__picks {
+    display: flex;
+    gap: 2rem;
+    width: 100%;
+    justify-content: center;
+}
+
+.te-result-overlay__pick {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    flex: 1;
+    max-width: 150px;
+}
+
+.te-result-overlay__player {
+    font-size: 0.8rem;
+    color: var(--text-secondary, #aaa);
+    text-transform: uppercase;
+}
+
+.te-result-overlay__value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    font-family: Inter, monospace;
+    color: #fff;
+}
+
+.te-result-overlay__dist {
+    font-size: 0.8rem;
+    color: var(--text-secondary, #888);
+}
+
+.te-result-overlay__winner {
+    font-size: 1.2rem;
+    font-weight: 700;
+    padding: 0.5rem 1.5rem;
+    border-radius: 12px;
+}
+
+.te-result-overlay__winner--you {
+    color: #4ade80;
+    background: rgba(74, 222, 128, 0.1);
+}
+
+.te-result-overlay__winner--opponent {
+    color: #f87171;
+    background: rgba(248, 113, 113, 0.1);
+}
+
+.te-result-overlay__winner--tie {
+    color: #facc15;
+    background: rgba(250, 204, 21, 0.1);
+}
+
+/* --- Game Over --- */
+.te-game-over {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    animation: te-fade-in 0.4s ease;
+}
+
+.te-game-over__title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.te-game-over__title--win {
+    color: #4ade80;
+    text-shadow: 0 0 20px rgba(74, 222, 128, 0.3);
+}
+
+.te-game-over__title--lose {
+    color: #f87171;
+}
+
+.te-game-over__title--disconnect {
+    color: var(--text-secondary, #aaa);
+    opacity: 0.9;
+}
+
+.te-game-over__actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    width: 100%;
+    max-width: 300px;
+}
+
+.te-game-over__opponent-rematch {
+    font-size: 0.85rem;
+    color: #fbbf24;
+    text-align: center;
+    animation: te-fade-in 0.3s ease;
+}
+
+.te-score-final {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.te-score-final__label {
+    font-size: 0.85rem;
+    color: var(--text-secondary, #aaa);
+    text-transform: uppercase;
+}
+
+.te-score-final__value {
+    font-size: 2.5rem;
+    font-weight: 800;
+    font-family: Inter, monospace;
+    color: #fff;
+}
+
+/* --- Shared --- */
+.te-screen__waiting {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 3rem;
+    color: var(--text-secondary, #aaa);
+}
+
+.te-screen__spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-top-color: #c084fc;
+    border-radius: 50%;
+    animation: te-spin 0.8s linear infinite;
+}
+
+@keyframes te-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes te-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

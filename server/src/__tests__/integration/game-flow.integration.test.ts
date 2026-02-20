@@ -3,7 +3,16 @@ import { createServer, Server as HttpServer } from 'http';
 import { Server as IOServer } from 'socket.io';
 import { io as ioClient, Socket as ClientSocket } from 'socket.io-client';
 import { setupSocketHandlers } from '../../socket/handlers.js';
-import { SOCKET_EVENTS, RED_SETUP_ROWS, BLUE_SETUP_ROWS } from '@rps/shared';
+import {
+    SOCKET_EVENTS,
+    RED_SETUP_ROWS,
+    BLUE_SETUP_ROWS,
+    GameFoundPayload,
+    SetupStatePayload,
+    GameStartPayload,
+    GameOverPayload,
+    RoomCreatedPayload
+} from '@rps/shared';
 
 /**
  * Socket.IO integration tests: spin up a real server, connect two clients,
@@ -23,7 +32,7 @@ function createClient(playerId?: string): ClientSocket {
 }
 
 /** Wait for a specific event from a socket, with timeout */
-function waitFor<T = any>(socket: ClientSocket, event: string, timeoutMs = 5000): Promise<T> {
+function waitFor<T = unknown>(socket: ClientSocket, event: string, timeoutMs = 5000): Promise<T> {
     return new Promise((resolve, reject) => {
         const timer = setTimeout(() => reject(new Error(`Timeout waiting for "${event}"`)), timeoutMs);
         socket.once(event, (data: T) => {
@@ -80,8 +89,8 @@ describe('Socket.IO Integration', () => {
         await Promise.all([waitForConnect(p1), waitForConnect(p2)]);
 
         // Both join queue
-        const gameFoundP1 = waitFor(p1, SOCKET_EVENTS.GAME_FOUND);
-        const gameFoundP2 = waitFor(p2, SOCKET_EVENTS.GAME_FOUND);
+        const gameFoundP1 = waitFor<GameFoundPayload>(p1, SOCKET_EVENTS.GAME_FOUND);
+        const gameFoundP2 = waitFor<GameFoundPayload>(p2, SOCKET_EVENTS.GAME_FOUND);
 
         p1.emit(SOCKET_EVENTS.JOIN_QUEUE, { gameMode: 'classic', gameVariant: 'standard' });
         p2.emit(SOCKET_EVENTS.JOIN_QUEUE, { gameMode: 'classic', gameVariant: 'standard' });
@@ -100,14 +109,14 @@ describe('Socket.IO Integration', () => {
         const [red, blue] = gf1.color === 'red' ? [p1, p2] : [p2, p1];
 
         // Setup: place king and pit
-        const setupRed = waitFor(red, SOCKET_EVENTS.SETUP_STATE);
+        const setupRed = waitFor<SetupStatePayload>(red, SOCKET_EVENTS.SETUP_STATE);
         red.emit(SOCKET_EVENTS.PLACE_KING_PIT, {
             kingPosition: { row: RED_SETUP_ROWS[0], col: 0 },
             pitPosition: { row: RED_SETUP_ROWS[0], col: 1 },
         });
         await setupRed;
 
-        const setupBlue = waitFor(blue, SOCKET_EVENTS.SETUP_STATE);
+        const setupBlue = waitFor<SetupStatePayload>(blue, SOCKET_EVENTS.SETUP_STATE);
         blue.emit(SOCKET_EVENTS.PLACE_KING_PIT, {
             kingPosition: { row: BLUE_SETUP_ROWS[0], col: 0 },
             pitPosition: { row: BLUE_SETUP_ROWS[0], col: 1 },
@@ -115,22 +124,22 @@ describe('Socket.IO Integration', () => {
         await setupBlue;
 
         // Randomize
-        const randRed = waitFor(red, SOCKET_EVENTS.SETUP_STATE);
+        const randRed = waitFor<SetupStatePayload>(red, SOCKET_EVENTS.SETUP_STATE);
         red.emit(SOCKET_EVENTS.RANDOMIZE_PIECES);
         await randRed;
 
-        const randBlue = waitFor(blue, SOCKET_EVENTS.SETUP_STATE);
+        const randBlue = waitFor<SetupStatePayload>(blue, SOCKET_EVENTS.SETUP_STATE);
         blue.emit(SOCKET_EVENTS.RANDOMIZE_PIECES);
         await randBlue;
 
         // Confirm setup — both
-        const confirmP1 = waitFor(red, SOCKET_EVENTS.SETUP_STATE);
+        const confirmP1 = waitFor<SetupStatePayload>(red, SOCKET_EVENTS.SETUP_STATE);
         red.emit(SOCKET_EVENTS.CONFIRM_SETUP);
         await confirmP1;
 
         // When blue confirms, game should start
-        const gameStartRed = waitFor(red, SOCKET_EVENTS.GAME_START);
-        const gameStartBlue = waitFor(blue, SOCKET_EVENTS.GAME_START);
+        const gameStartRed = waitFor<GameStartPayload>(red, SOCKET_EVENTS.GAME_START);
+        const gameStartBlue = waitFor<GameStartPayload>(blue, SOCKET_EVENTS.GAME_START);
         blue.emit(SOCKET_EVENTS.CONFIRM_SETUP);
 
         const [gsRed, gsBlue] = await Promise.all([gameStartRed, gameStartBlue]);
@@ -144,8 +153,8 @@ describe('Socket.IO Integration', () => {
 
         await Promise.all([waitForConnect(p1), waitForConnect(p2)]);
 
-        const gameFoundP1 = waitFor(p1, SOCKET_EVENTS.GAME_FOUND);
-        const gameFoundP2 = waitFor(p2, SOCKET_EVENTS.GAME_FOUND);
+        const gameFoundP1 = waitFor<GameFoundPayload>(p1, SOCKET_EVENTS.GAME_FOUND);
+        const gameFoundP2 = waitFor<GameFoundPayload>(p2, SOCKET_EVENTS.GAME_FOUND);
 
         p1.emit(SOCKET_EVENTS.JOIN_QUEUE, { gameMode: 'classic', gameVariant: 'standard' });
         p2.emit(SOCKET_EVENTS.JOIN_QUEUE, { gameMode: 'classic', gameVariant: 'standard' });
@@ -153,8 +162,8 @@ describe('Socket.IO Integration', () => {
         await Promise.all([gameFoundP1, gameFoundP2]);
 
         // p1 forfeits
-        const gameOverP1 = waitFor(p1, SOCKET_EVENTS.GAME_OVER);
-        const gameOverP2 = waitFor(p2, SOCKET_EVENTS.GAME_OVER);
+        const gameOverP1 = waitFor<GameOverPayload>(p1, SOCKET_EVENTS.GAME_OVER);
+        const gameOverP2 = waitFor<GameOverPayload>(p2, SOCKET_EVENTS.GAME_OVER);
 
         p1.emit(SOCKET_EVENTS.FORFEIT_GAME);
 
@@ -170,14 +179,14 @@ describe('Socket.IO Integration', () => {
         await Promise.all([waitForConnect(p1), waitForConnect(p2)]);
 
         // Create room
-        const roomCreated = waitFor(p1, SOCKET_EVENTS.ROOM_CREATED);
+        const roomCreated = waitFor<RoomCreatedPayload>(p1, SOCKET_EVENTS.ROOM_CREATED);
         p1.emit(SOCKET_EVENTS.CREATE_ROOM, { gameMode: 'classic', gameVariant: 'standard' });
         const roomData = await roomCreated;
         expect(roomData.roomCode).toBeDefined();
 
         // Join room
-        const gameFoundP1 = waitFor(p1, SOCKET_EVENTS.GAME_FOUND);
-        const gameFoundP2 = waitFor(p2, SOCKET_EVENTS.GAME_FOUND);
+        const gameFoundP1 = waitFor<GameFoundPayload>(p1, SOCKET_EVENTS.GAME_FOUND);
+        const gameFoundP2 = waitFor<GameFoundPayload>(p2, SOCKET_EVENTS.GAME_FOUND);
         p2.emit(SOCKET_EVENTS.JOIN_ROOM, { roomCode: roomData.roomCode });
 
         const [gf1, gf2] = await Promise.all([gameFoundP1, gameFoundP2]);

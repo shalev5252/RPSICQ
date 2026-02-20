@@ -1,4 +1,4 @@
-import { GameState, PlayerColor, BOARD_CONFIG } from '@rps/shared';
+import { GameState, PlayerColor, BOARD_CONFIG, RpsGameMode } from '@rps/shared';
 import { GamePhase, EvalWeights, BayesianState } from './types.js';
 
 /**
@@ -20,7 +20,7 @@ export class PhaseDetector {
      * Determine the current game phase.
      */
     public detectPhase(gameState: GameState, aiColor: PlayerColor, bayesianState: BayesianState | undefined): GamePhase {
-        const config = BOARD_CONFIG[gameState.gameMode];
+        const config = BOARD_CONFIG[gameState.gameMode as RpsGameMode];
         const opponentColor: PlayerColor = aiColor === 'red' ? 'blue' : 'red';
 
         const aiPlayer = gameState.players[aiColor];

@@ -1,0 +1,103 @@
+/* ─── Game Portal ───────────────────────────────────────────── */
+
+.portal-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 1rem;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.portal-title {
+    font-size: 2rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #f7971e, #ffd200);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 0.25rem;
+    text-align: center;
+}
+
+.portal-subtitle {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 1rem;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+/* Grid */
+.portal-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.25rem;
+    width: 100%;
+}
+
+/* Card */
+.portal-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1.75rem 1.25rem;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+    font-family: inherit;
+    color: #fff;
+}
+
+.portal-card:hover:not(:disabled) {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+    border-color: rgba(255, 210, 0, 0.5);
+}
+
+.portal-card:active:not(:disabled) {
+    transform: translateY(-1px);
+}
+
+.portal-card--disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    filter: grayscale(0.5);
+}
+
+/* Card parts */
+.portal-card__icon {
+    font-size: 2.5rem;
+    line-height: 1;
+}
+
+.portal-card__title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.portal-card__desc {
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.55);
+    text-align: center;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.portal-card__badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 2px 8px;
+    border-radius: 8px;
+}

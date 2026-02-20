@@ -5,7 +5,7 @@ import { Server } from 'socket.io';
 
 /** Create a minimal mock of the socket.io Server */
 function createMockIO(): Server {
-    const connectedSockets = new Map<string, any>();
+    const connectedSockets = new Map<string, unknown>();
     return {
         sockets: { sockets: connectedSockets },
     } as unknown as Server;
