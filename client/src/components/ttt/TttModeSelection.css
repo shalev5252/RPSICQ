@@ -79,3 +79,21 @@
     background: rgba(255, 255, 255, 0.1);
     color: var(--text-secondary, #aaa);
 }
+
+.ttt-mode-selection__back {
+    margin-top: 0.5rem;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-secondary, #aaa);
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-family: inherit;
+    transition: all 0.2s ease;
+}
+
+.ttt-mode-selection__back:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+}

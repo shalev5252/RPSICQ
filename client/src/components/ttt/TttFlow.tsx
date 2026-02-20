@@ -33,7 +33,7 @@ export const TttFlow: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
     switch (screen) {
         case 'mode-select':
-            return <TttModeSelection onPlayOnline={handlePlayOnline} onPlayAI={handlePlayAI} />;
+            return <TttModeSelection onPlayOnline={handlePlayOnline} onPlayAI={handlePlayAI} onBack={handleBackToPortal} />;
 
         case 'difficulty-select':
             return <TttDifficultySelection onSelect={handleDifficultySelect} onBack={handleBackToModeSelect} />;

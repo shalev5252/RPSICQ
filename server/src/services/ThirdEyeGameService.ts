@@ -312,7 +312,13 @@ export class ThirdEyeGameService {
 
         const sessionId = session.sessionId;
         const color = this.getPlayerColor(socketId);
-        const opponentSocketId = color === 'red' ? session.sockets.blue : session.sockets.red;
+        let opponentSocketId: string | null = null;
+
+        if (color === 'red') {
+            opponentSocketId = session.sockets.blue;
+        } else if (color === 'blue') {
+            opponentSocketId = session.sockets.red;
+        }
 
         this.deleteSession(sessionId);
         return { sessionId, opponentSocketId };

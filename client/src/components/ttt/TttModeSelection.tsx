@@ -5,9 +5,10 @@ import './TttModeSelection.css';
 interface TttModeSelectionProps {
     onPlayOnline: () => void;
     onPlayAI: () => void;
+    onBack: () => void;
 }
 
-export const TttModeSelection: React.FC<TttModeSelectionProps> = ({ onPlayOnline, onPlayAI }) => {
+export const TttModeSelection: React.FC<TttModeSelectionProps> = ({ onPlayOnline, onPlayAI, onBack }) => {
     const { t } = useTranslation();
 
     return (
@@ -34,6 +35,10 @@ export const TttModeSelection: React.FC<TttModeSelectionProps> = ({ onPlayOnline
                     <span className="ttt-mode-card__badge">{t('portal.coming_soon', 'Coming Soon')}</span>
                 </button>
             </div>
+
+            <button className="ttt-mode-selection__back" onClick={onBack}>
+                ← {t('common.back', 'Back')}
+            </button>
         </div>
     );
 };
