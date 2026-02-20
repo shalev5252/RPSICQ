@@ -34,6 +34,15 @@ export class ThirdEyeGameService {
     // ---------------------------------------------------------------
 
     public createSession(sessionId: string, socket1Id: string, socket2Id: string, p1Role: PlayerColor, _p2Role: PlayerColor): ThirdEyeSession {
+        // Clean up any existing session with the same ID
+        const oldSession = this.sessions.get(sessionId);
+        if (oldSession) {
+            this.clearTimers(oldSession);
+            if (oldSession.sockets.red) this.socketToSession.delete(oldSession.sockets.red);
+            if (oldSession.sockets.blue) this.socketToSession.delete(oldSession.sockets.blue);
+            this.sessions.delete(sessionId);
+        }
+
         // Map sockets to roles
         const redSocketId = p1Role === 'red' ? socket1Id : socket2Id;
         const blueSocketId = p1Role === 'blue' ? socket1Id : socket2Id;
@@ -253,6 +262,9 @@ export class ThirdEyeGameService {
     ): void {
         const session = this.sessions.get(sessionId);
         if (!session) return;
+
+        // Clear any existing timers to prevent stale refs
+        this.clearTimers(session);
 
         const startTime = Date.now();
         const endTime = startTime + TIMER_DURATION_MS;

@@ -25,6 +25,7 @@ export const ThirdEyeGameScreen: React.FC<ThirdEyeGameScreenProps> = ({ onBack }
         matchWinner,
         finalScores,
         rematchRequested,
+        opponentRequestedRematch,
         requestRematch,
         submitPick,
     } = useThirdEyeGame();
@@ -46,8 +47,8 @@ export const ThirdEyeGameScreen: React.FC<ThirdEyeGameScreenProps> = ({ onBack }
 
     const handleSubmit = useCallback(() => {
         if (hasSubmitted) return;
-        const num = parseInt(inputValue, 10);
-        if (isNaN(num)) {
+        const num = Number(inputValue);
+        if (!Number.isFinite(num) || !Number.isInteger(num)) {
             setInputError(t('portal.third_eye.invalid_number', 'Enter a valid number'));
             return;
         }
@@ -108,6 +109,11 @@ export const ThirdEyeGameScreen: React.FC<ThirdEyeGameScreenProps> = ({ onBack }
                     )}
 
                     <div className="te-game-over__actions">
+                        {opponentRequestedRematch && !rematchRequested && (
+                            <span className="te-game-over__opponent-rematch">
+                                {t('portal.third_eye.opponent_wants_rematch', 'Opponent wants a rematch!')}
+                            </span>
+                        )}
                         <button
                             className="te-btn te-btn--primary"
                             onClick={requestRematch}
@@ -115,7 +121,9 @@ export const ThirdEyeGameScreen: React.FC<ThirdEyeGameScreenProps> = ({ onBack }
                         >
                             {rematchRequested
                                 ? t('portal.third_eye.rematch_waiting', 'Waiting...')
-                                : t('portal.third_eye.rematch', 'Rematch')}
+                                : opponentRequestedRematch
+                                    ? t('portal.third_eye.rematch_accept', 'Accept Rematch')
+                                    : t('portal.third_eye.rematch', 'Rematch')}
                         </button>
                         <button className="te-btn te-btn--secondary" onClick={onBack}>
                             ← {t('portal.third_eye.back', 'Back to menu')}

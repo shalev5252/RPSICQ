@@ -232,6 +232,8 @@
             "opponent_disconnected": "Opponent disconnected",
             "rematch": "Rematch",
             "rematch_waiting": "Waiting...",
+            "rematch_accept": "Accept Rematch",
+            "opponent_wants_rematch": "Opponent wants a rematch!",
             "back": "Back to menu"
         }
     }

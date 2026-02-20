@@ -254,6 +254,8 @@
         "opponent_disconnected": "היריב התנתק",
         "rematch": "משחק חוזר",
         "rematch_waiting": "ממתין...",
+        "rematch_accept": "קבל משחק חוזר",
+        "opponent_wants_rematch": "היריב רוצה משחק חוזר!",
         "back": "חזרה לתפריט"
     }
 }

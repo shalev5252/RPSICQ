@@ -46,8 +46,8 @@
     font-family: inherit;
 }
 
-.ttt-mode-card:hover:not(.ttt-mode-card--disabled):not(:disabled),
-.ttt-mode-card:focus-visible:not(.ttt-mode-card--disabled):not(:disabled) {
+.ttt-mode-card:hover:not(.ttt-mode-card--disabled, :disabled),
+.ttt-mode-card:focus-visible:not(.ttt-mode-card--disabled, :disabled) {
     background: rgba(255, 255, 255, 0.12);
     border-color: rgba(100, 200, 255, 0.4);
     transform: translateY(-2px);
