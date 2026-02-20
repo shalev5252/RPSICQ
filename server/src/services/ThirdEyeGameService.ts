@@ -20,6 +20,7 @@ export interface ThirdEyeSession {
     timerRef: ReturnType<typeof setTimeout> | null;
     tickIntervalRef: ReturnType<typeof setInterval> | null;
     roundActive: boolean;
+    roundResolving?: boolean;
     winner: PlayerColor | null;
     rematchRequests: { red: boolean; blue: boolean };
 }
@@ -127,6 +128,7 @@ export class ThirdEyeGameService {
             blue: { number: null, submitted: false },
         };
         session.roundActive = true;
+        session.roundResolving = false;
 
         return {
             roundNumber: session.roundNumber,
@@ -181,7 +183,9 @@ export class ThirdEyeGameService {
     } | null {
         const session = this.sessions.get(sessionId);
         if (!session) return null;
+        if (session.roundResolving) return null;
 
+        session.roundResolving = true;
         session.roundActive = false;
         this.clearTimers(session);
 
@@ -283,7 +287,7 @@ export class ThirdEyeGameService {
 
     public requestRematch(sessionId: string, socketId: string): { bothReady: boolean } {
         const session = this.sessions.get(sessionId);
-        if (!session) return { bothReady: false };
+        if (!session || !session.winner) return { bothReady: false };
 
         const color = this.getPlayerColor(socketId);
         if (!color) return { bothReady: false };

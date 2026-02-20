@@ -380,6 +380,11 @@
     color: #f87171;
 }
 
+.te-game-over__title--disconnect {
+    color: var(--text-secondary, #aaa);
+    opacity: 0.9;
+}
+
 .te-game-over__actions {
     display: flex;
     flex-direction: column;

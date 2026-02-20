@@ -37,6 +37,9 @@ interface ThirdEyeHookResult {
     rematchRequested: boolean;
     opponentRequestedRematch: boolean;
     requestRematch: () => void;
+
+    // Actions
+    submitPick: (number: number) => void;
 }
 
 export function useThirdEyeGame(): ThirdEyeHookResult {
@@ -141,6 +144,11 @@ export function useThirdEyeGame(): ThirdEyeHookResult {
         socket.emit(SOCKET_EVENTS.TE_REMATCH);
     }, [socket]);
 
+    const submitPick = useCallback((number: number) => {
+        if (!socket) return;
+        socket.emit(SOCKET_EVENTS.TE_PICK_NUMBER, { number });
+    }, [socket]);
+
     return {
         isStarted,
         myColor,
@@ -159,5 +167,6 @@ export function useThirdEyeGame(): ThirdEyeHookResult {
         rematchRequested,
         opponentRequestedRematch,
         requestRematch,
+        submitPick,
     };
 }

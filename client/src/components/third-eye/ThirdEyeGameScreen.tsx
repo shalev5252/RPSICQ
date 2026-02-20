@@ -1,8 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useSocket } from '../../hooks/useSocket';
 import { useThirdEyeGame } from '../../hooks/useThirdEyeSocket';
-import { SOCKET_EVENTS } from '@rps/shared';
 import './ThirdEyeGameScreen.css';
 
 interface ThirdEyeGameScreenProps {
@@ -11,7 +9,6 @@ interface ThirdEyeGameScreenProps {
 
 export const ThirdEyeGameScreen: React.FC<ThirdEyeGameScreenProps> = ({ onBack }) => {
     const { t } = useTranslation();
-    const { socket } = useSocket();
     const {
         isStarted,
         myColor,
@@ -29,6 +26,7 @@ export const ThirdEyeGameScreen: React.FC<ThirdEyeGameScreenProps> = ({ onBack }
         finalScores,
         rematchRequested,
         requestRematch,
+        submitPick,
     } = useThirdEyeGame();
 
     const opponentColor = myColor === 'red' ? 'blue' : 'red';
@@ -47,7 +45,7 @@ export const ThirdEyeGameScreen: React.FC<ThirdEyeGameScreenProps> = ({ onBack }
     }, [roundNumber, showingResult]);
 
     const handleSubmit = useCallback(() => {
-        if (!socket || hasSubmitted) return;
+        if (hasSubmitted) return;
         const num = parseInt(inputValue, 10);
         if (isNaN(num)) {
             setInputError(t('portal.third_eye.invalid_number', 'Enter a valid number'));
@@ -58,18 +56,14 @@ export const ThirdEyeGameScreen: React.FC<ThirdEyeGameScreenProps> = ({ onBack }
             return;
         }
         setInputError('');
-        socket.emit(SOCKET_EVENTS.TE_PICK_NUMBER, { number: num });
-    }, [socket, inputValue, rangeMin, rangeMax, hasSubmitted, t]);
-
-    const handleRematch = useCallback(() => {
-        requestRematch();
-    }, [requestRematch]);
+        submitPick(num);
+    }, [inputValue, rangeMin, rangeMax, hasSubmitted, t, submitPick]);
 
     const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
         if (e.key === 'Enter') handleSubmit();
     }, [handleSubmit]);
 
-    const timerSeconds = Math.ceil(timeRemainingMs / 1000);
+    const timerSeconds = Math.ceil(Math.max(0, timeRemainingMs) / 1000);
     const timerUrgent = timerSeconds <= 5;
 
     // ----- Waiting for match -----
@@ -116,7 +110,7 @@ export const ThirdEyeGameScreen: React.FC<ThirdEyeGameScreenProps> = ({ onBack }
                     <div className="te-game-over__actions">
                         <button
                             className="te-btn te-btn--primary"
-                            onClick={handleRematch}
+                            onClick={requestRematch}
                             disabled={rematchRequested}
                         >
                             {rematchRequested
@@ -236,6 +230,7 @@ export const ThirdEyeGameScreen: React.FC<ThirdEyeGameScreenProps> = ({ onBack }
                         placeholder={`${rangeMin} – ${rangeMax}`}
                         min={rangeMin}
                         max={rangeMax}
+                        step={1}
                         autoFocus
                     />
                     {inputError && <span className="te-input-area__error">{inputError}</span>}
